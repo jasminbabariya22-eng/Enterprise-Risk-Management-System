@@ -194,6 +194,7 @@ For in-depth architectural and developer guides, explore the dedicated [`ERM_Cop
 - 🛡️ [05. Governance & Approval Workflow](./ERM_Copilot/docs/05_GOVERNANCE_AND_APPROVAL_WORKFLOW.md) — 4-stage governance pipeline and delegation rules.
 - 🔌 [06. API Integration & Endpoints](./ERM_Copilot/docs/06_API_INTEGRATION_AND_ENDPOINTS.md) — Complete REST endpoint reference and request/response contracts.
 - 🚢 [07. Development & Deployment Guide](./ERM_Copilot/docs/07_DEVELOPMENT_AND_DEPLOYMENT_GUIDE.md) — Production setup, Docker configurations, and maintenance.
+- ⚡ [08. Multi-Tier Caching & Performance Optimization](./ERM_Copilot/docs/08_MULTI_TIER_CACHING_AND_OPTIMIZATION.md) — 6-Tier caching pipeline (Response, Tool/DB, Embedding, Retrieval, Reranker, KV Prefix).
 
 ---
 
