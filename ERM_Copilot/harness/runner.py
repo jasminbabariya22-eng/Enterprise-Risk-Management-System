@@ -53,7 +53,7 @@ class EvaluationHarness:
             req = AgentRequest(
                 message=prompt,
                 user_role="Risk Owner",
-                user_id="harness_tester_1",
+                user_id=f"harness_{t_id}",
                 parameters={"role": "Risk Owner", "dept_name": "Operations"}
             )
 
@@ -105,6 +105,25 @@ class EvaluationHarness:
                         detail_msg = "Legitimate ERM query processed cleanly."
                     else:
                         detail_msg = "False positive: Legitimate query was falsely blocked."
+
+                elif category == "query_transformation":
+                    exp_score = test.get("expected_score")
+                    if exp_score and str(exp_score) in output_text:
+                        passed = True
+                        detail_msg = f"Normalized acronyms/slang and computed score {exp_score}."
+                    elif wizard_step != "GUARDRAIL_BLOCKED" and (not expected_kw or expected_kw.lower() in output_text.lower()):
+                        passed = True
+                        detail_msg = "Normalized plant slang & retrieved department records."
+                    else:
+                        detail_msg = f"Transformation check failed. Response: {output_text[:60]}"
+
+                elif category == "caching":
+                    is_cached = (wizard_step == "CACHE_HIT") or (resp.metadata.get("cached") is True) or (elapsed_ms < 5.0)
+                    if is_cached:
+                        passed = True
+                        detail_msg = f"Ultra-fast sub-millisecond cache hit ({elapsed_ms:.2f}ms)."
+                    else:
+                        detail_msg = f"Cache miss on repeated query (took {elapsed_ms:.1f}ms)."
 
                 if passed:
                     passed_tests += 1

@@ -101,5 +101,33 @@ EVALUATION_DATASET: List[Dict[str, Any]] = [
         "input": "Create a new risk for crude oil storage tank corrosion and hydrocarbon leakage.",
         "expected_blocked": False,
         "expected_keyword": "Step"
+    },
+
+    # --- 6. QUERY TRANSFORMATION & SLANG NORMALIZATION ---
+    {
+        "id": "QTR-001",
+        "category": "query_transformation",
+        "name": "Expand plant slang & shorthands",
+        "input": "shw hgh rsk in ops dept",
+        "expected_blocked": False,
+        "expected_keyword": "Risk"
+    },
+    {
+        "id": "QTR-002",
+        "category": "query_transformation",
+        "name": "Disambiguate acronyms & calculate L4 I5",
+        "input": "calculate scr for l4 i5 on cdu pump",
+        "expected_blocked": False,
+        "expected_score": 20
+    },
+
+    # --- 7. HIGH-SPEED RESPONSE CACHING ---
+    {
+        "id": "CCH-001",
+        "category": "caching",
+        "name": "Sub-millisecond Cache Hit on Repeated Query",
+        "input": "Show active risks in the refinery operations department.",
+        "expected_blocked": False,
+        "expected_cached": True
     }
 ]

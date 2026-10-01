@@ -25,6 +25,8 @@ from ERM_Copilot.services.db_service import erm_db
 from ERM_Copilot.services.api_client import erm_api_client
 from ERM_Copilot.gateway.client import portkey_client
 from ERM_Copilot.guardrails.manager import GuardrailManager
+from ERM_Copilot.transform.query_transformer import QueryTransformer
+from ERM_Copilot.cache.response_cache import erm_response_cache
 
 logger = logging.getLogger("ERM_Copilot.agents.agent")
 
@@ -121,21 +123,26 @@ class ERMCopilotAgent(BaseAgent):
 
     def process(self, request: AgentRequest) -> AgentResponse:
         """Process user query dynamically tailored to the user's role and RBAC scope."""
-        # --- 0. ENTERPRISE SAFETY & COMPLIANCE GUARDRAILS ---
-        guardrail_res = GuardrailManager.process_input(request)
-        if guardrail_res.blocked:
-            return self._make_response(request, guardrail_res.reason, "GUARDRAIL_BLOCKED")
-
-        msg = guardrail_res.sanitized_text.strip()
-        lower_msg = msg.lower()
         params = getattr(request, "metadata", {}) or getattr(request, "parameters", {}) or {}
-        
         user_role = str(params.get("role") or getattr(request, "user_role", None) or "").strip()
         dept_id = params.get("dept_id")
         dept_name = params.get("dept_name")
         raw_user_id = getattr(request, "user_id", None) or params.get("user_id") or "5"
         user_id = raw_user_id
         session_key = str(raw_user_id).strip()
+
+        # --- 1. QUERY TRANSFORMATION ENGINE (Expand shorthands & acronyms) ---
+        raw_msg = request.message or ""
+        transformed_msg, transform_meta = QueryTransformer.transform(raw_msg, user_role, dept_name)
+        
+        # --- 2. ENTERPRISE SAFETY & COMPLIANCE GUARDRAILS ---
+        normalized_request = request.model_copy(update={"message": transformed_msg}) if hasattr(request, "model_copy") else request
+        guardrail_res = GuardrailManager.process_input(normalized_request)
+        if guardrail_res.blocked:
+            return self._make_response(request, guardrail_res.reason, "GUARDRAIL_BLOCKED")
+
+        msg = guardrail_res.sanitized_text.strip()
+        lower_msg = msg.lower()
         
         is_enterprise_role = any(r in user_role.lower() for r in [
             "super admin", "admin", "risk head", "risk manager", "management", "auditor", "executive"
@@ -144,6 +151,14 @@ class ERMCopilotAgent(BaseAgent):
         filter_dept_name = None if is_enterprise_role else dept_name
         
         logfire.info(f"[ERMCopilotAgent] Role='{user_role}', Dept='{dept_name}' (ID: {dept_id}) | Query: '{msg}'")
+
+        # --- 2. HIGH-SPEED RESPONSE CACHE LOOKUP ---
+        is_wizard_active = (session_key in WIZARD_SESSIONS) or ConversationalRiskWizard.is_start_trigger(msg) or ConversationalRiskWizard.is_cancellation(msg)
+        if not is_wizard_active:
+            cached_resp = erm_response_cache.get(msg, user_role, filter_dept_id)
+            if cached_resp:
+                cached_text = cached_resp.response if hasattr(cached_resp, "response") else str(cached_resp)
+                return self._make_response(request, cached_text, "CACHE_HIT")
 
         # 0. CONVERSATIONAL RISK CREATION WIZARD (STATE MACHINE)
         if ConversationalRiskWizard.is_cancellation(msg):
@@ -426,6 +441,8 @@ class ERMCopilotAgent(BaseAgent):
                     treatments=sample_treatments
                 )
 
+                # Invalidate cache when new risk is registered
+                erm_response_cache.invalidate_all()
                 del WIZARD_SESSIONS[session_key]
 
                 rid = raw_data.get("risk_id", "RSK-REF-001") if isinstance(raw_data, dict) else "RSK-REF-001"
@@ -659,7 +676,7 @@ class ERMCopilotAgent(BaseAgent):
         created_dt = getattr(request, "created_at", None)
         timestamp_str = created_dt.isoformat() if created_dt else datetime.now(timezone.utc).isoformat()
 
-        return AgentResponse(
+        resp_obj = AgentResponse(
             request_id=req_id,
             agent_id=self.agent_id,
             status="success",
@@ -673,6 +690,12 @@ class ERMCopilotAgent(BaseAgent):
                 "timestamp": timestamp_str
             }
         )
+
+        # Cache read-only response for subsequent high-speed sub-millisecond retrieval
+        if not is_wizard_active and answer_text:
+            erm_response_cache.set(msg, resp_obj, user_role, filter_dept_id)
+
+        return resp_obj
 
     def _make_response(self, request: AgentRequest, answer_text: str, step_code: str) -> AgentResponse:
         req_id = getattr(request, "request_id", None) or str(uuid.uuid4())
