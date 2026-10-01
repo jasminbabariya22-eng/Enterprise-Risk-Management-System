@@ -569,6 +569,13 @@ class ERMCopilotAgent(BaseAgent):
             answer = "\n".join(lines)
             return self._make_response(request, answer, "DAILY_BRIEFING")
 
+        # 0b. ROLE-SPECIFIC WELCOME GREETING & INTERACTIVE ACTION MENU
+        clean_prompt = " ".join(re.findall(r'[a-zA-Z0-9]+', lower_msg))
+        is_greeting = clean_prompt in ["hi", "hii", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "help", "menu", "start", "start copilot", "welcome"]
+        if is_greeting:
+            answer = self._get_role_specific_welcome(user_role, dept_name, is_enterprise_role)
+            return self._make_response(request, answer, "ROLE_WELCOME_MENU")
+
         # 0c. INTERACTIVE 5x5 RISK MATRIX HEATMAP
         elif any(w in lower_msg for w in ["heatmap", "5x5", "heat map", "risk matrix", "matrix heatmap", "distribution"]):
             dist = erm_db.get_risk_matrix_distribution(dept_id=filter_dept_id)
@@ -696,6 +703,102 @@ class ERMCopilotAgent(BaseAgent):
             erm_response_cache.set(msg, resp_obj, user_role, filter_dept_id)
 
         return resp_obj
+
+    def _get_role_specific_welcome(self, user_role: str, dept_name: Optional[str], is_enterprise_role: bool) -> str:
+        role_lower = (user_role or "").lower()
+        dept_str = dept_name or "Plant Operations"
+
+        # 1. RISK OWNER
+        if "owner" in role_lower or role_lower in ["ro", "risk owner", "risk_owner"]:
+            return (
+                f"### 👋 Welcome, Risk Owner!\n"
+                f"I am your **AI Risk Intelligence Copilot**. I assist frontline engineers and department teams in formulating structured operational hazards, calculating 5×5 matrix scores, and tracking action follow-ups.\n\n"
+                f"🏢 **Assigned Department:** `{dept_str}`\n"
+                f"🛡️ **Governance Scope:** `5-Step Risk Registration & Mitigation Planning`\n\n"
+                f"👉 **Quick Actions for Risk Owner:**\n\n"
+                f"[btn:➕ Create New Risk|Create a new risk] "
+                f"[btn:📊 Calculate 5×5 Score|Calculate score for Likelihood 4 and Impact 4] "
+                f"[btn:📋 Department Risks|Show active risks in my department] "
+                f"[btn:⏰ Overdue Actions|Which risk action plans are overdue?]"
+            )
+
+        # 2. FUNCTIONAL HEAD
+        elif "function" in role_lower or "dept head" in role_lower or role_lower in ["fh", "functional head", "functional_head"]:
+            return (
+                f"### 👋 Welcome, Functional Head!\n"
+                f"I am your **Stage 2 Governance AI Copilot**. I assist you with reviewing newly submitted department risks, technical mitigation adequacy assessments, and 1-click approvals.\n\n"
+                f"🏢 **Governed Department:** `{dept_str}`\n"
+                f"🛡️ **Governance Scope:** `Stage 2 Technical Review & Department Approval Queue`\n\n"
+                f"👉 **Quick Actions for Functional Head:**\n\n"
+                f"[btn:📥 Review Pending Approvals|Show pending approvals] "
+                f"[btn:📋 Department Risk Register|Show active risks in my department] "
+                f"[btn:🗺️ Department Heatmap|Show 5x5 heatmap matrix] "
+                f"[btn:👥 Action Owner Workload|Show department action owners and followups]"
+            )
+
+        # 3. RISK MANAGER
+        elif "manager" in role_lower or role_lower in ["rm", "risk manager", "risk_manager"]:
+            return (
+                f"### 👋 Welcome, Risk Manager!\n"
+                f"I am your **Cross-Department Risk AI Advisor**. I assist you in Stage 3 audits, 4-tier matrix validation, enterprise risk aggregation, and mitigation adequacy verification.\n\n"
+                f"🏢 **Governance Scope:** `Multi-Department & Enterprise (Stage 3 Review Queue)`\n\n"
+                f"👉 **Quick Actions for Risk Manager:**\n\n"
+                f"[btn:📥 Stage 3 Audit Queue|Show pending Stage 3 approvals] "
+                f"[btn:🏢 Enterprise Risk Distribution|Show department risk summary] "
+                f"[btn:🗺️ 5×5 Risk Heatmap|Show 5x5 heatmap matrix] "
+                f"[btn:🔴 High Exposure Hazards|Show top open high-severity risks in the plant]"
+            )
+
+        # 4. RISK HEAD / CRO
+        elif "head" in role_lower or "cro" in role_lower or "chief" in role_lower:
+            return (
+                f"### 👋 Welcome, Chief Risk Officer (Risk Head)!\n"
+                f"I am your **Executive AI Risk Advisor**. I assist you in Stage 4 final executive approvals, board-level risk profile summaries, plant exposure heatmaps, and high-impact escalations.\n\n"
+                f"🏛️ **Governance Scope:** `Enterprise-Wide (Stage 4 Final Executive Sign-off)`\n\n"
+                f"👉 **Executive Actions:**\n\n"
+                f"[btn:🏛️ Stage 4 Final Approvals|Show pending Stage 4 approvals] "
+                f"[btn:🗺️ 5×5 Enterprise Heatmap|Show 5x5 heatmap matrix] "
+                f"[btn:🔴 Critical Plant Hazards|Show top open high-severity risks in the plant] "
+                f"[btn:📊 Executive Summary|Show executive risk profile]"
+            )
+
+        # 5. AUDITOR
+        elif "audit" in role_lower:
+            return (
+                f"### 👋 Welcome, Compliance Auditor!\n"
+                f"I am your **Audit & Regulatory Compliance AI Assistant**. I assist you in reconstructing immutable audit trails, verifying approval timestamps, and ensuring complete governance traceability.\n\n"
+                f"📜 **Governance Scope:** `Enterprise-Wide Audit Reconstruction & Evidence Verification`\n\n"
+                f"👉 **Audit Actions:**\n\n"
+                f"[btn:📜 Reconstruct Risk Audit Trail|Show audit trail for risk] "
+                f"[btn:✅ Approval Verification Logs|Show pending approvals] "
+                f"[btn:📋 Enterprise Risk Fleet|Show all risks in the register]"
+            )
+
+        # 6. MANAGEMENT / C-SUITE
+        elif any(k in role_lower for k in ["management", "executive", "c-suite", "board"]):
+            return (
+                f"### 👋 Welcome, Executive Management!\n"
+                f"I am your **Strategic Risk Intelligence Advisor**. I provide high-level enterprise risk exposure profiles, plant hazard summaries, and regulatory compliance metrics.\n\n"
+                f"📊 **Governance Scope:** `Board & Executive Governance Overview`\n\n"
+                f"👉 **Strategic Actions:**\n\n"
+                f"[btn:📊 Executive Risk Summary|Show executive risk profile] "
+                f"[btn:🗺️ Plant Risk Heatmap|Show 5x5 heatmap matrix] "
+                f"[btn:🔴 Top Critical Exposures|Show top open high-severity risks in the plant]"
+            )
+
+        # 7. ADMIN / DEFAULT
+        else:
+            return (
+                f"### 👋 Welcome to ERM Copilot!\n"
+                f"I am your **Enterprise Risk Management (ERM) AI Intelligence Agent**. I assist you with risk formulation, 5×5 matrix scoring, approval queues, audit trails, and mitigation workflows.\n\n"
+                f"🏢 **Current Scope:** `{dept_str}`\n\n"
+                f"👉 **Available Quick Actions:**\n\n"
+                f"[btn:➕ Create New Risk|Create a new risk] "
+                f"[btn:📥 Approval Queues|Show pending approvals] "
+                f"[btn:📊 Calculate 5×5 Score|Calculate score for Likelihood 4 and Impact 4] "
+                f"[btn:🗺️ 5×5 Risk Heatmap|Show 5x5 heatmap matrix] "
+                f"[btn:📋 Active Risk Register|Show active risk register]"
+            )
 
     def _make_response(self, request: AgentRequest, answer_text: str, step_code: str) -> AgentResponse:
         req_id = getattr(request, "request_id", None) or str(uuid.uuid4())
