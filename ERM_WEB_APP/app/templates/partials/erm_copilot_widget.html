@@ -451,6 +451,97 @@
     background: #0d6efd;
     transform: scale(1.05);
   }
+
+  /* User Feedback Strip & Telemetry */
+  .copilot-feedback-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #eef2f6;
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .copilot-feedback-btn {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+
+  .copilot-feedback-btn:hover {
+    background: #f1f5f9;
+    color: #020264;
+    border-color: #94a3b8;
+  }
+
+  .copilot-feedback-btn.active-positive {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #10b981;
+    font-weight: 600;
+  }
+
+  .copilot-feedback-btn.active-negative {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #f87171;
+    font-weight: 600;
+  }
+
+  .copilot-feedback-drawer {
+    display: none;
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    font-size: 11px;
+  }
+
+  .copilot-feedback-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 5px 0 2px 0;
+  }
+
+  .copilot-feedback-tag {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copilot-feedback-tag:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+  }
+
+  .copilot-feedback-ack {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #059669;
+  }
 </style>
 
 <!-- Floating Launcher Button -->
@@ -752,6 +843,129 @@
     return fullHtml;
   }
 
+  const COPILOT_FEEDBACK_CACHE = {};
+
+  function appendBotMessage(rawText, userPrompt) {
+    const chatBody = document.getElementById('erm-chat-body');
+    const msgId = 'bot-msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    COPILOT_FEEDBACK_CACHE[msgId] = {
+      prompt: userPrompt || '',
+      response: rawText || ''
+    };
+
+    const botDiv = document.createElement('div');
+    botDiv.className = 'chat-msg bot';
+    botDiv.id = msgId;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'chat-msg-content';
+    contentDiv.innerHTML = renderExecutiveMarkdown(rawText || 'No response received.');
+    botDiv.appendChild(contentDiv);
+
+    // Feedback Action Strip
+    const strip = document.createElement('div');
+    strip.className = 'copilot-feedback-strip';
+    strip.id = `strip-${msgId}`;
+    strip.innerHTML = `
+      <span style="font-size:10px; color:#94a3b8; margin-right:2px;">Feedback:</span>
+      <button class="copilot-feedback-btn" onclick="handleFeedback('${msgId}', 1, 'accurate_helpful', this)" title="Helpful / Accurate">👍 Helpful</button>
+      <button class="copilot-feedback-btn" onclick="toggleNegativeFeedbackDrawer('${msgId}')" title="Needs Improvement">👎 Issues</button>
+      <button class="copilot-feedback-btn" onclick="copyCopilotResponse('${msgId}', this)" title="Copy Response">📋 Copy</button>
+    `;
+    botDiv.appendChild(strip);
+
+    // Negative feedback category drawer
+    const drawer = document.createElement('div');
+    drawer.className = 'copilot-feedback-drawer';
+    drawer.id = `drawer-${msgId}`;
+    drawer.innerHTML = `
+      <div style="font-weight:600; color:#334155; margin-bottom:4px;">What could be improved?</div>
+      <div class="copilot-feedback-tags">
+        <button class="copilot-feedback-tag" onclick="submitCategorizedFeedback('${msgId}', 'hallucination_inaccurate', this)">⚠️ Inaccurate / Hallucination</button>
+        <button class="copilot-feedback-tag" onclick="submitCategorizedFeedback('${msgId}', 'missing_details', this)">📝 Missing Details</button>
+        <button class="copilot-feedback-tag" onclick="submitCategorizedFeedback('${msgId}', 'unclear_mitigation', this)">🔧 Unclear Mitigation</button>
+        <button class="copilot-feedback-tag" onclick="submitCategorizedFeedback('${msgId}', 'wrong_math_score', this)">🔢 Calculation Error</button>
+        <button class="copilot-feedback-tag" onclick="submitCategorizedFeedback('${msgId}', 'format_issue', this)">📄 Formatting Issue</button>
+      </div>
+    `;
+    botDiv.appendChild(drawer);
+
+    chatBody.appendChild(botDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function toggleNegativeFeedbackDrawer(msgId) {
+    const drawer = document.getElementById(`drawer-${msgId}`);
+    if (drawer) {
+      drawer.style.display = (drawer.style.display === 'flex' || drawer.style.display === 'block') ? 'none' : 'flex';
+      drawer.style.flexDirection = 'column';
+    }
+  }
+
+  async function handleFeedback(msgId, rating, category, btnElement) {
+    const msgData = COPILOT_FEEDBACK_CACHE[msgId] || {};
+    const strip = document.getElementById(`strip-${msgId}`);
+    const drawer = document.getElementById(`drawer-${msgId}`);
+    if (drawer) drawer.style.display = 'none';
+
+    let rbacUser = "erm_portal_user";
+    let rbacRole = "";
+    let rbacDeptName = "";
+
+    if (typeof APP_DATA !== "undefined" && APP_DATA) {
+      rbacUser = APP_DATA.userId || APP_DATA.user || APP_DATA.log_id || APP_DATA.email || (APP_DATA.fname ? `${APP_DATA.fname} ${APP_DATA.lname}` : "erm_portal_user");
+      rbacRole = APP_DATA.userType || APP_DATA.role_name || "";
+      rbacDeptName = APP_DATA.dept_name || APP_DATA.department || "";
+    }
+
+    try {
+      if (strip) {
+        strip.innerHTML = rating > 0 
+          ? '<span class="copilot-feedback-ack">✨ 👍 Helpful — Thank you for your feedback!</span>'
+          : '<span class="copilot-feedback-ack" style="color:#d97706;">📝 👎 Feedback recorded. We are refining our AI models.</span>';
+      }
+
+      await fetch('/api/erm/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: rating,
+          category: category || 'general',
+          user_id: String(rbacUser),
+          role: rbacRole,
+          department: rbacDeptName,
+          prompt: msgData.prompt || '',
+          response: msgData.response || ''
+        })
+      });
+    } catch (e) {
+      console.warn('Feedback submission error:', e);
+    }
+  }
+
+  function submitCategorizedFeedback(msgId, category, tagBtn) {
+    handleFeedback(msgId, -1, category, tagBtn);
+  }
+
+  async function copyCopilotResponse(msgId, btn) {
+    const msgData = COPILOT_FEEDBACK_CACHE[msgId];
+    const textToCopy = msgData ? msgData.response : (document.getElementById(msgId)?.innerText || '');
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '✓ Copied!';
+      btn.style.borderColor = '#10b981';
+      btn.style.color = '#059669';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  }
+
   async function sendERMMessage() {
     const input = document.getElementById('erm-chat-input');
     const msg = input.value.trim();
@@ -806,11 +1020,7 @@
       const data = await response.json();
       typingDiv.remove();
 
-      const botDiv = document.createElement('div');
-      botDiv.className = 'chat-msg bot';
-
-      botDiv.innerHTML = renderExecutiveMarkdown(data.answer || 'No response received.');
-      chatBody.appendChild(botDiv);
+      appendBotMessage(data.answer || 'No response received.', msg);
     } catch (err) {
       typingDiv.remove();
       const errDiv = document.createElement('div');
@@ -818,8 +1028,7 @@
       errDiv.style.borderColor = '#dc3545';
       errDiv.innerHTML = '<span style="color:#dc3545;">⚠️ Unable to connect to ERM Copilot service. Please ensure backend services are running.</span>';
       chatBody.appendChild(errDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
     }
-
-    chatBody.scrollTop = chatBody.scrollHeight;
   }
 </script>

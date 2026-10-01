@@ -10,6 +10,9 @@ from ERM_Copilot.services.db_service import erm_db, ERMDatabaseService
 from ERM_Copilot.services.api_client import erm_api_client, ERMFastAPIClient
 from ERM_Copilot.config.settings import settings
 
+from ERM_Copilot.feedback.models import FeedbackEntry, FeedbackSummary
+from ERM_Copilot.feedback.service import FeedbackService, erm_feedback_service
+
 __all__ = [
     "erm_copilot_agent",
     "ERMCopilotAgent",
@@ -25,5 +28,10 @@ __all__ = [
     "ERMDatabaseService",
     "erm_api_client",
     "ERMFastAPIClient",
-    "settings"
+    "settings",
+    "FeedbackEntry",
+    "FeedbackSummary",
+    "FeedbackService",
+    "erm_feedback_service"
 ]
+

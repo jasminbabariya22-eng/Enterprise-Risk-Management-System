@@ -38,4 +38,6 @@ Thumbs.db
 # Temporary Files & Artifacts
 *.tmp
 *.bak
+*.zip
+*.tar.gz
 nssm.exe

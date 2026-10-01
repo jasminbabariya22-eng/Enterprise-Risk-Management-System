@@ -60,6 +60,83 @@ def proxy_erm_chat():
         return jsonify({"status": "error", "answer": "AI Copilot backend is initializing or unreachable. Please try again in a few seconds."}), 502
 
 
+@auth_bp.route("/api/erm/feedback", methods=["POST"])
+def proxy_erm_feedback():
+    try:
+        payload = request.get_json() or {}
+        rating = int(payload.get("rating", 1))
+        category = payload.get("category", "general")
+        comment = payload.get("comment")
+        request_id = payload.get("request_id")
+        user_id = payload.get("user_id", "5")
+        user_role = payload.get("role") or payload.get("user_role", "Risk Owner")
+        department = payload.get("department") or payload.get("dept_name")
+        prompt = payload.get("prompt")
+        response_text = payload.get("response") or payload.get("response_snippet")
+
+        try:
+            import sys
+            from pathlib import Path
+            erm_root = str(Path(__file__).resolve().parents[4])
+            if erm_root not in sys.path:
+                sys.path.insert(0, erm_root)
+            from ERM_Copilot.feedback.service import erm_feedback_service
+            entry = erm_feedback_service.record_feedback(
+                rating=rating,
+                category=category,
+                comment=comment,
+                request_id=request_id,
+                user_id=str(user_id),
+                user_role=user_role,
+                department=department,
+                prompt=prompt,
+                response=response_text
+            )
+            return jsonify({
+                "status": "success",
+                "feedback_id": entry.feedback_id,
+                "message": "Thank you! Your feedback helps continuously improve ERM AI quality."
+            }), 200
+        except Exception as local_err:
+            current_app.logger.info(f"Direct feedback recording fallback: {local_err}")
+
+        # Fallback to external HTTP gateway if running separately
+        res = requests.post("http://127.0.0.1:8000/api/erm/feedback", json=payload, timeout=10)
+        try:
+            return jsonify(res.json()), res.status_code
+        except Exception:
+            return jsonify({"status": "success", "message": "Feedback submitted successfully."}), 200
+    except Exception as e:
+        current_app.logger.error(f"Feedback recording error: {str(e)}")
+        return jsonify({"status": "error", "message": "Unable to save feedback at this moment."}), 500
+
+
+@auth_bp.route("/api/erm/feedback/summary", methods=["GET"])
+def proxy_erm_feedback_summary():
+    try:
+        try:
+            import sys
+            from pathlib import Path
+            erm_root = str(Path(__file__).resolve().parents[4])
+            if erm_root not in sys.path:
+                sys.path.insert(0, erm_root)
+            from ERM_Copilot.feedback.service import erm_feedback_service
+            summary = erm_feedback_service.get_summary()
+            return jsonify({
+                "status": "success",
+                "data": summary
+            }), 200
+        except Exception as local_err:
+            current_app.logger.info(f"Direct feedback summary fallback: {local_err}")
+
+        res = requests.get("http://127.0.0.1:8000/api/erm/feedback/summary", timeout=10)
+        return jsonify(res.json()), res.status_code
+    except Exception as e:
+        current_app.logger.error(f"Feedback summary error: {str(e)}")
+        return jsonify({"status": "error", "data": {}}), 500
+
+
+
 
 
 def roles_required(*roles):
