@@ -24,6 +24,7 @@ from ERM_Copilot.models.contracts import AgentRequest, AgentResponse, RequestCon
 from ERM_Copilot.services.db_service import erm_db
 from ERM_Copilot.services.api_client import erm_api_client
 from ERM_Copilot.gateway.client import portkey_client
+from ERM_Copilot.guardrails.manager import GuardrailManager
 
 logger = logging.getLogger("ERM_Copilot.agents.agent")
 
@@ -120,7 +121,12 @@ class ERMCopilotAgent(BaseAgent):
 
     def process(self, request: AgentRequest) -> AgentResponse:
         """Process user query dynamically tailored to the user's role and RBAC scope."""
-        msg = request.message.strip()
+        # --- 0. ENTERPRISE SAFETY & COMPLIANCE GUARDRAILS ---
+        guardrail_res = GuardrailManager.process_input(request)
+        if guardrail_res.blocked:
+            return self._make_response(request, guardrail_res.reason, "GUARDRAIL_BLOCKED")
+
+        msg = guardrail_res.sanitized_text.strip()
         lower_msg = msg.lower()
         params = getattr(request, "metadata", {}) or getattr(request, "parameters", {}) or {}
         
@@ -673,12 +679,15 @@ class ERMCopilotAgent(BaseAgent):
         created_dt = getattr(request, "created_at", None)
         timestamp_str = created_dt.isoformat() if created_dt else datetime.now(timezone.utc).isoformat()
         
+        # Apply output guardrails & formatting sanitization
+        sanitized_output = GuardrailManager.process_output(answer_text)
+        
         return AgentResponse(
             request_id=req_id,
             agent_id=self.agent_id,
             status="success",
             success=True,
-            response=answer_text.strip(),
+            response=sanitized_output.strip(),
             metadata={
                 "intent": "CREATE_RISK_WIZARD",
                 "wizard_step": step_code,
