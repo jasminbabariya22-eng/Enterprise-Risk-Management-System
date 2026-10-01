@@ -10,6 +10,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from ERM_Copilot.config.settings import settings
+from ERM_Copilot.cache.tool_cache import erm_tool_cache
+from ERM_Copilot.cache.manager import cache_manager
 
 logger = logging.getLogger("ERM_Copilot.services.db_service")
 
@@ -59,6 +61,11 @@ class ERMDatabaseService:
         limit: int = 15
     ) -> List[Dict[str, Any]]:
         """Search risk register entries with optional filters."""
+        # Tier 2 Cache Check
+        cached = erm_tool_cache.get("search_risks", keyword=keyword, department=department, status=status, limit=limit)
+        if cached is not None:
+            return cached
+
         try:
             conn = self._get_connection()
             cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -106,7 +113,10 @@ class ERMDatabaseService:
             results = cur.fetchall()
             cur.close()
             conn.close()
-            return [dict(r) for r in results]
+            formatted = [dict(r) for r in results]
+            # Store in Tier 2 DB cache
+            erm_tool_cache.set("search_risks", formatted, ttl=300, keyword=keyword, department=department, status=status, limit=limit)
+            return formatted
         except Exception as e:
             logger.error(f"Error searching risks: {e}")
             return []
