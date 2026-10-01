@@ -1,0 +1,401 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <!-- <h3 class="mb-0">Risk Register</h3> -->
+                  <span style="float:left; margin-right:20px">Risk Register</span>
+        <!-- Title Icon Start -->
+        <span>
+          {% if session_data.userType in ["Risk Head", "Risk Manager"] %}
+            <a class="pl-5 navigate plus-icon-color" href="#"><i class="bi bi-plus-lg" data-toggle="tooltip" data-placement="top" title=""></i></a>
+          {% else %}
+            <a class="pl-5 navigate plus-icon-color" href="/riskDetailsAdd" onclick="sessionStorage.removeItem('rrid')"><i class="bi bi-plus-lg" data-toggle="tooltip" data-placement="top" title=""></i></a>
+          {% endif %}
+            <a class="pl-5 edit-icon-color" href="#"><i class="bi bi-pencil-square" data-toggle="tooltip" data-p`lacement="top" title="" style="font-size: 15px;"></i></a>
+            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px;" data-original-title="Delete"></i></a>
+            <a class="pl-5 export-icon-color" href="#" onclick="downloadExcel()"><i class="bi bi-file-earmark-fill" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px; " data-original-title="Export"></i></a>
+
+        </span>
+
+              </div>
+              <div class="col-sm-6">
+               
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+          <!--Start HR Risk-->
+<div class="bd-example m-0 border-0 tab-content active table-responsive" id="div1"> 
+<table id="HrTable" class="table table-hover table-bordered" style="width: 100%;">
+  <thead>
+    <tr class="tb-head">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Title</th>
+      <th width="25%" scope="col">Risk Description</th>
+     
+      <th width="1%" scope="col"> <span style="float:right;"><a href="/help" target="_blank" style="color:#ffffff; float: right; font-size: 18px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Help"><i class="bi bi-info-circle-fill" aria-hidden="true"></i></a></span>Inherent Risk Level</th>
+      <th width="25%" scope="col">Current Mitigation</th>
+     
+      <th width="1%" scope="col"> <span style="float:right;"><a href="/help" target="_blank" style="color:#ffffff; float: right; font-size: 18px;" data-bs-toggle="tooltip" data-bs-placement="top" title="Help"><i class="bi bi-info-circle-fill" aria-hidden="true"></i></a></span>Current Risk Level</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Status</th>
+      <th scope="col">Financial Year</th>
+      <th scope="col">FH Status</th>
+      <th scope="col">RM Status</th>
+      <th scope="col">RH Status</th>
+      <th scope="col">Created On</th>
+     
+      <th width="1%" scope="col">Action</th>
+      <th scope="col" style="visibility: hidden;">Id</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody></tbody>
+
+</table> 
+</div>  
+
+ <!-- Toast -->
+<div class="toast position-fixed top-0 end-0 p-3 mt-5" id="toastMsg" style="z-index:9999!important;">
+<div class="toast-body bg-success text-white"></div>
+
+
+<style>
+  
+    .tab-content {
+      display: none;
+      /* padding: 20px;
+      border: 1px solid #ccc;
+      margin-top: 10px; */
+    }
+    .tab-content.active {
+      display: block;
+    }
+   
+    .tab-btn { color:#000;}
+
+    .tab-btn.active {
+      background: #007bff!important;
+      color: #fff!important;
+    }
+
+  </style>
+  
+<!-- <script>
+
+</script> -->
+<script>
+  const APP_DATA = {{ session_data | tojson }};
+</script>
+<script>
+  function downloadExcel() {
+    axios.get('/exportExcel', {
+        responseType: 'blob' ,  
+        params: {
+                    dept_code:dept_code
+                }
+    })
+    .then(response => {
+        const url = window.URL.createObjectURL(response.data);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "risk_register.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        //alert("File downloaded successfully!");
+        showToast("File downloaded successfully!");
+    })
+    .catch(error => {
+        console.error(error);
+        //alert("Download failed!");
+        showToast("Download failed!");
+    });
+
+}
+
+function openTab(evt, tabId) {
+
+  document.querySelectorAll(".tab-content")
+    .forEach(div => div.classList.remove("active"));
+
+  document.querySelectorAll(".tab-btn")
+    .forEach(btn => btn.classList.remove("active"));
+
+  document.getElementById(tabId).classList.add("active");
+
+  evt.currentTarget.classList.add("active");
+}
+
+const dept_code = '{{ dept_code }}';
+
+$(document).ready(function () {
+  
+  GetAllRiskRegister(dept_code);
+});
+
+
+function mergeRows(table, columns) {
+
+    var api = table.api();
+    var rows = api.rows({ page: 'current' }).nodes();
+
+    columns.forEach(function (colIndex) {
+
+        var lastValue = null;
+        var lastGroupValue = null;
+        var span = 1;
+
+        api.column(colIndex, { page: 'current' }).data().each(function (value, i) {
+
+            var currentRow = $(rows).eq(i);
+            var currentGroupValue = currentRow.find('td').eq(0).text(); // FIRST COLUMN
+
+            if (lastValue === value && lastGroupValue === currentGroupValue) {
+
+                span++;
+
+                currentRow.find('td').eq(colIndex).hide();
+
+                $(rows).eq(i - span + 1).find('td').eq(colIndex)
+                    .attr('rowspan', span);
+
+            } else {
+
+                span = 1;
+                lastValue = value;
+                lastGroupValue = currentGroupValue;
+
+            }
+
+        });
+
+    });
+
+}
+
+function GetAllRiskRegister(dept_code) {
+  
+  try {
+
+    var api_url = "/GetAllRiskRegister"
+   
+    axios.get(api_url,{
+        params: { dept_code:dept_code }
+    })
+    .then(response => {
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+            console.log("RSSlist", data);
+            $('#HrTable').DataTable({
+                destroy: true,
+                data: data,
+                order: [
+                          [14, 'desc'],
+                          [0, 'asc'],
+                          [1, 'asc'],
+                          [2, 'asc']
+                      ],
+                columns: [
+
+                    { data: "risk_id" },
+                    { data: "risk_name" },
+                                       {
+                      data: "rd_risk_description",
+                      render: function (data) {
+                        if (!data) return "";
+                        return data.replace(/\n/g, "<br>");
+                      }
+                    },
+                    { data: "inherent_color_code" },
+                    
+                    {
+                      data: "rd_mitigation",
+                      render: function (data) {
+                        if (!data) return "";
+                        return data.replace(/\n/g, "<br>");
+                      }
+                    },                                                  
+                    { data: "current_color_code" },
+
+                    { data: "risk_owner_name" },
+                    { data: "risk_status_name" },
+                    { data: "financial_year" },
+                    { data: "function_head_approval_status_name",
+                      render: function (data) {
+                                    
+                         if (data === "Approved") {
+                             return `<span style="font-weight:bold; color:green;">${data}</span>`;
+                         }
+                         else if (data === "Rejected") {
+                             return `<span style="font-weight:bold; color:red;">${data}</span>`;
+                         }
+                       
+                         return data || "";
+                     }
+                    },
+                   { data: "risk_manager_approval_status_name", 
+                    render: function (data) {
+                                    
+                         if (data === "Approved") {
+                             return `<span style="font-weight:bold; color:green;">${data}</span>`;
+                         }
+                         else if (data === "Rejected") {
+                             return `<span style="font-weight:bold; color:red;">${data}</span>`;
+                         }
+                       
+                         return data || "";
+                     }
+                    },
+                    { data: "risk_head_approval_status_name", 
+                    render: function (data) {
+                                    
+                         if (data === "Approved") {
+                             return `<span style="font-weight:bold; color:green;">${data}</span>`;
+                         }
+                         else if (data === "Rejected") {
+                             return `<span style="font-weight:bold; color:red;">${data}</span>`;
+                         }
+                       
+                         return data || "";
+                     }
+                    },
+                    
+                    {
+                      data: "created_on",
+                      render: function (data) {
+
+                        if (!data) return "";
+
+                        var parts = data.split('T');
+                        var date = parts[0];           
+                        var time = parts[1].substring(0,5); 
+
+                        return date ;
+                      }
+                    },
+                    
+                    {
+                        data: "risk_register_id",
+                        render: function (data, type, row) {
+                          if (APP_DATA.userType === "Functional Head" || APP_DATA.userType === "Risk Head" || APP_DATA.userType === "Risk Manager") {
+                            if (row.risk_status_name === 'Drafted' || row.risk_status_name === 'Pending for Action')
+                            {
+                            return `
+                            <a href="#"><i class="bi bi-pencil-square" style="color:#248742" onclick="getRiskRegisterbyid(${data},1)"></i></a>
+                            `;
+                            }
+                            else{
+                            return `
+                            <a href="#"><i class="bi bi-pencil-square" style="color:#248742" onclick="getRiskRegisterbyid(${data},1)"></i></a>
+                            
+                            `;
+                              //| <a href="#"><i class="bi bi-hand-thumbs-up-fill text-success" onclick="getRiskRegisterbyid(${data},2)"></i></a>
+                            }
+                          }
+                          else{
+                              return `
+                              <a href="#"><i class="bi bi-pencil-square" style="color:#248742" onclick="getRiskRegisterbyid(${data},1)"></i></a>
+                            `;
+                          }
+                        }
+                    },
+                    {
+                      data: "risk_register_id",
+                      visible: false
+                    }
+                ],
+                 drawCallback: function () {
+                    var table = $('#HrTable').DataTable();
+                    
+                    $('#HrTable tbody td').show().removeAttr('rowspan');
+                    mergeRows(this, [0,1,6,7,8,9,10,11,12,13]);
+              },
+              
+
+    createdRow: function (row, data) {
+	  if (data.action_required  === true) {
+        $('td:eq(13)', row).css({
+            'background-color': '#d4edda',
+            'color': 'black',
+            'font-weight': 'bold',
+            'text-align': 'center'
+        });
+      }
+	  
+        $('td:eq(3)', row).css({
+            'background-color': data.inherent_color_str,
+            'color': 'black',
+            'font-weight': 'bold',
+            'text-align': 'center'
+        });
+
+        $('td:eq(5)', row).css({
+            'background-color': data.current_color_str,
+            'color': 'black',
+            'font-weight': 'bold',
+            'text-align': 'center'
+        });
+
+    }
+
+            });
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+      })
+      .catch(error => {
+          //showToast("Failed to load departments");
+      });
+    } catch (error) {
+    console.log("An error occurred:", error.message);
+  }
+}
+
+
+function getRiskRegisterbyid(id, btn) {
+   
+    sessionStorage.setItem("rrid", id);
+    sessionStorage.setItem("btn", btn);
+    window.location.href = "/riskDetails";
+}
+
+function getRiskRegisterStatusAprbyid(id) {
+ 
+    sessionStorage.setItem("rrid", id);
+    window.location.href = "/riskDetails";
+}
+
+function showToast(msg,cls="bg-success"){
+  let toastEl=document.getElementById('toastMsg');
+  toastEl.querySelector('.toast-body').innerText=msg;
+  toastEl.querySelector('.toast-body').className="toast-body text-white "+cls;
+  new bootstrap.Toast(toastEl).show();
+}
+</script>
+
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+      
+   
+{% endblock %}

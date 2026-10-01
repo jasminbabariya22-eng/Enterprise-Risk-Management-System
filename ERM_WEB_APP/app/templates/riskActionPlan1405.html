@@ -1,0 +1,908 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+<!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <!-- <h3 class="mb-0">Risk Register</h3> -->
+                  <h5 style="float:left; margin-right:20px">Risk Action Plan</h5>
+        <!-- Title Icon Start -->
+       </div>
+              <div class="col-sm-6">
+                
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+
+   <div class="row">
+
+<!-- Start Left Panel -->
+  <div class="col-lg-6">
+ <div class="col-lg-12">
+        <h6><b>Risk Details</b></h6>
+      </div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk ID</label>
+  <div class="col-sm-8">
+    <input type="hidden" id="RfId" >
+    <input type="text" class="form-control form-control-sm" id="Risk_Id" readonly>
+  </div>
+  </div>
+</div>
+
+  <div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Name</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="RiskName" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Functional Risk</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="value" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Financial Year</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="financial_year"  readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Created On</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Created_on"  readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6" style="display: none;">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Target Date</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Target_Date" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Risk Description</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="3" id="Risk_Description" readonly></textarea>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Inherent Risk Level</label>
+  <div class="col-sm-8">
+    <!-- <button class="btn btn-gradient text-white">Likelihood</button> <button class="btn btn-gradient text-white">Impact</button> -->
+      <!-- Likelihood button -->
+<div class="btn-group">
+ <button type="button" id="InherentRiskLevel" class="btn orangeBg" style=" width: 100px;;">3D</button>
+  
+</div>
+<!-- End Likelihood button -->
+ 
+<!-- Impact button -->
+<div class="btn-group">
+  
+</div>
+<!--End Impact button -->
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Risk Mitigation</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="3" id="Risk_Mitigation" readonly></textarea>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Current Risk Level</label>
+  <div class="col-sm-8">
+    
+      <!-- Likelihood button -->
+<div class="btn-group">
+<button type="button" id="CurrentRiskLevel" class="btn light_greenBg" style="width: 100px;;">3A</button>
+ 
+</div>
+<!-- End Likelihood button -->
+ 
+<!-- Impact button -->
+<div class="btn-group">
+  
+</div>
+<!--End Impact button -->
+
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Action Plan</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="3" id="Action_plan" readonly></textarea>
+  </div>
+  </div>
+</div>
+
+ <div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Status</label>
+  <div class="col-sm-8">
+     <input type="text" class="form-control form-control-sm" id="Risk_Status" readonly>
+     
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Owner</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Owner"  readonly>
+      
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Co Owner</label>
+  <div class="col-sm-8">
+     <input type="text" class="form-control form-control-sm" id="Risk_Co_Owner" readonly>
+     
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Progress(%)</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Progress" readonly>
+  </div>
+  </div>
+</div>
+
+
+<div class="col-lg-12">
+  <div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0"> 
+<table id="ActionPlanTable--1" class="table table-striped table-hover table-bordered" style="width: 100%;">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col">Head</th>
+      <th scope="col">Approved By</th>
+      <th scope="col">Approved On</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table> 
+</div>  
+</div>
+</div>
+
+</div>
+ </div>
+<!-- End Left Panel -->
+
+ <!--Start Right Panel-->
+<div class="col-lg-6">
+
+<div class="col-lg-12">
+<h6><b>Action Plan Work History</b></h6>
+</div>
+<div style="width: 100; height: 500px; overflow: auto;">
+<div id="FollowupContainer">
+
+</div>
+</div>
+
+<div id="divDetail">
+<div class="col-lg-12">
+<h6><b>Add Remark</b><span class="star">*</span></h6>
+</div>
+
+<div class="col-lg-12 mb-3">
+<textarea class="form-control form-control-sm" rows="6" id="Add_New_Remark" placeholder="Enter Description or Remarks"></textarea>
+</div>
+
+<div class="col-lg-12 mb-3">
+  
+<div class="row mb-3"> 
+  <div class="col-6 col-md-4 bg-light">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Progress(%) <span class="star">*</span></label>
+  <div class="col-sm-12">
+    
+     <select class="form-control form-control-sm" id="Progress">
+            
+        </select>
+  </div>
+  </div>
+  </div> 
+
+  <div class="col-6 col-md-4 bg-light">
+<div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Status <span class="star">*</span></label>
+  <div class="col-sm-12">
+  <select class="form-control form-control-sm" id="Status_followup" >
+    
+</select>
+  </div>
+  </div>
+  </div> 
+
+  <div class="col-6 col-md-4 bg-light">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Next Follow Up Date</label>
+  <div class="col-sm-12">
+    <input type="date" class="form-control form-control-sm" id="Target_Date_Next" placeholder="Target Date">
+  </div>
+  </div>
+  </div> 
+
+  <div class="col-6 col-md-4 bg-light">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">File Upload:</label>
+  <div class="col-sm-12">
+   <input type="file" id="fileUpload" name="fileUpload" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+  </div>
+  </div>
+  </div> 
+</div>
+
+</div>
+</div>
+<div class="col-lg-12">
+  <button class="btn btn-primary text-white " id="btnsubmit" onclick="AddNewRiskDes()" type="button">Submit</button>
+  <button class="btn btn-secondary text-white float-sm-end" type="button" onclick="LoadRegister()">Close</button>
+</div>
+
+</div>
+ <!--End Right Panel-->
+
+
+   </div>
+
+
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+<!-- Toast -->
+<div class="toast position-fixed top-0 end-0 p-3 mt-5" id="toastMsg" style="z-index:9999!important;">
+<div class="toast-body bg-success text-white"></div>
+
+          </div>
+<script>
+  const APP_DATA = {{ session_data | tojson }};
+</script>
+
+<script>
+  function showToast(msg,cls="bg-success"){
+  let toastEl=document.getElementById('toastMsg');
+  toastEl.querySelector('.toast-body').innerText=msg;
+  toastEl.querySelector('.toast-body').className="toast-body text-white "+cls;
+  new bootstrap.Toast(toastEl).show();
+}
+
+  document.getElementById("fileUpload").addEventListener("change", function () {
+    const file = this.files[0];
+
+    if (!file) return;
+
+    // Max size = 2MB
+    const maxSize = 2 * 1024 * 1024;
+
+    //Allowed extensions
+    const allowedExtensions = ["pdf", "doc", "docx", "xlsx", "xls"];
+
+    const fileName = file.name;
+    const fileSize = file.size;
+
+    const extension = fileName.split('.').pop().toLowerCase();
+
+    
+    if (fileSize > maxSize) {
+        alert("File size must be less than 2 MB");
+        this.value = ""; // reset input
+        return;
+    }
+
+    // Valid file
+    console.log("File is valid:", fileName);
+});
+    var optionHTML_Progress = "";
+    function setDivDisabled(divId, disabled) {
+      const controls = document.querySelectorAll(
+      `#${divId} input, #${divId} select, #${divId} textarea, #${divId} button`
+      );
+
+      controls.forEach(control => {
+      control.disabled = disabled;
+      });
+    }
+
+    $(document).ready(function () {
+    optionHTML_Progress = '<option value="0">0%</option><option value="0-25%">0-25%</option> '+ 
+    '<option value="25-50">25-50%</option>' + 
+    '<option value="50-75">50-75%</option>' + 
+    '<option value="75-100">75-100%</option>' + 
+    '<option value="100">100%</option>'
+
+    if (APP_DATA.userType === "Risk Owner" || APP_DATA.userType === "Functional Head" || APP_DATA.userType === "Risk Manager" || APP_DATA.userType === "Risk Head")
+    {
+      $("#btnsubmit").hide();
+      setDivDisabled('divDetail', true);
+    }
+    FillUserList();
+    FillstatusListtreatment();
+    //FillstatusListRisk();
+
+    FillstatusListRisk();
+
+    let risk_treatment_id = sessionStorage.getItem("risk_treatment_id");
+    let risk_description_id = sessionStorage.getItem("risk_description_id");
+    let risk_register_id = sessionStorage.getItem("risk_register_id");
+
+   $("#RfId").val(risk_treatment_id);
+   riskfollowup(risk_treatment_id);
+
+   console.log("risk_register_id", risk_register_id);
+   console.log("risk_description_id", risk_description_id);
+   console.log("risk_treatment_id", risk_treatment_id);
+   getRiskRegisterbyid(risk_register_id);
+   getRiskDescriptiondetailsbyid(risk_description_id);
+   getRiskTreatmentbyTreatmentid(risk_treatment_id);
+   $("#Target_Date_Next").val(APP_DATA.current_date)
+   document.getElementById("Target_Date_Next").min = APP_DATA.current_date;
+});
+
+function FillUserList() {
+    axios.get("/getalluser")
+    .then(response => {
+
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+           optionHTML = '<option value="">--Select--</option>';
+            for (var i = 0; i < data.length; i++) {
+                optionHTML += '<option value="' + data[i].id + '">' 
+                            + data[i].first_name + ' - ' 
+                            + data[i].last_name+ 
+                            '</option>';
+            }
+            document.getElementById("Risk_Owner").innerHTML = optionHTML;
+            document.getElementById("Risk_Co_Owner").innerHTML = optionHTML;
+
+          } else {
+            showToast(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        showToast("Failed to load departments");
+    });
+}
+
+var treatmentHTML = "";
+function FillstatusListtreatment() {
+    axios.get("/getstatusListtreatment")
+    .then(response => {
+        console.log("StatusList treatment:", response.data.data);
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+            console.log("data status", data);
+            treatmentHTML = '<option value="">--Select--</option>';
+            for (var i = 0; i < data.length; i++) {
+                treatmentHTML += '<option value="' + data[i].id + '">' 
+                            + data[i].status_name + 
+                            '</option>';
+            }
+
+            document.getElementById("Status_followup").innerHTML = treatmentHTML;
+            document.getElementById("Progress").innerHTML = optionHTML_Progress;
+        } 
+        else {
+            showToast(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        console.log(error);
+        showToast("Failed to load status list");
+    });
+
+}
+
+function FillstatusListRisk() {
+    axios.get("/getstatusListRisk")
+    .then(function (response) {
+
+        console.log("StatusList Risk:", response.data);
+
+        if (response.data && response.data.Error && response.data.Error.Error === false) {
+
+            let data = response.data.data || [];
+            let RiskHTML = '<option value="-1">--Select--</option>';
+
+            data.forEach(function (item) {
+                RiskHTML += `<option value="${item.id}">${item.status_name}</option>`;
+            });
+
+            document.getElementById("Status_followup").innerHTML = RiskHTML;
+            
+        }
+
+    })
+    .catch(function (error) {
+        console.log("API Error:", error);
+    });
+}
+
+ function getRiskRegisterbyid(id) {
+    axios.get("/getRiskRegisterbyid", {
+        params: { RiskRegister_id:id }
+    })
+        .then(response => {
+               console.log("response getRiskRegisterbyid tbldata:", response);
+if (response.data.Error.Error === false) {
+
+    let data = response.data.data;
+
+    $("#Risk_Id").val(data.risk_id);
+    $("#value").val(data.department_name);
+    $("#financial_year").val(data.financial_year);
+    $("#Approval_Status").val(data.risk_status);
+    $("#RiskName").val(data.risk_name);
+
+    // Created Date
+    if (data.created_on) {
+        let dateOnly = data.created_on.split("T")[0];
+        $("#Created_on").val(dateOnly);
+
+        let dateTime = data.created_on.replace("T", " ").split(".")[0];
+        $("#Target_Date").val(dateTime);
+    }
+
+    let tableHTML = "";
+
+    tableHTML += `
+    <tr>
+        <td>Risk Functional Head</td>
+        <td>${data.risk_function_head_approval_by_name ?? ""}</td>
+        <td>${formatDate(data.risk_function_head_approval_on)}</td>
+    </tr>`;
+
+    tableHTML += `
+    <tr>
+        <td>Risk Manager</td>
+        <td>${data.risk_manager_approval_by_name ?? ""}</td>
+        <td>${formatDate(data.risk_manager_approved_on)}</td>
+    </tr>`;
+
+    tableHTML += `
+    <tr>
+        <td>Risk Head</td>
+        <td>${data.risk_head_approval_by_name ?? ""}</td>
+        <td>${formatDate(data.risk_head_approved_on)}</td>
+    </tr>`;
+
+    $("#ActionPlanTable--1 tbody").html(tableHTML);
+} 
+        else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            //showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+function formatDate(dateString){
+
+    // if(!dateString) return "";
+
+    // let date = new Date(dateString);
+
+    // let day = ("0" + date.getDate()).slice(-2);
+    // let month = ("0" + (date.getMonth()+1)).slice(-2);
+    // let year = date.getFullYear();
+
+    // return day + "-" + month + "-" + year;
+    return dateString.replace("T", " ").split(".")[0]
+}  
+
+
+function getRiskDescriptiondetailsbyid(id) {
+    axios.get("/getRiskDescriptiondetailsbyids", {
+        params: { RiskRegisterDescriptiondetail_id:id }
+    })
+        .then(response => {
+               console.log("response getRiskDescriptiondetailsbyid: ", response);
+
+        if (response.data.Error.Error === false) {
+
+
+          let mainData = response.data.data[0];
+          let desc = mainData.risk_descriptions[0];
+          let treatment = desc.treatments[0];
+          $("#Risk_Description").val(desc.risk_description);
+          $("#Risk_Mitigation").val(desc.mitigation);
+          $("#InherentRiskLevel").text(desc.inherent_color_code);
+          $("#InherentRiskLevel").css("background-color", desc.inherent_color_str);
+          $("#CurrentRiskLevel").text(desc.current_color_code);
+          $("#CurrentRiskLevel").css("background-color", desc.current_color_str);
+          $("#Action_plan").val(treatment.action_plan);
+          $("#Risk_Status").val(treatment.risk_status_name);
+          $("#Risk_Owner").val(mainData.risk_owner_name);
+          //$("#Risk_Co_Owner").val(treatment.risk_co_owner_name);
+          $("#Risk_Co_Owner").val(mainData.risk_co_owner_name);
+          //alert(treatment.risk_co_owner_name)
+          $("#Risk_Progress").val(mainData.risk_progress);
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            //showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+function getRiskTreatmentbyTreatmentid(id) {
+  axios.get("/getRiskTreatmentbyTreatmentid", {
+      params: { Risk_id:id}
+  })
+      .then(response => {
+            // console.log("Now responce treatment Api responce :", response);
+
+      if (response.data.Error.Error === false) {
+      } else {
+          showToast(response.data.Error.Error_message);
+      }
+      })
+      .catch(error => {
+          //showToast("Failed to load categories");
+      })
+      .finally(() => {
+      });
+}
+
+function AddNewRiskDes1() {
+    alert("AddNewRiskDescription");
+    const reference_id = document.getElementById("RfId").value;
+    const module_name = "risk_treatment";
+    const remark = document.getElementById("Add_New_Remark").value;
+    const progress = document.getElementById("Progress").value;
+    const status = document.getElementById("Status_followup").value;
+    const next_followup_date = document.getElementById("Target_Date_Next").value;
+
+
+
+    axios.get("/AddNewRiskDes", {
+        params: {
+        reference_id: reference_id,
+            module_name: module_name,
+            remark: remark,
+            progress: progress,
+            status: status,
+            next_followup_date: next_followup_date
+      }
+    })
+
+        .then(response => {
+               console.log("response", response);
+               console.log(response.data);
+
+    let data = response.data.data;
+
+    let date = new Date(data.created_on);
+    let formattedDate =
+        ("0" + date.getDate()).slice(-2) + "." +
+        ("0" + (date.getMonth() + 1)).slice(-2) + "." +
+        date.getFullYear();
+
+    let html = `
+              <div class="h-100 p-3 pb-0 bg-white border rounded-3">
+                  <p>${data.remark}</p>
+                  <p>&nbsp;</p>
+
+                  <div class="row mb-3">
+
+                      <div class="col-6 col-md-4 p-2">
+                          <strong>Name :</strong> 
+                          <span style="color:#ff6a00">${data.risk_owner_name}</span>
+                      </div>
+
+                      <div class="col-6 col-md-4 p-2">
+                          <strong>Status :</strong> 
+                          <span style="color:#479f0d">${data.risk_status_name}</span>
+                      </div>
+
+                      <div class="col-6 col-md-4 p-2">
+                          <strong>Date :</strong> 
+                          <span style="color:#3119e7">${formattedDate}</span>
+                      </div>
+
+                  </div>
+              </div>
+              `;
+
+    document.getElementById("FollowupContainer").innerHTML += html;
+
+    $("#Add_New_Remark").val("");
+    $("#Progress").val("");
+    $("#Status_followup").val("-1");
+    
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+  }
+
+
+function AddNewRiskDes() {
+
+    const formData = new FormData();
+          if (!document.getElementById("Add_New_Remark").value.trim()) {
+          //alert("Please enter remark");
+      showToast("Please enter remark", "bg-danger");
+          document.getElementById("Add_New_Remark").focus();
+          return;
+      }
+
+          if (!document.getElementById("Progress").value.trim()) {
+          //alert("Please enter progress");
+      showToast("Please enter progress", "bg-danger");
+          document.getElementById("Progress").focus();
+          return;
+      }
+
+          if (!document.getElementById("Status_followup").value.trim()) {
+          //alert("Please select status");
+          showToast("Please select status", "bg-danger");
+          document.getElementById("Status_followup").focus();
+          return;
+      }
+
+
+
+    formData.append("reference_id", document.getElementById("RfId").value);
+    formData.append("module_name", "risk_treatment");
+    formData.append("remark", document.getElementById("Add_New_Remark").value);
+    formData.append("progress", document.getElementById("Progress").value);
+    formData.append("status", document.getElementById("Status_followup").value);
+    formData.append("next_followup_date", document.getElementById("Target_Date_Next").value);
+
+    const fileInput = document.getElementById("fileUpload"); 
+    if (fileInput.files.length > 0) {
+        formData.append("file", fileInput.files[0]);
+    }
+
+    axios.post("/AddNewRiskDes", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data"
+        }
+    })
+    .then(response => {
+
+        let data = response.data.data;
+        riskfollowup($("#RfId").val());
+        $("#Add_New_Remark").val("");
+        $("#Progress").val("");
+        $("#Status_followup").val("-1");
+        $("#fileUpload").val("");
+        //alert("Action Plan Work History Update");
+        showToast("Action Plan work history updated");
+
+    })
+    .catch(error => {
+        console.log(error);
+    });
+}
+
+
+function riskfollowup(id) {
+  axios.get("/riskfollowup", {
+      params: { Risk_id:id}
+  })
+      .then(response => {
+             console.log("responce treatment history  :", response);
+      if (response.data.Error.Error === false) {
+    console.log("riskfollowup response", response.data);
+    let data = response.data.data;
+    let html = "";
+    data.forEach(item => {
+    let formattedDate = "";
+    if (item.next_followup_date) {
+        let date = new Date(item.next_followup_date);
+        formattedDate =
+            ("0" + date.getDate()).slice(-2) + "." +
+            ("0" + (date.getMonth() + 1)).slice(-2) + "." +
+            date.getFullYear();
+    }
+
+    html += `
+    <div class="h-100 p-3 pb-0 bg-white border rounded-3 mb-2">
+        <p>${item.remark ?? ""}</p>
+
+        <div class="row mb-3">
+        
+            <div class="col-6 col-md-4 p-2">
+                <strong>Name :</strong> 
+                <span style="color:#ff6a00">${item.risk_owner_name ?? ""}</span>
+            </div>
+          
+            <div class="col-6 col-md-4 p-2">
+                <strong>Status :</strong> 
+                <span style="color:#479f0d">${item.risk_status_name ?? ""}</span>
+            </div>
+          
+            <div class="col-6 col-md-4 p-2">
+                <strong>Date :</strong> 
+                <span style="color:#3119e7">${formattedDate}</span>
+
+                ${
+                    item.has_file === true
+                    ? `<a href="#" style="color: #C50388; padding-left:20px;" onclick="downloadReffile(${item.followup_id})" style="color:purple">
+                          <i class="bi bi-download" data-bs-toggle="tooltip" title="Export"></i>
+                       </a>`
+                    : ""
+                }
+
+            </div>
+          
+        </div>
+    </div>
+    `;
+});
+
+    document.getElementById("FollowupContainer").innerHTML = html;
+
+} else {
+    showToast(response.data.Error.Error_message);
+}
+
+
+      })
+      .catch(error => {
+          //showToast("Failed to load categories");
+      })
+      .finally(() => {
+      });
+}
+
+function downloadReffile(dept_code) {
+    axios.get('/downloadReffile', {
+        responseType: 'blob' ,  
+        params: {
+                    dept_code:dept_code
+                }
+    })
+    .then(response => {
+        
+const url = window.URL.createObjectURL(new Blob([response.data]));
+
+        let filename = "downloaded_file";
+        const disposition = response.headers['content-disposition'];
+
+        if (disposition && disposition.includes('filename=')) {
+            filename = disposition.split('filename=')[1].replace(/"/g, '');
+        }
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+
+        //alert("File downloaded successfully!");
+        showToast("File downloaded successfully!");
+    })
+    .catch(error => {
+        console.error(error);
+        //alert("Download failed!");
+        showToast("Download failed!", "bg-danger");
+    });
+}
+
+// Save previous page before entering current page
+if (document.referrer) {
+    sessionStorage.setItem("previousPage", document.referrer);
+}
+
+function LoadRegister(){
+  //window.location.href = "/riskRegister";
+  //window.history.back()
+  const previousPage = sessionStorage.getItem("previousPage");
+
+  if (previousPage) {
+      window.location.href = previousPage;
+  } else {
+      window.history.back();
+  }
+}
+
+$('#Status_followup').on('change', function () {
+    let selectedStatus = $(this).find("option:selected").text().trim();
+    let progressField = $('#Progress');
+
+    if (selectedStatus === 'Not Started') {
+        progressField.prop('disabled', true).val('0');
+    } else if (selectedStatus === 'Completed') {
+        progressField.prop('disabled', true).val('100');
+    } else {
+        progressField.prop('disabled', false);
+    }
+});
+
+
+// PROGRESS CHANGE
+$('#Progress').on('change', function () {
+    
+    let selectedProgress = $(this).val();
+    let statusField = $('#Status_followup');
+
+    if (selectedProgress === '100') {
+        statusField.find("option").filter(function () {
+            return $(this).text().trim() === 'Completed';
+        }).prop('selected', true).trigger('change');
+    }
+    else if (selectedProgress === '0') {
+        statusField.find("option").filter(function () {
+            return $(this).text().trim() === 'Not Started';
+        }).prop('selected', true).trigger('change');
+    }
+});
+
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+ <!--begin::Sidebar-->
+      <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="light">
+        <!--begin::Sidebar Brand-->
+        <!-- <div class="sidebar-brand">
+          <a href="./index.html" class="brand-link">
+
+            <img
+              src="./assets/img/pil_logo.png"
+              alt="Logo"
+              class="brand-image opacity-75 shadow"
+            />
+            <span class="brand-text fw-light">PIL</span>
+          </a>
+        </div> -->
+        <!--end::Sidebar Brand-->
+        <!--begin::Sidebar Wrapper-->
+        <div class="sidebar-wrapper" style="height: 90vh; overflow: scroll;">
+          <nav>
+            <!--begin::Sidebar Menu-->
+            <ul
+              class="nav sidebar-menu flex-column"
+              data-lte-toggle="treeview"
+              role="navigation"
+              aria-label="Main navigation"
+              data-accordion="false"
+              id="navigation">
+              
+              <li class="nav-header menustrip text-white">Function List</li>
+
+             <li class="nav-item">
+              {% if usertype in privileged_roles %}
+              <a href="/risk_register/all" class="nav-link {% if active_dept|string == 'all' %}active{% endif %} ">
+              {%else%}
+              <a href="/risk_register/all" class="nav-link {% if active_dept|string == 'all' %}active{% endif %} {% if usertype not in privileged_roles and 'all' != userdept %}
+              disabled
+              {% endif %}">
+              {% endif %}
+               <i class="bi {% if active_dept|string == 'all' %}
+                  bi-circle-fill text-success
+                  {% else %}
+                  bi-circle
+                  {% endif %}">
+               </i>
+              <p>All</p>
+              </a>
+              </li>
+
+              {% for fn in functions %}
+              <!-- <li>
+                  <a href="#">{{ fn.function_name }}</a>
+              </li> -->
+              <li class="nav-item">
+              {% if usertype in privileged_roles %}
+              <a href="/risk_register/{{fn.id}}" class="nav-link {% if active_dept|string == fn.id|string %}active{% endif %} ">
+              {%else%}
+              <a href="/risk_register/{{fn.id}}" class="nav-link {% if active_dept|string == fn.id|string %}active{% endif %} {% if usertype not in privileged_roles and fn.id != userdept %}
+              disabled
+              {% endif %}">
+              {% endif %}
+               <i class="bi {% if active_dept|string == fn.id|string %}
+                  bi-circle-fill text-success
+                  {% else %}
+                  bi-circle
+                  {% endif %}">
+               </i>
+              <p>{{fn.dept_name}}</p>
+              </a>
+              </li>
+              {% endfor %}
+               
+  
+            </ul>
+            <!--end::Sidebar Menu-->
+          </nav>
+
+          
+        </div>
+        <!--end::Sidebar Wrapper-->
+
+        <div style="position: absolute; bottom: 0;;">
+            <ul style="list-style: none;"><li class="nav-item">
+                <a class="nav-link" style="color: #000;" href="/logout">
+                  <i  class="nav-icon bi bi-power"></i> Sign out
+                </a>
+              </li></ul></div>
+      </aside>
+      <!--end::Sidebar-->
+
+     <style>
+    .nav-link.active {
+      background: #007bff!important;
+      color: #fff!important;
+    }
+    
+</style>
+<script>
+//   document.addEventListener("DOMContentLoaded", function () {
+
+//   const currentPath = window.location.pathname;
+
+//   document.querySelectorAll("#navigation .nav-link").forEach(link => {
+
+//     // set active based on URL
+//     if (link.getAttribute("href") === currentPath) {
+//       link.classList.add("active");
+//       currentDeptCode = link.dataset.dept;
+//       const icon = link.querySelector("i");
+//     if (icon) {
+//         icon.style.setProperty("color", "green", "important");
+//         icon.classList.remove("bi-circle");
+//         icon.classList.add("bi-circle-fill");
+//     }
+    
+//     }
+
+//   });
+
+// });
+</script>

@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.chart-box {
+    height: 300px;
+}
+.chart-box > div {
+    height: 100% !important;
+}
+</style>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Dashboard</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+  <div class="container-fluid">
+
+    <!-- ========================= -->
+    <!-- SUMMARY CARDS -->
+    <!-- ========================= -->
+    <div class="row">
+
+      <!-- TOTAL -->
+      <div class="col-lg-2 col-6">
+        <div class="small-box text-bg-primary">
+          <div class="inner">
+            <h4>Total</h4>
+            <h6 id="totalCount">0</h6>
+          </div>
+          <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+        </div>
+      </div>
+
+      <!-- COMPLETED -->
+      <div class="col-lg-2 col-6">
+        <div class="small-box text-bg-success">
+          <div class="inner">
+            <h4>Completed</h4>
+            <h6 id="completedCount">0</h6>
+          </div>
+         <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+        </div>
+      </div>
+
+      <!-- OPENED -->
+      <div class="col-lg-2 col-6">
+        <div class="small-box text-bg-warning">
+          <div class="inner">
+            <h4>Opened</h4>
+            <h6 id="openedCount">0</h6>
+          </div>
+          <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-dark link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+        </div>
+      </div>
+
+      <!-- IN PROGRESS -->
+      <div class="col-lg-2 col-6">
+        <div class="small-box text-bg-secondary">
+          <div class="inner">
+            <h4>In Progress</h4>
+            <h6 id="progressCount">0</h6>
+          </div>
+          <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
+                    ></path>
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+        </div>
+      </div>
+
+      <!-- APPROVED -->
+      <div class="col-lg-2 col-6">
+        <div class="small-box text-bg-info">
+          <div class="inner">
+            <h4>Approved</h4>
+            <h6 id="approvedCount">0</h6>
+          </div>
+        <svg
+                  class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true">
+  <path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M6.956 1.745C7.021.81 7.908.087 8.864.325l.261.066c.463.116.874.456 1.012.965.22.816.533 2.511.062 4.51a10 10 0 0 1 .443-.051c.713-.065 1.669-.072 2.516.21.518.173.994.681 1.2 1.273.184.532.16 1.162-.234 1.733q.086.18.138.363c.077.27.113.567.113.856s-.036.586-.113.856c-.039.135-.09.273-.16.404.169.387.107.819-.003 1.148a3.2 3.2 0 0 1-.488.901c.054.152.076.312.076.465 0 .305-.089.625-.253.912C13.1 15.522 12.437 16 11.5 16H8c-.605 0-1.07-.081-1.466-.218a4.8 4.8 0 0 1-.97-.484l-.048-.03c-.504-.307-.999-.609-2.068-.722C2.682 14.464 2 13.846 2 13V9c0-.85.685-1.432 1.357-1.615.849-.232 1.574-.787 2.132-1.41.56-.627.914-1.28 1.039-1.639.199-.575.356-1.539.428-2.59z">
+</path>
+
+<path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M6.956 1.745C7.021.81 7.908.087 8.864.325l.261.066c.463.116.874.456 1.012.965.22.816.533 2.511.062 4.51a10 10 0 0 1 .443-.051c.713-.065 1.669-.072 2.516.21.518.173.994.681 1.2 1.273.184.532.16 1.162-.234 1.733q.086.18.138.363c.077.27.113.567.113.856s-.036.586-.113.856c-.039.135-.09.273-.16.404.169.387.107.819-.003 1.148a3.2 3.2 0 0 1-.488.901c.054.152.076.312.076.465 0 .305-.089.625-.253.912C13.1 15.522 12.437 16 11.5 16H8c-.605 0-1.07-.081-1.466-.218a4.8 4.8 0 0 1-.97-.484l-.048-.03c-.504-.307-.999-.609-2.068-.722C2.682 14.464 2 13.846 2 13V9c0-.85.685-1.432 1.357-1.615.849-.232 1.574-.787 2.132-1.41.56-.627.914-1.28 1.039-1.639.199-.575.356-1.539.428-2.59z">
+</path>
+</svg>
+                  <!-- <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
+                    ></path>
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
+                    ></path>
+                  </svg> -->
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+        </div>
+      </div>
+
+      <!-- REJECTED -->
+      <div class="col-lg-2 col-6">
+        <div class="small-box text-bg-danger">
+          <div class="inner">
+            <h4>Rejected</h4>
+            <h6 id="rejectedCount">0</h6>
+          </div>
+         <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+  <path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+
+  <path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M6.146 5.146a.5.5 0 0 1 .708 0L8 6.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 7l1.147 1.146a.5.5 0 0 1-.708.708L8 7.707 6.854 8.854a.5.5 0 1 1-.708-.708L7.293 7 6.146 5.854a.5.5 0 0 1 0-.708"/>
+</svg>
+                  <!-- <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
+                    ></path>
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
+                    ></path>
+                  </svg> -->
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- CHARTS -->
+    <!-- ========================= -->
+    <div class="row">
+
+      <!-- Division (LINE CHART) -->
+      <div class="col-lg-6">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">Risks By Division</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-box">
+              <div id="revenue-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div class="col-lg-6">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">Risks By Category</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-box">
+              <div id="sales-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend -->
+      <div class="col-lg-6">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">Risk Trend</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-box">
+              <div id="visitors-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie -->
+      <div class="col-lg-6">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title">Risk Distribution</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-box">
+              <div id="pie-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================= -->
+<!-- SCRIPTS -->
+<!-- ========================= -->
+
+<script src="{{ url_for('static', filename='cdn/apexcharts.min.js') }}"></script>
+
+<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    loadSummary();
+    loadDivisionChart();
+    loadCategoryChart();
+    loadTrendChart();
+    loadDistributionChart();
+});
+
+function loadSummary() {
+    axios.get("/api/dashboard/summary").then(res => {
+        const d = res.data.data.data;
+        $("#totalCount").text(d.total);
+        $("#completedCount").text(d.Completed);
+        $("#openedCount").text(d.Opened);
+        $("#progressCount").text(d.in_progress);
+        $("#approvedCount").text(d.Approved);
+        $("#rejectedCount").text(d.Rejected);
+    });
+}
+
+function loadDivisionChart() {
+    axios.get("/api/dashboard/division").then(res => {
+        const d = res.data.data;
+
+        new ApexCharts(document.querySelector("#revenue-chart"), {
+            chart: { type: 'line', height: 300 },
+            stroke: { curve: 'smooth', width: 3 },
+            markers: { size: 4 },
+            series: [{ name: "Risks", data: d.values }],
+            xaxis: { categories: d.categories }
+        }).render();
+    });
+}
+
+function loadCategoryChart() {
+    axios.get("/api/dashboard/category").then(res => {
+        const d = res.data.data;
+
+        new ApexCharts(document.querySelector("#sales-chart"), {
+            chart: { type: 'bar', height: 300 },
+            series: [{ name: "Category", data: d.values }],
+            xaxis: { categories: d.categories }
+        }).render();
+    });
+}
+
+function loadTrendChart() {
+    axios.get("/api/dashboard/trend").then(res => {
+        const d = res.data.data;
+
+        new ApexCharts(document.querySelector("#visitors-chart"), {
+            chart: { type: 'line', height: 300 },
+            stroke: { curve: 'smooth' },
+            series: [
+                { name: "High", data: d.high },
+                { name: "Low", data: d.low }
+            ],
+            xaxis: { categories: d.categories }
+        }).render();
+    });
+}
+
+function loadDistributionChart() {
+    axios.get("/api/dashboard/distribution").then(res => {
+        const d = res.data.data;
+
+        new ApexCharts(document.querySelector("#pie-chart"), {
+            chart: { type: 'pie', height: 300 },
+            series: d.values,
+            labels: d.labels
+        }).render();
+    });
+}
+</script>
+
+{% endblock %}

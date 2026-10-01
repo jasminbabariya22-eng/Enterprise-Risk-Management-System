@@ -1,0 +1,128 @@
+ <!--begin::Sidebar-->
+      <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="light">
+        <!--begin::Sidebar Brand-->
+        <!-- <div class="sidebar-brand">
+          <a href="./index.html" class="brand-link">
+
+            <img
+              src="./assets/img/pil_logo.png"
+              alt="Logo"
+              class="brand-image opacity-75 shadow"
+            />
+            <span class="brand-text fw-light">PIL</span>
+          </a>
+        </div> -->
+        <!--end::Sidebar Brand-->
+        <!--begin::Sidebar Wrapper-->
+        <div class="sidebar-wrapper">
+          <nav>
+            <!--begin::Sidebar Menu-->
+            <ul
+              class="nav sidebar-menu flex-column"
+              data-lte-toggle="treeview"
+              role="navigation"
+              aria-label="Main navigation"
+              data-accordion="false"
+              id="navigation">
+              
+              <li class="nav-header menustrip text-white">FUNCTION LISTTTT</li>
+
+             
+
+              
+               
+              <!-- <li class="nav-header menustrip text-white">FUNCTION LIST</li>
+              <li class="nav-item">
+                <a href="/risk_register/HR" class="nav-link">
+                  <i class="nav-icon bi bi-pencil-square"></i>
+                  <p>HR Risk</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/ITOT" class="nav-link">
+                  <i class="nav-icon bi bi-grip-horizontal"></i>
+                  <p>IT OT Risk</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/ONM" class="nav-link">
+                  <i class="nav-icon bi bi-star-half"></i>
+                  <p>O$M Risk</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/ABC" class="nav-link">
+                  <i class="nav-icon bi bi-box-seam-fill"></i>
+                  <p>ABC Risk</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/COM" class="nav-link">
+                  <i class="nav-icon bi bi-shop"></i>
+                  <p>Commercial Risk</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/PNC" class="nav-link">
+                  <i class="nav-icon bi bi-yelp"></i>
+                  <p>P & C</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/FIN" class="nav-link">
+                  <i class="nav-icon bi bi-wallet-fill"></i>
+                  <p>Finance Risk</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/LEG" class="nav-link">
+                  <i class="nav-icon bi bi-patch-check-fill"></i>
+                  <p>Legal</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/risk_register/COV" class="nav-link">
+                  <i class="nav-icon bi bi-virus2"></i>
+                  <p>COVID-19</p>
+                </a>
+              </li> -->
+             <!-- <li class="nav-header"><hr></li>
+              <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon bi bi-power"></i>
+                  <p>Sign out</p>
+                </a>
+              </li> -->
+            </ul>
+            <!--end::Sidebar Menu-->
+          </nav>
+
+          <div style="position: absolute; bottom: 0;;">
+            <ul style="list-style: none;"><li class="nav-item">
+                <a class="nav-link" href="/logout">
+                  <i  class="nav-icon bi bi-power"></i> Sign out
+                </a>
+              </li></ul></div>
+        </div>
+        <!--end::Sidebar Wrapper-->
+      </aside>
+      <!--end::Sidebar-->
+
+     <style>
+    .nav-link.active {
+      background: #007bff!important;
+      color: #fff!important;
+    }
+    
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+const currentPath = window.location.pathname;
+document.querySelectorAll("#navigation .nav-link").forEach(link => {
+    if (link.getAttribute("href") === currentPath) {
+      link.classList.add("active");
+    }
+  });
+});
+</script>

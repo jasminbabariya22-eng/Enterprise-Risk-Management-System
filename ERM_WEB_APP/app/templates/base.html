@@ -1,0 +1,341 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Enterprise Risk Management (ERM)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+ 
+    <meta name="title" content="" />
+    <meta name="author" content="ColorlibHQ" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+
+    <meta name="supported-color-schemes" content="light dark" />
+    <link href="{{ url_for('static', filename='css/adminlte.css') }}"  rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}"  rel="stylesheet">
+
+    <link href="{{ url_for('static', filename='css/adminlte.css') }}"  rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}"  rel="stylesheet">
+
+    <link href="{{ url_for('static', filename='cdn/index.css') }}"  rel="stylesheet">
+    
+    <link href="{{ url_for('static', filename='cdn/overlayscrollbars.min.css') }}"  rel="stylesheet">
+
+    <link href="{{ url_for('static', filename='cdn/bootstrap-icons.min.css') }}"  rel="stylesheet">
+
+    <link href="{{ url_for('static', filename='cdn/apexcharts.css') }}"  rel="stylesheet">
+
+    <link href="{{ url_for('static', filename='cdn/jsvectormap.min.css') }}"  rel="stylesheet">
+ 
+    <!--Datatable-->
+    <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}"  rel="stylesheet">
+    <link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}"  rel="stylesheet">
+
+	<!--Datatable-->
+    <style>
+    .menustrip {background: #020264!important;}
+    .nav-link{ color:#fff;}
+    .star{ color:red; font-weight: bold;}
+    </style>
+</head>
+
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+ <!--begin::App Wrapper-->
+<div class="app-wrapper">
+{% include 'partials/header.html' %}
+
+{% if usertype|lower != 'action owner' %}
+    {% include 'partials/sidebar.html' %}
+{% endif %}
+
+<!--begin::App Main-->
+<main class="app-main">
+
+{% block content %}{% endblock %}
+
+</main>
+  <!--end::App Main-->
+
+  {% include 'partials/footer.html' %}
+
+ </div>
+    <!--end::App Wrapper-->
+
+<!--begin::Script-->
+
+    <script src="{{ url_for('static', filename='cdn/overlayscrollbars.browser.es6.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='cdn/popper.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='cdn/bootstrap.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/adminlte.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>             
+ <!--begin::OverlayScrollbars Configure-->
+    <script>
+      const SELECTOR_SIDEBAR_WRAPPER = '.sidebar-wrapper';
+      const Default = {
+        scrollbarTheme: 'os-theme-light',
+        scrollbarAutoHide: 'leave',
+        scrollbarClickScroll: true,
+      };
+      document.addEventListener('DOMContentLoaded', function () {
+        const sidebarWrapper = document.querySelector(SELECTOR_SIDEBAR_WRAPPER);
+
+        // Disable OverlayScrollbars on mobile devices to prevent touch interference
+        const isMobile = window.innerWidth <= 992;
+
+        if (
+          sidebarWrapper &&
+          OverlayScrollbarsGlobal?.OverlayScrollbars !== undefined &&
+          !isMobile
+        ) {
+          OverlayScrollbarsGlobal.OverlayScrollbars(sidebarWrapper, {
+            scrollbars: {
+              theme: Default.scrollbarTheme,
+              autoHide: Default.scrollbarAutoHide,
+              clickScroll: Default.scrollbarClickScroll,
+            },
+          });
+        }
+      });
+    </script>
+    <!--end::OverlayScrollbars Configure-->
+
+     <script src="{{ url_for('static', filename='cdn/Sortable.min.js') }}"></script>
+    
+    <script>
+      new Sortable(document.querySelector('.connectedSortable'), {
+        group: 'shared',
+        handle: '.card-header',
+      });
+
+      const cardHeaders = document.querySelectorAll('.connectedSortable .card-header');
+      cardHeaders.forEach((cardHeader) => {
+        cardHeader.style.cursor = 'move';
+      });
+    </script>
+
+  
+    <!-- jsvectormap -->
+    <script src="{{ url_for('static', filename='cdn/jsvectormap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='cdn/world.js') }}"></script>
+
+    <!-- jsvectormap -->
+    <script>
+      // World map by jsVectorMap
+      new jsVectorMap({
+        selector: '#world-map',
+        map: 'world',
+      });
+
+      // Sparkline charts
+      const option_sparkline1 = {
+        series: [
+          {
+            data: [1000, 1200, 920, 927, 931, 1027, 819, 930, 1021],
+          },
+        ],
+        chart: {
+          type: 'area',
+          height: 50,
+          sparkline: {
+            enabled: true,
+          },
+        },
+        stroke: {
+          curve: 'straight',
+        },
+        fill: {
+          opacity: 0.3,
+        },
+        yaxis: {
+          min: 0,
+        },
+        colors: ['#DCE6EC'],
+      };
+
+      const sparkline1 = new ApexCharts(document.querySelector('#sparkline-1'), option_sparkline1);
+      sparkline1.render();
+
+      const option_sparkline2 = {
+        series: [
+          {
+            data: [515, 519, 520, 522, 652, 810, 370, 627, 319, 630, 921],
+          },
+        ],
+        chart: {
+          type: 'area',
+          height: 50,
+          sparkline: {
+            enabled: true,
+          },
+        },
+        stroke: {
+          curve: 'straight',
+        },
+        fill: {
+          opacity: 0.3,
+        },
+        yaxis: {
+          min: 0,
+        },
+        colors: ['#DCE6EC'],
+      };
+
+      const sparkline2 = new ApexCharts(document.querySelector('#sparkline-2'), option_sparkline2);
+      sparkline2.render();
+
+      const option_sparkline3 = {
+        series: [
+          {
+            data: [15, 19, 20, 22, 33, 27, 31, 27, 19, 30, 21],
+          },
+        ],
+        chart: {
+          type: 'area',
+          height: 50,
+          sparkline: {
+            enabled: true,
+          },
+        },
+        stroke: {
+          curve: 'straight',
+        },
+        fill: {
+          opacity: 0.3,
+        },
+        yaxis: {
+          min: 0,
+        },
+        colors: ['#DCE6EC'],
+      };
+
+      const sparkline3 = new ApexCharts(document.querySelector('#sparkline-3'), option_sparkline3);
+      sparkline3.render();
+    </script>
+    <!--end::Script-->
+
+    <!--Datatable-->
+
+<script>
+$(document).ready(function() {
+$('#HrTable').DataTable();
+
+$('#DescTable').DataTable();
+$('#TreatmentTable').DataTable();
+$('#ApprovalTable').DataTable();
+$('#PopUpTable').DataTable();
+$('#ActionPlanTable').DataTable();
+
+});
+</script>
+<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
+<link href="{{ url_for('static', filename='cdn/jquery.dataTables.min.css') }}"  rel="stylesheet">
+<script src="{{ url_for('static', filename='cdn/jquery.dataTables.min.js') }}"></script>
+
+<script>
+$('#HrTable').dataTable({
+                        orderCellsTop: true,
+                        scrollX: true,
+                        fixedColumns: {
+                             right: 1,
+                             left: 0
+                        },
+                        lengthMenu: [[5, 10, 15, 20, -1], [5, 10, 15, 20, 'All']],
+
+                    });
+
+$('#DescTable').dataTable({
+                        orderCellsTop: true,
+                        scrollX: true,
+                        fixedColumns: {
+                            right: 1,
+                            left: 0
+                        },
+                        lengthMenu: [[5, 10, 15, 20, -1], [5, 10, 15, 20, 'All']],
+
+                    });
+
+$('#TreatmentTable').dataTable({
+                        orderCellsTop: true,
+                        scrollX: true,
+                        fixedColumns: {
+                            right: 1,
+                            left: 0
+                        },
+                        lengthMenu: [[5, 10, 15, 20, -1], [5, 10, 15, 20, 'All']],
+
+                    });
+
+$('#ApprovalTable').dataTable({
+                        orderCellsTop: true,
+                        scrollX: true,
+                        fixedColumns: {
+                            right: 1,
+                            left: 0
+                        },
+                        lengthMenu: [[5, 10, 15, 20, -1], [5, 10, 15, 20, 'All']],
+
+                    });
+
+$('#PopUpTable').dataTable({
+                        orderCellsTop: true,
+                        scrollX: true,
+                        fixedColumns: {
+                             right: 1,
+                             left: 0
+                        },
+                        lengthMenu: [[5, 10, 15, 20, -1], [5, 10, 15, 20, 'All']],
+
+                    });
+
+$('#ActionPlanTable').dataTable({
+                        orderCellsTop: true,
+                        scrollX: true,
+                        fixedColumns: {
+                            right: 1,
+                            left: 0
+                        },
+                        lengthMenu: [[5, 10, 15, 20, -1], [5, 10, 15, 20, 'All']],
+
+                    });
+
+</script>
+
+	<!--End Datatable-->
+  
+
+   <!--Tooltip-->
+
+  <style>
+.tooltip-inner{
+background:#000;
+color:#fff;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before{
+border-top-color:#000;
+}
+</style>
+  
+
+<script>
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+tooltipTriggerList.map(function (tooltipTriggerEl) {
+return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
+  <!--End Tooltip-->
+
+  <!-- ERM Copilot Floating AI Assistant Widget -->
+  {% include 'partials/erm_copilot_widget.html' %}
+
+  </body>
+  <!--end::Body-->
+</html>

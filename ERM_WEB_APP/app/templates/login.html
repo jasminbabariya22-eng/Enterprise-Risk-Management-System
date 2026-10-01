@@ -1,0 +1,52 @@
+
+<link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
+ <!--begin::Third Party Plugin(Bootstrap Icons)-->
+    <link href="{{ url_for('static', filename='cdn/bootstrap-icons.min.css') }}" rel="stylesheet">
+    
+    <!--end::Third Party Plugin(Bootstrap Icons)-->
+
+<link href="{{ url_for('static', filename='css/Login_main.css') }}"  rel="stylesheet">
+
+<title>Login</title>
+
+<form method="post" action="/ERM" class="login100-form validate-form">
+    <div class="limiter">
+        <div class="container-login100">
+            <div class="wrap-login100" style="padding:0;">
+                <div class="login100-form validate-form wrap-login100" style="border-radius:0px">
+                    <div class="login100-form-avatar" style="overflow: visible; margin-bottom:26px;">
+                        <a href="/"><img src="{{ url_for('static', filename='assets/img/pil_logo.png') }}"  alt="" width="100"></a>
+                    </div>
+                    {% if error %}
+                    <div class="alert alert-danger py-2 px-3 mx-4 text-center" style="font-size:13px; border-radius:8px; background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; margin-bottom:15px;">
+                        ⚠️ {{ error }}
+                    </div>
+                    {% endif %}
+                    <div class="wrap-input100 validate-input" data-validate="Enter user name" style="margin-bottom:20px">
+                        <input class="input100" type="text" id="txtEmail" name="username" placeholder="User name" autocomplete="off" value="" required>
+                        <span class="focus-input100 icon2" data-placeholder=""><i class="bi bi-person"></i></span>
+                    </div>
+                    <div class="wrap-input100 validate-input" data-validate="Enter password" style="margin-bottom:20px">
+                        <input class="input100" type="password" id="txtPassword" name="password" placeholder="Password" autocomplete="new-password" value="" required>
+                        <span class="focus-input100 icon2" data-placeholder=""><i class="bi bi-lock"></i></span>
+                    </div>
+                    <div class="container-login100-form-btn">
+                        <button type="submit" class="login100-form-btn" id="btnLogin">Login</button>
+                        
+                    </div>
+                </div>
+                <div class="row pb-2" style="background: #fff; color: #fff;padding: 5px; border-radius:0px 0px 10px 10px">
+                    
+                    <div class="col-md-12">
+                            <p class="mb-0" style="font-size:12px; color:#666666; padding-left:15px; font-weight:500;">Copyright©2026  All rights reserved.</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+ </form>
+   
+ 

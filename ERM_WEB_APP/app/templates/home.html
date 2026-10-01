@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Enterprise Dashboard</title>
+
+    <!-- Bootstrap -->
+     <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+
+    <!-- Axios -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> -->
+     <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        #loadingSpinner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4>Welcome <span id="usernameLabel"></span></h4>
+            <small class="text-muted">
+                Role: <span id="roleLabel"></span>
+            </small>
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
+            Logout
+        </a>
+    </div>
+
+    <!-- Card -->
+    <div class="card shadow-sm p-4">
+        <h5 class="mb-3">Dynamic Dropdown</h5>
+
+        <div class="mb-3">
+            <label class="form-label">Category</label>
+            <select id="categoryDropdown" class="form-select">
+                <option value="">Select Category</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Products</label>
+            <select id="productDropdown" class="form-select" disabled>
+                <option value="">Select Product</option>
+            </select>
+        </div>
+    </div>
+
+</div>
+
+<!-- Loading Spinner
+<div id="loadingSpinner" class="d-flex">
+    <div class="spinner-border text-primary"></div>
+</div> -->
+
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast align-items-center text-white bg-danger border-0">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> -->
+<script src="{{ url_for('static', filename='cdn/bootstrap.bundle.min.js') }}"></script>
+<script>
+
+const spinner = document.getElementById("loadingSpinner");
+const categoryDropdown = document.getElementById("categoryDropdown");
+const productDropdown = document.getElementById("productDropdown");
+
+// ============================
+// Spinner Functions
+// ============================
+function showSpinner() {
+    spinner.style.display = "flex";
+}
+
+function hideSpinner() {
+    spinner.style.display = "none";
+}
+
+// ============================
+// Toast
+// ============================
+function showToast(message) {
+    document.getElementById("toastMessage").innerText = message;
+    const toast = new bootstrap.Toast(document.getElementById("appToast"));
+    toast.show();
+}
+
+// ============================
+// Load Logged User
+// ==================
+// ==========
+function loadUser() {
+alert("call apigggg")
+    //showSpinner();
+alert("call api")
+    axios.get("/user")
+        .then(response => {
+            document.getElementById("usernameLabel").innerText =
+                response.data.user_fname;
+
+            // document.getElementById("roleLabel").innerText =
+            //     response.data.role;
+        })
+        .catch(error => {
+            showToast("Failed to load user info");
+        })
+        .finally(() => {
+            hideSpinner();
+        });
+}
+
+// ============================
+// Load Categories
+// ============================
+function loadCategories() {
+
+    //showSpinner();
+//hideSpinner();
+    axios.get("/user")
+        .then(response => {
+
+            // response.data.forEach(item => {
+            //     const option = document.createElement("option");
+            //     option.value = item.user_fname;
+            //     option.text = item.user_fname;
+            //     categoryDropdown.appendChild(option);
+            // });
+             const option = document.createElement("option");
+                option.value = response.data.user_fname;
+                option.text = response.data.user_fname;
+                categoryDropdown.appendChild(option);
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+}
+
+// ============================
+// Load Products
+// ============================
+categoryDropdown.addEventListener("change", function () {
+
+    const categoryId = this.value;
+
+    productDropdown.innerHTML =
+        '<option value="">Select Product</option>';
+    productDropdown.disabled = true;
+
+    if (!categoryId) return;
+
+    showSpinner();
+
+    axios.get("/api/products", {
+        params: { category_id: categoryId }
+    })
+    .then(response => {
+
+        response.data.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.id;
+            option.text = item.name;
+            productDropdown.appendChild(option);
+        });
+
+        productDropdown.disabled = false;
+
+    })
+    .catch(error => {
+        showToast("Failed to load products");
+    })
+    .finally(() => {
+        hideSpinner();
+    });
+
+});
+
+// ============================
+// Initialize
+// ============================
+document.addEventListener("DOMContentLoaded", function () {
+    loadUser();
+    loadCategories();
+});
+
+</script>
+
+</body>
+</html>

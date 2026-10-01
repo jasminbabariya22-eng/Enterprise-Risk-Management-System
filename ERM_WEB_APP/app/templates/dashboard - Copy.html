@@ -1,0 +1,628 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <h3 class="mb-0">Dashboard</h3>
+              </div>
+              <div class="col-sm-6">
+                <!-- <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item"><a href="#">Home</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                </ol> -->
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <!--begin::Col-->
+              <div class="col-lg-2 col-6">
+                <!--begin::Small Box Widget 1-->
+                <div class="small-box text-bg-primary">
+                  <div class="inner">
+                    <h4>Total</h4>
+
+                    <h6>50</h6>
+                  </div>
+                  <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+                </div>
+                <!--end::Small Box Widget 1-->
+              </div>
+              <!--end::Col-->
+              <div class="col-lg-2 col-6">
+                <!--begin::Small Box Widget 2-->
+                <div class="small-box text-bg-success">
+                  <div class="inner">
+                    <h4>Completed</h4>
+
+                    <h6>52</h6>
+                  </div>
+                  <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+                </div>
+                <!--end::Small Box Widget 2-->
+              </div>
+              <!--end::Col-->
+              <div class="col-lg-2 col-6">
+                <!--begin::Small Box Widget 3-->
+                <div class="small-box text-bg-warning">
+                  <div class="inner">
+                    <h4>Opened</h4>
+
+                    <h6>10</h6>
+                  </div>
+                  <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-dark link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+                </div>
+                <!--end::Small Box Widget 3-->
+              </div>
+              <!--end::Col-->
+              <div class="col-lg-2 col-6">
+                <!--begin::Small Box Widget 4-->
+                <div class="small-box text-bg-secondary">
+                  <div class="inner">
+                    <h4>In Progress</h4>
+
+                    <h6>14</h6>
+                  </div>
+                  <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
+                    ></path>
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
+                    ></path>
+                  </svg>
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+                </div>
+                <!--end::Small Box Widget 4-->
+              </div>
+              <!--end::Col-->
+
+               <!--end::Col-->
+              <div class="col-lg-2 col-6">
+                <!--begin::Small Box Widget 4-->
+                <div class="small-box text-bg-info">
+                  <div class="inner">
+                    <h4>Approved</h4>
+
+                    <h6>72</h6>
+                  </div>
+                  <svg
+                  class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true">
+  <path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M6.956 1.745C7.021.81 7.908.087 8.864.325l.261.066c.463.116.874.456 1.012.965.22.816.533 2.511.062 4.51a10 10 0 0 1 .443-.051c.713-.065 1.669-.072 2.516.21.518.173.994.681 1.2 1.273.184.532.16 1.162-.234 1.733q.086.18.138.363c.077.27.113.567.113.856s-.036.586-.113.856c-.039.135-.09.273-.16.404.169.387.107.819-.003 1.148a3.2 3.2 0 0 1-.488.901c.054.152.076.312.076.465 0 .305-.089.625-.253.912C13.1 15.522 12.437 16 11.5 16H8c-.605 0-1.07-.081-1.466-.218a4.8 4.8 0 0 1-.97-.484l-.048-.03c-.504-.307-.999-.609-2.068-.722C2.682 14.464 2 13.846 2 13V9c0-.85.685-1.432 1.357-1.615.849-.232 1.574-.787 2.132-1.41.56-.627.914-1.28 1.039-1.639.199-.575.356-1.539.428-2.59z">
+</path>
+
+<path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M6.956 1.745C7.021.81 7.908.087 8.864.325l.261.066c.463.116.874.456 1.012.965.22.816.533 2.511.062 4.51a10 10 0 0 1 .443-.051c.713-.065 1.669-.072 2.516.21.518.173.994.681 1.2 1.273.184.532.16 1.162-.234 1.733q.086.18.138.363c.077.27.113.567.113.856s-.036.586-.113.856c-.039.135-.09.273-.16.404.169.387.107.819-.003 1.148a3.2 3.2 0 0 1-.488.901c.054.152.076.312.076.465 0 .305-.089.625-.253.912C13.1 15.522 12.437 16 11.5 16H8c-.605 0-1.07-.081-1.466-.218a4.8 4.8 0 0 1-.97-.484l-.048-.03c-.504-.307-.999-.609-2.068-.722C2.682 14.464 2 13.846 2 13V9c0-.85.685-1.432 1.357-1.615.849-.232 1.574-.787 2.132-1.41.56-.627.914-1.28 1.039-1.639.199-.575.356-1.539.428-2.59z">
+</path>
+</svg>
+                  <!-- <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
+                    ></path>
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
+                    ></path>
+                  </svg> -->
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+                </div>
+                <!--end::Small Box Widget 4-->
+              </div>
+              <!--end::Col-->
+
+               <!--end::Col-->
+              <div class="col-lg-2 col-6">
+                <!--begin::Small Box Widget 4-->
+                <div class="small-box text-bg-danger">
+                  <div class="inner">
+                    <h4>Rejected</h4>
+
+                    <h6>2</h6>
+                  </div>
+                  <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+  <path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+
+  <path
+  clip-rule="evenodd"
+  fill-rule="evenodd"
+  d="M6.146 5.146a.5.5 0 0 1 .708 0L8 6.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 7l1.147 1.146a.5.5 0 0 1-.708.708L8 7.707 6.854 8.854a.5.5 0 1 1-.708-.708L7.293 7 6.146 5.854a.5.5 0 0 1 0-.708"/>
+</svg>
+                  <!-- <svg
+                    class="small-box-icon"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
+                    ></path>
+                    <path
+                      clip-rule="evenodd"
+                      fill-rule="evenodd"
+                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
+                    ></path>
+                  </svg> -->
+                  <a
+                    href="#"
+                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
+                  >
+                    More info <i class="bi bi-link-45deg"></i>
+                  </a>
+                </div>
+                <!--end::Small Box Widget 4-->
+              </div>
+              <!--end::Col-->
+
+            </div>
+            <!--end::Row-->
+            <!--begin::Row-->
+            <div class="row">
+              <!-- Start col -->
+              <div class="col-lg-6 connectedSortable">
+                <div class="card mb-4">
+                  <div class="card-header">
+                    <h3 class="card-title">Risks By Division</h3>
+                  </div>
+
+                  <div class="card-body">
+                    <div id="revenue-chart"></div>
+                  </div>
+                </div>
+                <!-- /.card -->
+
+
+              </div>
+              <!-- /.Start col -->
+
+
+ <!-- /.col-md-6 -->
+              <div class="col-lg-6">
+                <div class="card mb-4">
+                  <div class="card-header border-0">
+                    <div class="d-flex justify-content-between">
+                      <h3 class="card-title">Risks By Category</h3>
+                      <!-- <a
+                        href="javascript:void(0);"
+                        class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+                        >View Report</a
+                      > -->
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <!-- <div class="d-flex">
+                      <p class="d-flex flex-column">
+                        <span class="fw-bold fs-5">$18,230.00</span>
+                        <span>Sales Over Time</span>
+                      </p>
+                      <p class="ms-auto d-flex flex-column text-end">
+                        <span class="text-success"> <i class="bi bi-arrow-up"></i> 33.1% </span>
+                        <span class="text-secondary">Since Past Year</span>
+                      </p>
+                    </div> -->
+                    <!-- /.d-flex -->
+
+                    <div class="position-relative mb-4">
+                      <div id="sales-chart"></div>
+                    </div>
+
+                    <div class="d-flex flex-row justify-content-end">
+                      <span class="me-2">
+                        <i class="bi bi-square-fill text-primary"></i> This year
+                      </span>
+
+                      <span> <i class="bi bi-square-fill text-secondary"></i> Last year </span>
+                    </div>
+                  </div>
+                </div>
+                <!-- /.card -->
+
+              </div>
+              <!-- /.col-md-6 -->
+
+
+             <!-- Start col -->
+             <div class="col-lg-6">
+                <div class="card mb-4">
+                  <div class="card-header border-0">
+                    <div class="d-flex justify-content-between">
+                      <h3 class="card-title">Risk Distribution</h3>
+                      <a href="javascript:void(0);" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">View Report</a>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="d-flex">
+                      <p class="d-flex flex-column">
+                        <span class="fw-bold fs-5">820</span>
+                        <span>Visitors Over Time</span>
+                      </p>
+                      <p class="ms-auto d-flex flex-column text-end">
+                        <span class="text-success"> <i class="bi bi-arrow-up"></i> 12.5% </span>
+                        <span class="text-secondary">Since last week</span>
+                      </p>
+                    </div>
+                    <!-- /.d-flex -->
+
+                    <div class="position-relative mb-4">
+                       <div id="visitors-chart"></div>
+                      
+                    </div>
+
+                    <div class="d-flex flex-row justify-content-end">
+                      <span class="me-2">
+                        <i class="bi bi-square-fill text-primary"></i> This Week
+                      </span>
+
+                      <span> <i class="bi bi-square-fill text-secondary"></i> Last Week </span>
+                    </div>
+                  </div>
+                </div>
+                <!-- /.card -->
+
+
+              </div>
+            <!-- /.Start col -->
+
+              <!-- Start col -->
+             <div class="col-lg-6">
+              <div class="card mb-4">
+                  <div class="card-header border-0">
+                    <h3 class="card-title">Risk Chart</h3>
+
+                    <!-- <div class="card-tools">
+                      <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+                        <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+                        <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+                      </button>
+                      <button type="button" class="btn btn-tool" data-lte-toggle="card-remove">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div> -->
+                  </div>
+                  <!-- /.card-header -->
+                  <div class="card-body">
+                    <!--begin::Row-->
+                    <div class="row">
+                      <div class="col-12">
+                        <div id="pie-chart" style="min-height: 228.7px;"><div id="apexchartsdptl7krv" class="apexcharts-canvas apexchartsdptl7krv apexcharts-theme-light" style="width: 361px; height: 228.7px;"><svg id="SvgjsSvg1891" width="361" height="228.7" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.dev" class="apexcharts-svg" xmlns:data="ApexChartsNS" transform="translate(0, 0)" style="background: transparent;"><g id="SvgjsG1893" class="apexcharts-inner apexcharts-graphical" transform="translate(22, 0)"><defs id="SvgjsDefs1892"><clipPath id="gridRectMaskdptl7krv"><rect id="SvgjsRect1895" width="232" height="250" x="-3" y="-1" rx="0" ry="0" opacity="1" stroke-width="0" stroke="none" stroke-dasharray="0" fill="#fff"></rect></clipPath><clipPath id="forecastMaskdptl7krv"></clipPath><clipPath id="nonForecastMaskdptl7krv"></clipPath><clipPath id="gridRectMarkerMaskdptl7krv"><rect id="SvgjsRect1896" width="230" height="252" x="-2" y="-2" rx="0" ry="0" opacity="1" stroke-width="0" stroke="none" stroke-dasharray="0" fill="#fff"></rect></clipPath></defs><g id="SvgjsG1897" class="apexcharts-pie"><g id="SvgjsG1898" transform="translate(0, 0) scale(1)"><circle id="SvgjsCircle1899" r="67.75853658536586" cx="113" cy="113" fill="transparent"></circle><g id="SvgjsG1900" class="apexcharts-slices"><g id="SvgjsG1901" class="apexcharts-series apexcharts-pie-series" seriesName="Chrome" rel="1" data:realIndex="0"><path id="SvgjsPath1902" d="M 113 8.756097560975604 A 104.2439024390244 104.2439024390244 0 0 1 216.4838470218313 125.56521393685978 L 180.26450056419034 121.16738905895885 A 67.75853658536586 67.75853658536586 0 0 0 113 45.24146341463414 L 113 8.756097560975604 z" fill="rgba(13,110,253,1)" fill-opacity="1" stroke-opacity="1" stroke-linecap="butt" stroke-width="2" stroke-dasharray="0" class="apexcharts-pie-area apexcharts-donut-slice-0" index="0" j="0" data:angle="96.92307692307692" data:startAngle="0" data:strokeWidth="2" data:value="700" data:pathOrig="M 113 8.756097560975604 A 104.2439024390244 104.2439024390244 0 0 1 216.4838470218313 125.56521393685978 L 180.26450056419034 121.16738905895885 A 67.75853658536586 67.75853658536586 0 0 0 113 45.24146341463414 L 113 8.756097560975604 z" stroke="#ffffff"></path></g><g id="SvgjsG1903" class="apexcharts-series apexcharts-pie-series" seriesName="Edge" rel="2" data:realIndex="1"><path id="SvgjsPath1904" d="M 216.4838470218313 125.56521393685978 A 104.2439024390244 104.2439024390244 0 0 1 137.94719876012255 214.2147640897304 L 129.21567919407966 178.78959665832474 A 67.75853658536586 67.75853658536586 0 0 0 180.26450056419034 121.16738905895885 L 216.4838470218313 125.56521393685978 z" fill="rgba(32,201,151,1)" fill-opacity="1" stroke-opacity="1" stroke-linecap="butt" stroke-width="2" stroke-dasharray="0" class="apexcharts-pie-area apexcharts-donut-slice-1" index="0" j="1" data:angle="69.23076923076921" data:startAngle="96.92307692307692" data:strokeWidth="2" data:value="500" data:pathOrig="M 216.4838470218313 125.56521393685978 A 104.2439024390244 104.2439024390244 0 0 1 137.94719876012255 214.2147640897304 L 129.21567919407966 178.78959665832474 A 67.75853658536586 67.75853658536586 0 0 0 180.26450056419034 121.16738905895885 L 216.4838470218313 125.56521393685978 z" stroke="#ffffff"></path></g><g id="SvgjsG1905" class="apexcharts-series apexcharts-pie-series" seriesName="FireFox" rel="3" data:realIndex="2"><path id="SvgjsPath1906" d="M 137.94719876012255 214.2147640897304 A 104.2439024390244 104.2439024390244 0 0 1 43.873506309240085 191.02768140690947 L 68.06777910100605 163.71799291449116 A 67.75853658536586 67.75853658536586 0 0 0 129.21567919407966 178.78959665832474 L 137.94719876012255 214.2147640897304 z" fill="rgba(255,193,7,1)" fill-opacity="1" stroke-opacity="1" stroke-linecap="butt" stroke-width="2" stroke-dasharray="0" class="apexcharts-pie-area apexcharts-donut-slice-2" index="0" j="2" data:angle="55.38461538461539" data:startAngle="166.15384615384613" data:strokeWidth="2" data:value="400" data:pathOrig="M 137.94719876012255 214.2147640897304 A 104.2439024390244 104.2439024390244 0 0 1 43.873506309240085 191.02768140690947 L 68.06777910100605 163.71799291449116 A 67.75853658536586 67.75853658536586 0 0 0 129.21567919407966 178.78959665832474 L 137.94719876012255 214.2147640897304 z" stroke="#ffffff"></path></g><g id="SvgjsG1907" class="apexcharts-series apexcharts-pie-series" seriesName="Safari" rel="4" data:realIndex="3"><path id="SvgjsPath1908" d="M 43.873506309240085 191.02768140690947 A 104.2439024390244 104.2439024390244 0 0 1 27.208950174890504 53.78271396270835 L 57.235817613678826 74.50876407576042 A 67.75853658536586 67.75853658536586 0 0 0 68.06777910100605 163.71799291449116 L 43.873506309240085 191.02768140690947 z" fill="rgba(214,51,132,1)" fill-opacity="1" stroke-opacity="1" stroke-linecap="butt" stroke-width="2" stroke-dasharray="0" class="apexcharts-pie-area apexcharts-donut-slice-3" index="0" j="3" data:angle="83.07692307692307" data:startAngle="221.53846153846152" data:strokeWidth="2" data:value="600" data:pathOrig="M 43.873506309240085 191.02768140690947 A 104.2439024390244 104.2439024390244 0 0 1 27.208950174890504 53.78271396270835 L 57.235817613678826 74.50876407576042 A 67.75853658536586 67.75853658536586 0 0 0 68.06777910100605 163.71799291449116 L 43.873506309240085 191.02768140690947 z" stroke="#ffffff"></path></g><g id="SvgjsG1909" class="apexcharts-series apexcharts-pie-series" seriesName="Opera" rel="5" data:realIndex="4"><path id="SvgjsPath1910" d="M 27.208950174890504 53.78271396270835 A 104.2439024390244 104.2439024390244 0 0 1 88.05280123987743 11.78523591026962 L 96.78432080592033 47.210403341675246 A 67.75853658536586 67.75853658536586 0 0 0 57.235817613678826 74.50876407576042 L 27.208950174890504 53.78271396270835 z" fill="rgba(111,66,193,1)" fill-opacity="1" stroke-opacity="1" stroke-linecap="butt" stroke-width="2" stroke-dasharray="0" class="apexcharts-pie-area apexcharts-donut-slice-4" index="0" j="4" data:angle="41.53846153846155" data:startAngle="304.6153846153846" data:strokeWidth="2" data:value="300" data:pathOrig="M 27.208950174890504 53.78271396270835 A 104.2439024390244 104.2439024390244 0 0 1 88.05280123987743 11.78523591026962 L 96.78432080592033 47.210403341675246 A 67.75853658536586 67.75853658536586 0 0 0 57.235817613678826 74.50876407576042 L 27.208950174890504 53.78271396270835 z" stroke="#ffffff"></path></g><g id="SvgjsG1911" class="apexcharts-series apexcharts-pie-series" seriesName="IE" rel="6" data:realIndex="5"><path id="SvgjsPath1912" d="M 88.05280123987743 11.78523591026962 A 104.2439024390244 104.2439024390244 0 0 1 112.98180600686547 8.756099148701026 L 112.98817390446256 45.24146444665567 A 67.75853658536586 67.75853658536586 0 0 0 96.78432080592033 47.210403341675246 L 88.05280123987743 11.78523591026962 z" fill="rgba(173,181,189,1)" fill-opacity="1" stroke-opacity="1" stroke-linecap="butt" stroke-width="2" stroke-dasharray="0" class="apexcharts-pie-area apexcharts-donut-slice-5" index="0" j="5" data:angle="13.846153846153868" data:startAngle="346.15384615384613" data:strokeWidth="2" data:value="100" data:pathOrig="M 88.05280123987743 11.78523591026962 A 104.2439024390244 104.2439024390244 0 0 1 112.98180600686547 8.756099148701026 L 112.98817390446256 45.24146444665567 A 67.75853658536586 67.75853658536586 0 0 0 96.78432080592033 47.210403341675246 L 88.05280123987743 11.78523591026962 z" stroke="#ffffff"></path></g></g></g></g><line id="SvgjsLine1913" x1="0" y1="0" x2="226" y2="0" stroke="#b6b6b6" stroke-dasharray="0" stroke-width="1" stroke-linecap="butt" class="apexcharts-ycrosshairs"></line><line id="SvgjsLine1914" x1="0" y1="0" x2="226" y2="0" stroke-dasharray="0" stroke-width="0" stroke-linecap="butt" class="apexcharts-ycrosshairs-hidden"></line></g><g id="SvgjsG1894" class="apexcharts-annotations"></g></svg><div class="apexcharts-legend apexcharts-align-center apx-legend-position-right" style="position: absolute; left: auto; top: 24px; right: 5px;"><div class="apexcharts-legend-series" rel="1" seriesname="Chrome" data:collapsed="false" style="margin: 2px 5px;"><span class="apexcharts-legend-marker" rel="1" data:collapsed="false" style="background: rgb(13, 110, 253) !important; color: rgb(13, 110, 253); height: 12px; width: 12px; left: 0px; top: 0px; border-width: 0px; border-color: rgb(255, 255, 255); border-radius: 12px;"></span><span class="apexcharts-legend-text" rel="1" i="0" data:default-text="Chrome" data:collapsed="false" style="color: rgb(55, 61, 63); font-size: 12px; font-weight: 400; font-family: Helvetica, Arial, sans-serif;">Chrome</span></div><div class="apexcharts-legend-series" rel="2" seriesname="Edge" data:collapsed="false" style="margin: 2px 5px;"><span class="apexcharts-legend-marker" rel="2" data:collapsed="false" style="background: rgb(32, 201, 151) !important; color: rgb(32, 201, 151); height: 12px; width: 12px; left: 0px; top: 0px; border-width: 0px; border-color: rgb(255, 255, 255); border-radius: 12px;"></span><span class="apexcharts-legend-text" rel="2" i="1" data:default-text="Edge" data:collapsed="false" style="color: rgb(55, 61, 63); font-size: 12px; font-weight: 400; font-family: Helvetica, Arial, sans-serif;">Edge</span></div><div class="apexcharts-legend-series" rel="3" seriesname="FireFox" data:collapsed="false" style="margin: 2px 5px;"><span class="apexcharts-legend-marker" rel="3" data:collapsed="false" style="background: rgb(255, 193, 7) !important; color: rgb(255, 193, 7); height: 12px; width: 12px; left: 0px; top: 0px; border-width: 0px; border-color: rgb(255, 255, 255); border-radius: 12px;"></span><span class="apexcharts-legend-text" rel="3" i="2" data:default-text="FireFox" data:collapsed="false" style="color: rgb(55, 61, 63); font-size: 12px; font-weight: 400; font-family: Helvetica, Arial, sans-serif;">FireFox</span></div><div class="apexcharts-legend-series" rel="4" seriesname="Safari" data:collapsed="false" style="margin: 2px 5px;"><span class="apexcharts-legend-marker" rel="4" data:collapsed="false" style="background: rgb(214, 51, 132) !important; color: rgb(214, 51, 132); height: 12px; width: 12px; left: 0px; top: 0px; border-width: 0px; border-color: rgb(255, 255, 255); border-radius: 12px;"></span><span class="apexcharts-legend-text" rel="4" i="3" data:default-text="Safari" data:collapsed="false" style="color: rgb(55, 61, 63); font-size: 12px; font-weight: 400; font-family: Helvetica, Arial, sans-serif;">Safari</span></div><div class="apexcharts-legend-series" rel="5" seriesname="Opera" data:collapsed="false" style="margin: 2px 5px;"><span class="apexcharts-legend-marker" rel="5" data:collapsed="false" style="background: rgb(111, 66, 193) !important; color: rgb(111, 66, 193); height: 12px; width: 12px; left: 0px; top: 0px; border-width: 0px; border-color: rgb(255, 255, 255); border-radius: 12px;"></span><span class="apexcharts-legend-text" rel="5" i="4" data:default-text="Opera" data:collapsed="false" style="color: rgb(55, 61, 63); font-size: 12px; font-weight: 400; font-family: Helvetica, Arial, sans-serif;">Opera</span></div><div class="apexcharts-legend-series" rel="6" seriesname="IE" data:collapsed="false" style="margin: 2px 5px;"><span class="apexcharts-legend-marker" rel="6" data:collapsed="false" style="background: rgb(173, 181, 189) !important; color: rgb(173, 181, 189); height: 12px; width: 12px; left: 0px; top: 0px; border-width: 0px; border-color: rgb(255, 255, 255); border-radius: 12px;"></span><span class="apexcharts-legend-text" rel="6" i="5" data:default-text="IE" data:collapsed="false" style="color: rgb(55, 61, 63); font-size: 12px; font-weight: 400; font-family: Helvetica, Arial, sans-serif;">IE</span></div></div><div class="apexcharts-tooltip apexcharts-theme-dark" style="left: -1.85007px; top: 48.4px;"><div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex; background-color: rgb(214, 51, 132);"><span class="apexcharts-tooltip-marker" style="background-color: rgb(214, 51, 132); display: none;"></span><div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;"><div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-y-label">Safari: </span><span class="apexcharts-tooltip-text-y-value">600</span></div><div class="apexcharts-tooltip-goals-group"><span class="apexcharts-tooltip-text-goals-label"></span><span class="apexcharts-tooltip-text-goals-value"></span></div><div class="apexcharts-tooltip-z-group"><span class="apexcharts-tooltip-text-z-label"></span><span class="apexcharts-tooltip-text-z-value"></span></div></div></div><div class="apexcharts-tooltip-series-group" style="order: 2; display: none; background-color: rgb(214, 51, 132);"><span class="apexcharts-tooltip-marker" style="background-color: rgb(214, 51, 132); display: none;"></span><div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;"><div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-y-label">Safari: </span><span class="apexcharts-tooltip-text-y-value">600</span></div><div class="apexcharts-tooltip-goals-group"><span class="apexcharts-tooltip-text-goals-label"></span><span class="apexcharts-tooltip-text-goals-value"></span></div><div class="apexcharts-tooltip-z-group"><span class="apexcharts-tooltip-text-z-label"></span><span class="apexcharts-tooltip-text-z-value"></span></div></div></div><div class="apexcharts-tooltip-series-group" style="order: 3; display: none; background-color: rgb(214, 51, 132);"><span class="apexcharts-tooltip-marker" style="background-color: rgb(214, 51, 132); display: none;"></span><div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;"><div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-y-label">Safari: </span><span class="apexcharts-tooltip-text-y-value">600</span></div><div class="apexcharts-tooltip-goals-group"><span class="apexcharts-tooltip-text-goals-label"></span><span class="apexcharts-tooltip-text-goals-value"></span></div><div class="apexcharts-tooltip-z-group"><span class="apexcharts-tooltip-text-z-label"></span><span class="apexcharts-tooltip-text-z-value"></span></div></div></div><div class="apexcharts-tooltip-series-group" style="order: 4; display: none; background-color: rgb(214, 51, 132);"><span class="apexcharts-tooltip-marker" style="background-color: rgb(214, 51, 132); display: none;"></span><div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;"><div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-y-label">Safari: </span><span class="apexcharts-tooltip-text-y-value">600</span></div><div class="apexcharts-tooltip-goals-group"><span class="apexcharts-tooltip-text-goals-label"></span><span class="apexcharts-tooltip-text-goals-value"></span></div><div class="apexcharts-tooltip-z-group"><span class="apexcharts-tooltip-text-z-label"></span><span class="apexcharts-tooltip-text-z-value"></span></div></div></div><div class="apexcharts-tooltip-series-group" style="order: 5; display: none; background-color: rgb(214, 51, 132);"><span class="apexcharts-tooltip-marker" style="background-color: rgb(214, 51, 132); display: none;"></span><div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;"><div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-y-label">Safari: </span><span class="apexcharts-tooltip-text-y-value">600</span></div><div class="apexcharts-tooltip-goals-group"><span class="apexcharts-tooltip-text-goals-label"></span><span class="apexcharts-tooltip-text-goals-value"></span></div><div class="apexcharts-tooltip-z-group"><span class="apexcharts-tooltip-text-z-label"></span><span class="apexcharts-tooltip-text-z-value"></span></div></div></div><div class="apexcharts-tooltip-series-group" style="order: 6; display: none; background-color: rgb(214, 51, 132);"><span class="apexcharts-tooltip-marker" style="background-color: rgb(214, 51, 132); display: none;"></span><div class="apexcharts-tooltip-text" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px;"><div class="apexcharts-tooltip-y-group"><span class="apexcharts-tooltip-text-y-label">Safari: </span><span class="apexcharts-tooltip-text-y-value">600</span></div><div class="apexcharts-tooltip-goals-group"><span class="apexcharts-tooltip-text-goals-label"></span><span class="apexcharts-tooltip-text-goals-value"></span></div><div class="apexcharts-tooltip-z-group"><span class="apexcharts-tooltip-text-z-label"></span><span class="apexcharts-tooltip-text-z-value"></span></div></div></div></div></div></div>
+                      </div>
+                      <!-- /.col -->
+                    </div>
+                    <!--end::Row-->
+                  </div>
+                  <!-- /.card-body -->
+                  <div class="card-footer p-0">
+                    <ul class="nav nav-pills flex-column" role="navigation" aria-label="Navigation 17">
+                      <li class="nav-item">
+                        <a href="#" class="nav-link">
+                          United States of America
+                          <span class="float-end text-danger">
+                            <i class="bi bi-arrow-down fs-7"></i>
+                            12%
+                          </span>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#" class="nav-link">
+                          India
+                          <span class="float-end text-success">
+                            <i class="bi bi-arrow-up fs-7"></i> 4%
+                          </span>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="#" class="nav-link">
+                          China
+                          <span class="float-end text-info">
+                            <i class="bi bi-arrow-left fs-7"></i> 0%
+                          </span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                  <!-- /.footer -->
+                </div>
+                <!-- /.card -->
+
+
+              </div>
+            <!-- /.Start col -->
+
+            </div>
+            <!-- /.row (main row) -->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+
+    <!-- apexcharts -->
+   
+<script src="{{ url_for('static', filename='cdn/apexcharts.min.js') }}"></script>
+
+    <script>
+
+      // ++++++++++++++++++++++++++++++++++++++++++
+
+      const visitors_chart_options = {
+        series: [
+          {
+            name: 'High - 2023',
+            data: [100, 120, 170, 167, 180, 177, 160],
+          },
+          {
+            name: 'Low - 2023',
+            data: [60, 80, 70, 67, 80, 77, 100],
+          },
+        ],
+        chart: {
+          height: 200,
+          type: 'line',
+          toolbar: {
+            show: false,
+          },
+        },
+        colors: ['#0d6efd', '#adb5bd'],
+        stroke: {
+          curve: 'smooth',
+        },
+        grid: {
+          borderColor: '#e7e7e7',
+          row: {
+            colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
+            opacity: 0.5,
+          },
+        },
+        legend: {
+          show: false,
+        },
+        markers: {
+          size: 1,
+        },
+        xaxis: {
+          categories: ['22th', '23th', '24th', '25th', '26th', '27th', '28th'],
+        },
+      };
+
+      const visitors_chart = new ApexCharts(
+        document.querySelector('#visitors-chart'),
+        visitors_chart_options,
+      );
+      visitors_chart.render();
+
+      const sales_chart_options = {
+        series: [
+          {
+            name: 'Net Profit',
+            data: [44, 55, 57, 56, 61, 58, 63, 60, 66],
+          },
+          {
+            name: 'Revenue',
+            data: [76, 85, 101, 98, 87, 105, 91, 114, 94],
+          },
+          {
+            name: 'Free Cash Flow',
+            data: [35, 41, 36, 26, 45, 48, 52, 53, 41],
+          },
+        ],
+        chart: {
+          type: 'bar',
+          height: 200,
+        },
+        plotOptions: {
+          bar: {
+            horizontal: false,
+            columnWidth: '55%',
+            endingShape: 'rounded',
+          },
+        },
+        legend: {
+          show: false,
+        },
+        colors: ['#0d6efd', '#20c997', '#ffc107'],
+        dataLabels: {
+          enabled: false,
+        },
+        stroke: {
+          show: true,
+          width: 2,
+          colors: ['transparent'],
+        },
+        xaxis: {
+          categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+        },
+        fill: {
+          opacity: 1,
+        },
+        tooltip: {
+          y: {
+            formatter: function (val) {
+              return '$ ' + val + ' thousands';
+            },
+          },
+        },
+      };
+
+      const sales_chart = new ApexCharts(
+        document.querySelector('#sales-chart'),
+        sales_chart_options,
+      );
+      sales_chart.render();
+    </script>
+    <!--end::Script-->
+
+<!--Revenue chart-->
+
+    <!-- ChartJS -->
+    <script>
+
+      // ++++++++++++++++++++++++++++++++++++++++++
+
+      const sales_chart_options1 = {
+        series: [
+          {
+            name: 'Digital Goods',
+            data: [28, 48, 40, 19, 86, 27, 90],
+          },
+          {
+            name: 'Electronics',
+            data: [65, 59, 80, 81, 56, 55, 40],
+          },
+        ],
+        chart: {
+          height: 300,
+          type: 'area',
+          toolbar: {
+            show: false,
+          },
+        },
+        legend: {
+          show: false,
+        },
+        colors: ['#0d6efd', '#20c997'],
+        dataLabels: {
+          enabled: false,
+        },
+        stroke: {
+          curve: 'smooth',
+        },
+        xaxis: {
+          type: 'datetime',
+          categories: [
+            '2023-01-01',
+            '2023-02-01',
+            '2023-03-01',
+            '2023-04-01',
+            '2023-05-01',
+            '2023-06-01',
+            '2023-07-01',
+          ],
+        },
+        tooltip: {
+          x: {
+            format: 'MMMM yyyy',
+          },
+        },
+      };
+
+      const sales_chart1 = new ApexCharts(
+        document.querySelector('#revenue-chart'),
+        sales_chart_options1,
+      );
+      sales_chart1.render();
+    </script>
+<!--End Revenue chart-->
+
+    
+{% endblock %}

@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <!-- <h3 class="mb-0">Risk Register</h3> -->
+                  <h5 style="float:left; margin-right:20px">Risk Action Plan</h5>
+        <!-- Title Icon Start -->
+        <!-- <span>
+            <a class="pl-5 navigate plus-icon-color" href="#"><i class="bi bi-plus-lg" data-toggle="tooltip" data-placement="top" title=""></i></a>
+            <a class="pl-5 edit-icon-color" href="#"><i class="bi bi-pencil-square" data-toggle="tooltip" data-p`lacement="top" title="" style="font-size: 15px;"></i></a>
+            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px;" data-original-title="Delete"></i></a>
+            <a class="pl-5 export-icon-color" href="#"><i class="bi bi-file-earmark-fill" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px; " data-original-title="Export"></i></a>
+
+        </span> -->
+
+              </div>
+              <div class="col-sm-6">
+                <!-- <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item"><a href="#">Home</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                </ol> -->
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+
+   <div class="row">
+
+<!-- Start Left Panel -->
+  <div class="col-lg-6">
+ <div class="col-lg-12">
+        <h6><b>Risk Details</b></h6>
+      </div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk ID</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Id" readonly>
+  </div>
+  </div>
+</div>
+
+  <div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Name</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="RiskName" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Department</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="value" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Financial Year</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="financial_year"  readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Created On</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Created_on"  readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Target Date</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Target_Date" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Risk Description</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="3" id="Risk_Description" readonly></textarea>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Inherent Risk Level</label>
+  <div class="col-sm-8">
+    <!-- <button class="btn btn-gradient text-white">Likelihood</button> <button class="btn btn-gradient text-white">Impact</button> -->
+      <!-- Likelihood button -->
+<div class="btn-group">
+ <button type="button" class="btn orangeBg" style=" width: 100px;;">3D</button>
+  <!-- <button type="button" class="btn btn-primary text-white dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Likelihood
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="#">Remote</a></li>
+    <li><a class="dropdown-item" href="#">Unlikely</a></li>
+    <li><a class="dropdown-item" href="#">Possible</a></li>
+    <li><a class="dropdown-item" href="#">Probable</a></li>
+    <li><a class="dropdown-item" href="#">Expected</a></li>
+  </ul> -->
+</div>
+<!-- End Likelihood button -->
+ 
+<!-- Impact button -->
+<div class="btn-group">
+  
+  <!-- <button type="button" class="btn btn-primary text-white dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Impact
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="#">Negligible</a></li>
+    <li><a class="dropdown-item" href="#">Minor</a></li>
+    <li><a class="dropdown-item" href="#">Moderate</a></li>
+    <li><a class="dropdown-item" href="#">Major</a></li>
+    <li><a class="dropdown-item" href="#">Extreme</a></li>
+  </ul> -->
+</div>
+<!--End Impact button -->
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Risk Mitigation</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="3" id="Risk_Mitigation" readonly></textarea>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Current Risk Level</label>
+  <div class="col-sm-8">
+    <!-- <button class="btn btn-warning">Likelihood</button> <button class="btn btn-warning">Impact</button> -->
+      <!-- Likelihood button -->
+<div class="btn-group">
+<button type="button" class="btn light_greenBg" style="width: 100px;;">3A</button>
+  <!-- <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Likelihood
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="#">Remote</a></li>
+    <li><a class="dropdown-item" href="#">Unlikely</a></li>
+    <li><a class="dropdown-item" href="#">Possible</a></li>
+    <li><a class="dropdown-item" href="#">Probable</a></li>
+    <li><a class="dropdown-item" href="#">Expected</a></li>
+  </ul> -->
+</div>
+<!-- End Likelihood button -->
+ 
+<!-- Impact button -->
+<div class="btn-group">
+  
+  <!-- <button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Impact
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="#">Negligible</a></li>
+    <li><a class="dropdown-item" href="#">Minor</a></li>
+    <li><a class="dropdown-item" href="#">Moderate</a></li>
+    <li><a class="dropdown-item" href="#">Major</a></li>
+    <li><a class="dropdown-item" href="#">Extreme</a></li>
+  </ul> -->
+</div>
+<!--End Impact button -->
+
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Action Plan</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="3" id="Action_plan" readonly></textarea>
+  </div>
+  </div>
+</div>
+
+ <div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Status</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Status" value="In Progress" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Owner</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Owner" value="Shruti N" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Co Owner</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Co_Owner" value="Manali" readonly>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Progress(%)</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Progress" value="65%" readonly>
+  </div>
+  </div>
+</div>
+
+
+<div class="col-lg-12">
+  <div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0"> 
+<table id="ActionPlanTable--1" class="table table-striped table-hover table-bordered" style="width: 100%;">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col">Head</th>
+      <th scope="col">Approved By</th>
+      <th scope="col">Approved On</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Functional Head</td>
+      <td>Shruti N.</td>
+      <td>16-02-2026</td>
+    </tr>
+    <tr>
+      <td>Risk Manager</td>
+      <td>Manali</td>
+      <td>16-02-2026</td>
+    </tr>
+   
+    <tr>
+      <td>Risk Head</td>
+      <td>Manali</td>
+      <td>16-02-2026</td>
+    </tr>
+
+  </tbody>
+</table> 
+</div>  
+</div>
+</div>
+
+</div>
+ </div>
+<!-- End Left Panel -->
+
+ <!--Start Right Panel-->
+<div class="col-lg-6">
+
+<div class="col-lg-12">
+<h6><b>Action Plan Work History</b></h6>
+</div>
+
+<div class="col-lg-12 mb-3">
+  <div class="h-100 p-3 pb-0 bg-white border rounded-3">
+  <p>Partner with well-established recruitment agencies to enable faster identification, screening, and hiring of qualified candidates, ensuring minimal disruption to business operations.</p> 
+  <p>&nbsp;</p>
+<div class="row mb-3"> 
+  <div class="col-6 col-md-4 p-2"><strong>Name :</strong> <span style="color:#ff6a00">Manali</span></div> 
+  <div class="col-6 col-md-4 p-2"><strong>Status :</strong> <span style="color: #479f0d">In Progress</span></div> 
+  <div class="col-6 col-md-4 p-2"><strong>Date :</strong> <span style="color:#3119e7">02.03.2025</span></div>  
+</div>
+
+</div>
+</div>
+
+<div class="col-lg-12 mb-3">
+  <div class="h-100 p-3 pb-0 bg-white border rounded-3">
+  <p>Engage reputed recruitment agencies to accelerate candidate sourcing and secure qualified talent within defined timelines for critical positions.</p> 
+  <p>&nbsp;</p>
+<div class="row mb-3"> 
+  <div class="col-6 col-md-4 p-2"><strong>Name :</strong> <span style="color:#ff6a00">Manali</span></div> 
+  <div class="col-6 col-md-4 p-2"><strong>Status :</strong> <span style="color: #479f0d">In Progress</span></div> 
+  <div class="col-6 col-md-4 p-2"><strong>Date :</strong> <span style="color:#3119e7">02.03.2025</span></div> 
+</div>
+
+</div>
+</div>
+
+<div class="col-lg-12 mb-3">
+  <div class="h-100 p-3 pb-0 bg-white border rounded-3">
+  <p>Formalize partnerships with reputed recruitment agencies to facilitate timely identification and onboarding of qualified candidates, thereby mitigating risks arising from resource shortages.</p> 
+  <p>&nbsp;</p>
+<div class="row mb-3"> 
+  <div class="col-6 col-md-4 p-2"><strong>Name :</strong> <span style="color:#ff6a00">Manali</span></div> 
+  <div class="col-6 col-md-4 p-2"><strong>Status :</strong> <span style="color: #479f0d">In Progress</span></div> 
+  <div class="col-6 col-md-4 p-2"><strong>Date :</strong> <span style="color:#3119e7">02.03.2025</span></div> 
+</div>
+
+</div>
+</div>
+
+<div class="col-lg-12">
+<h5>Add New Remark</h5>
+</div>
+
+<div class="col-lg-12 mb-3">
+<textarea class="form-control form-control-sm" rows="6" id="Add_New_Remark" placeholder="Enter Description or Remarks"></textarea>
+</div>
+
+<div class="col-lg-12 mb-3">
+  
+<div class="row mb-3"> 
+  <div class="col-6 col-md-4 bg-light">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Progress</label>
+  <div class="col-sm-12">
+    <input type="tet" class="form-control form-control-sm" id="Progress" placeholder="65%">
+  </div>
+  </div>
+  </div> 
+
+  <div class="col-6 col-md-4 bg-light">
+<div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Status</label>
+  <div class="col-sm-12">
+  <select class="form-control form-control-sm" id="Status" name="Status">
+    <option>Select</option>
+    <option value="">In Progress</option>
+    <option value="">Completed</option>
+    <option value="">Pending</option>
+</select>
+  </div>
+  </div>
+
+  </div> 
+
+  <div class="col-6 col-md-4 bg-light">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Next Follow Up Date</label>
+  <div class="col-sm-12">
+    <input type="date" class="form-control form-control-sm" id="Target_Date" placeholder="Target Date">
+  </div>
+  </div>
+  </div> 
+</div>
+
+</div>
+
+<div class="col-lg-12">
+  <button class="btn btn-primary text-white float-sm-end" type="button">Add Update</button>
+</div>
+
+</div>
+ <!--End Right Panel-->
+
+
+   </div>
+
+
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+      
+<script>
+    $(document).ready(function () {
+
+    let risk_treatment_id = sessionStorage.getItem("risk_treatment_id");
+    let risk_description_id = sessionStorage.getItem("risk_description_id");
+    let risk_register_id = sessionStorage.getItem("risk_register_id");
+
+    //alert("risk_register_id", risk_register_id);
+    //alert("risk_description_id", risk_description_id);
+    //alert("risk_treatment_id", risk_treatment_id);
+
+   console.log("risk_register_id", risk_register_id);
+   console.log("risk_description_id", risk_description_id);
+   console.log("risk_treatment_id", risk_treatment_id);
+getRiskRegisterbyid(risk_register_id);
+   
+});
+
+ function getRiskRegisterbyid(id) {
+   // alert(id);
+    axios.get("/getRiskRegisterbyid", {
+        params: { RiskRegister_id:id }
+    })
+        .then(response => {
+               console.log("response getRiskRegisterbyid:", response);
+
+        if (response.data.Error.Error === false) {
+          //alert("risk_register_id:", response.data.data.dept_name);
+          //alert(response.data.data.description);
+          //$("#rrid").val(response.data.data.risk_register_id);
+          $("#Risk_Id").val(response.data.data.risk_id);
+          $("#value").val(response.data.data.dept_id);
+          //$("#Risk_Owner1").val(response.data.data.risk_owner_id);
+         // $("#CoRisk_Owner1").val(response.data.data.risk_owner_id);
+          $("#financial_year").val(response.data.data.financial_year);
+          $("#Approval_Status").val(response.data.data.risk_status);
+          $("#RiskName").val(response.data.data.risk_name);
+          //let dateOnly = response.data.data.createdOn.split("T")[0];
+
+           let dateOnly = response.data.data.createdOn;
+          $("#Created_on").val(dateOnly);
+
+         // let dateTime = response.data.data.createdOn.replace("T", " ").split(".")[0];
+          let dateTime = response.data.data.createdOn;
+          $("#Target_Date").val(dateTime);
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+function getRiskDescriptiondetailsbyid(id) {
+   // alert(id);
+    axios.get("/getRiskDescriptiondetailsbyid", {
+        params: { RiskRegisterDescriptiondetail_id:id }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+        console.log("risk Description", response.data.data[0]);
+
+        alert("risk Description id: " + response.data.data[0].risk_description_id);
+
+        //let data = response.data.data.data[0];
+        $("#Risk_Description").val(response.data.data[0].risk_description);
+        $("#Risk_Mitigation").val(response.data.data[0].mitigation);
+        //setDropdownValue("InherentLikelihoodValue","InherentLikelihoodBtn","InherentLikelidropdown-item",response.data.data[0].inherent_risk_likelihood_id);
+        //setDropdownValue("InherentImpactValue","InherentImpactBtn","InherentImpactdropdown-item",response.data.data[0].inherent_risk_impact_id);
+        //setDropdownValue("CurrentLikelihoodValue","CurrentLikelihoodBtn","CurrentLikelidropdown-item",response.data.data[0].current_risk_likelihood_id);
+        //setDropdownValue("CurrentImpactValue","CurrentImpactBtn","CurrentImpactdropdown-item",response.data.data[0].current_risk_impact_id);
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+
+</script>
+{% endblock %}

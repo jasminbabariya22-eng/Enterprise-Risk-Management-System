@@ -1,0 +1,271 @@
+  
+       <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
+       <link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
+
+       <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-12">
+                  <h5 style="float:left; margin-right:20px">Help</h5>
+              </div>
+      
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+
+   <div class="row">
+<!--Start Left Panel-->
+<div class="col-lg-2">
+  <div class="left-panel">
+  <ul class="nav">
+              <li class="nav-item">
+                <a href="#RiskGrid" class="nav-link tab-btn">
+                  <p>Risk Grid</p>
+                </a>
+              </li>
+              <li class="nav-item border-top">
+                <a href="#Impact" class="nav-link tab-btn">
+                  <p>Impact (I) Descriptors & Indices</p>
+                </a>
+              </li>
+              <li class="nav-item border-top">
+                <a href="#Likelihood" class="nav-link tab-btn">
+                  <p>Likelihood (L) Descriptors & Indices</p>
+                </a>
+              </li>
+  </ul>
+</div>
+</div>
+ <!--End Left Panel-->
+ 
+<!--Start Right Panel-->
+<div class="col-lg-10">
+<div class="col-lg-12">
+  <div class="bd-example m-0 border-0 tab-content" id="RiskGrid"> 
+  <h3>Risk Grid</h3>
+
+  <img src="{{ url_for('static', filename='assets/img/riskDetailGraph.jpg') }}"  alt="" class="img-fluid">
+</div>
+</div>
+
+<!-- Start Impact -->
+<div class="col-lg-12">
+  <div class="bd-example m-0 border-0 tab-content" id="Impact">
+  <h3>Impact (I) Descriptors & Indices</h3>
+<div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0 table-responsive"> 
+<table class="table table-striped table-hover table-bordered" width="100%">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col" rowspan="3">Consequence Indices</th>
+      <th scope="col" colspan="5">
+        <span><img src="{{ url_for('static', filename='assets/img/straight-long-arrow.png') }}"  alt="" class="img-fluid"></span><br>
+        Increasing Impact</th>
+      <!-- <th scope="col">bb</th>
+      <th scope="col">cc</th>
+      <th scope="col">dd</th>
+      <th scope="col">ee</th> -->
+    </tr>
+
+    <tr class="tb-head text-center">
+      <!-- <th scope="col">Consequence Indices</th> -->
+      <th scope="col">1</th>
+      <th scope="col">2</th>
+      <th scope="col">3</th>
+      <th scope="col">4</th>
+      <th scope="col">5</th>
+    </tr>
+
+    <tr class="tb-head text-center">
+      <!-- <th scope="col">Consequence Indices</th> -->
+      <th scope="col">Negligible</th>
+      <th scope="col">Minor</th>
+      <th scope="col">Moderate</th>
+      <th scope="col">Major</th>
+      <th scope="col">Extreme</th>
+    </tr>
+
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Cash Flow at Risk</b></td>
+      <td>Upto 2.5%</td>
+      <td>2.5-5%</td>
+      <td>5-10%</td>
+      <td>10-20%</td>
+      <td>> 20%</td>
+    </tr>
+    <tr>
+      <td><b>Healthy & Safety</b></td>
+      <td>Incident requiring first-aid</td>
+      <td>Minorinjury with minimum medical attention without loss of work day (eg. Stitches)</td>
+      <td>One ormore cases of moderate injury (eg. Bone fracture) leading to LTI</td>
+      <td>One or more cases of permanent disability (eg. Loss of limb)</td>
+      <td>Death of one or more individual</td>
+    </tr>
+   <tr>
+      <td><b>Operational / Business Interruption</b></td>
+      <td>Impact can be absorbed through normalactivity and resouce levels; no down/recovery time'</td>
+      <td>Impact requires actions greater than normal activity; recovery time short (eg. Days)</td>
+      <td>A significant event that disrupts operations and requires some additional management time/focus; recovery time significant (eg. weeks) </td>
+      <td>A critical event that disrupts multiple key projects/ processes, stretches plans, and requires considerable management efforts to endure; recovery time</td>
+      <td>Adisaster with the potentialto lead to the collapse of IP; dedicated management and Board time required; recovery time lengthy (eg. Years)</td>
+    </tr>
+    <tr>
+      <td><b>Environment</b></td>
+      <td>Localized exposure in a nonsensitive area which canbe restored in few days</td>
+      <td>Localized exposure in a non sensitive environmentrestored in a week</td>
+      <td>Expos ure in a sensitive environment which cantake upto a month to be restored</td>
+      <td>Exposure in a sensitive environment requiring containment with outside support</td>
+      <td>Widespread and irreversible degradation in habitat/ environment media</td>
+    </tr>
+    <tr>
+      <td><b>Compliance</b></td>
+      <td>Compliance failure with no specific penalty</td>
+      <td>Accidental breach, easily remedied, potential for warning</td>
+      <td>Notification from regulators without impacting opera bility (Legal notice/demand/ wa rning) </td>
+      <td>Publiccomments/ criticism by regulators, inquiry/ investigationon PIL (operations slightly to be disrupted)</td>
+      <td>Major regulatory, criminal investigation, potential imprisonment of management or directors or closure of operations likely</td>
+    </tr>
+    <tr>
+      <td><b>Business Partners</b></td>
+      <td>Few, if any clients/ customers (<1% volume) impacted </td>
+      <td>Small number of clients/ customers impacted (1-5% volume)</td>
+      <td>Large number of clients/ customers impa cted (5-10% vol.); nega tive client/customer reaction but temporary</td>
+      <td>Many clients/ customers impacted (10-30% of volume); high likelihood of adverse client/ customer reaction (eg. Lawsuits); may lose some clients/ customers permanently; some disruption of ope rations/</td>
+      <td>Large number of clients/ customers impacted (>30% volume); a dverse client/customers reaction (eg. Lawsuits); perma nent loss of multiple clients/ customers; wider disruption of operations/ projects</td>
+    </tr>
+    <tr>
+      <td><b>People</b></td>
+      <td>Negligible impact on staff</td>
+      <td>Minor attrition canbema naged through normal back-filling</td>
+      <td>Loss of few key/ criticalstaff, temporary increase in staff turnover</td>
+      <td>Loss of multiple key/critical staff, sustained increase in staff turnover across several locations</td>
+      <td>Widespread loss of key/ critical staff, sizeable sustained increase in staff turnover across all locations</td>
+    </tr>
+    <tr>
+      <td><b>Media / General Public</b></td>
+      <td>No media coverage or interest restrictedto internal communication</td>
+      <td>Brief and isolated a dverse local or regional coverage</td>
+      <td>Adverse regional coverage, one or more media types</td>
+      <td>National/ international coverage, multiple media</td>
+      <td>Sustained lead story in national/ international, multiple media</td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+</div>
+
+</div>
+</div>
+<!-- End Impact -->
+
+<!-- Start Likelihood -->
+<div class="col-lg-12">
+   <div class="bd-example m-0 border-0 tab-content" id="Likelihood">
+  <h3>Likelihood (L) Descriptors & Indices</h3>
+<div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0 table-responsive"> 
+<table class="table table-striped table-hover table-bordered" width="100%">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col" colspan="5">
+        Likelihood Descriptors & Index</th>
+    </tr>
+
+    <tr class="tb-head text-center">
+      <th scope="col">Descriptors</th>
+      <th scope="col">Probability</th>
+      <th scope="col" colspan="3">Indices</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Risk has manifested at PIL/ industry atleast once per year</b></td>
+      <td>>90%</td>
+      <td>5</td>
+      <td>Expected</td>
+      <td rowspan="5" width="100" style="writing-mode: vertical-rl;
+  text-orientation: mixed;"><span><img src="{{ url_for('static', filename='assets/img/up-arrow.png') }}" alt="" class="img-fluid"></span><br> <b>Increasiing Likelihood</b></td>
+    </tr>
+    <tr>
+      <td><b>Manifested in PIL/industry once in last 2 years</b></td>
+      <td>65-90%</td>
+      <td>4</td>
+      <td>Probable</td>
+      <!-- <td>aa</td> -->
+    </tr>
+   <tr>
+      <td><b>Manifested in PIL/industry once in last 2-5 years</b></td>
+      <td>35-65%</td>
+      <td>3</td>
+      <td>Possible</td>
+      <!-- <td>aa</td> -->
+    </tr>
+    <tr>
+      <td><b>Never happended in PIL; few instances in the industry (5-20 years)</b></td>
+      <td>10-35%</td>
+      <td>2</td>
+      <td>Unlikely</td>
+      <!-- <td>aa</td> -->
+    </tr>
+    <tr>
+      <td><b>Very few instances in industry (Once in 20 years or more)</b></td>
+      <td> <10% </td>
+      <td>1</td>
+      <td>Remote</td>
+      <!-- <td>aa</td> -->
+    </tr>
+    
+  </tbody>
+</table> 
+</div>  
+</div>
+
+</div>
+</div>
+<!-- End Likelihood -->
+
+<div class="blankH"></div>
+
+</div>
+<!--End Right Panel-->
+   </div>
+
+
+
+   <style>
+    
+    .tab-btn { color:#000;}
+
+    .tab-btn.active {
+      background: #007bff!important;
+      color: #fff!important;
+    }
+
+    .left-panel {
+  position: -webkit-sticky; 
+  position: sticky;
+  top: 0; 
+  height: 100vh; 
+  overflow-y: auto; 
+}
+
+.blankH{ height: 300px;}
+  </style>
+
+
+          </div>
+
+        </div>
+       

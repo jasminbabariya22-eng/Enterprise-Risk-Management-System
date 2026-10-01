@@ -1,0 +1,28 @@
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+
+# Database
+SQLAlchemy==2.0.27
+psycopg2-binary==2.9.9
+alembic==1.13.1
+
+# Auth
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.2
+
+# Validation
+pydantic==2.6.1
+pydantic-settings==2.1.0
+
+email-validator==2.2.0
+
+# Utilities
+python-dotenv==1.0.1
+python-multipart==0.0.9
+
+pandas==2.2.1
+openpyxl==3.1.2
+
+#pip install cryptography
+cryptography>=42.0.0

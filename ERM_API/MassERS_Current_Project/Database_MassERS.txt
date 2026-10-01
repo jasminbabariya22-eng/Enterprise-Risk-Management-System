@@ -1,0 +1,186 @@
+-------------------------------------------------------------------------Database (Table)------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS ers.mst_user_role
+(
+    id serial primary key NOT NULL,
+    name character varying(200) NOT NULL UNIQUE,
+    description character varying(2000),
+    created_on timestamp without time zone NOT NULL,
+    created_by integer NOT NULL DEFAULT 1,
+    modified_on timestamp without time zone,
+    modified_by integer,
+    is_deleted smallint DEFAULT 0
+    
+);
+
+----------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS ers.mst_department
+(
+    id serial primary key,
+    dept_name character varying(255) not null UNIQUE,
+    dept_short_name character varying(10);
+    --assigned_to integer,
+    --assigned_on timestamp without time zone,
+    created_by integer DEFAULT 1,
+    created_on timestamp without time zone,
+    modified_by integer DEFAULT 1,
+    modified_on timestamp without time zone,
+    is_deleted smallint DEFAULT 0,
+    description text ,
+    last_risk_number integer
+);
+
+-------------------------------------------------
+CREATE TABLE IF NOT EXISTS ers.mst_users
+(
+    id serial primary key NOT NULL,
+    log_id varchar NOT NULL UNIQUE,
+    password varchar NOT NULL,
+    first_name varchar NOT NULL,
+    last_name varchar NOT NULL,
+    email varchar NOT NULL UNIQUE,
+    photo varchar,
+    contact_no varchar(20),
+    country_code integer,
+    std_code integer,
+    country varchar,
+    address varchar,
+    user_city varchar,
+    created_by integer,
+    created_on timestamp without time zone NOT NULL,
+    modified_by integer,
+    modified_on timestamp without time zone,
+    dept_id integer  NOT NULL,
+    role_id integer  NOT NULL,
+    user_type_id integer DEFAULT 0,
+    status varchar NOT NULL,
+    is_deleted smallint  
+ );
+
+-------------------------------------------------
+CREATE TABLE IF NOT EXISTS ers.mst_user_type
+(
+    id serial primary key NOT NULL,
+    name character varying(50) NOT NULL UNIQUE,
+    description character varying(100),
+    created_by integer DEFAULT 1,
+    created_on timestamp without time zone,
+    modified_by integer,
+    modified_on timestamp without time zone,
+    is_deleted integer
+);
+
+
+-----------------------------------------------
+
+-----------------------------------------------
+
+CREATE TABLE IF NOT EXISTS ers.mst_status
+(
+    id serial primary key,
+    status_name character varying(200) NOT NULL,
+    created_by integer DEFAULT 1,
+    created_on timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    modified_by integer DEFAULT 1,
+    modified_on timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    is_deleted integer DEFAULT 0,
+    type text COLLATE pg_catalog."default"   
+);
+
+
+
+
+-----------------------------------------------
+
+
+INSERT INTO ers.mst_department
+(dept_name, description, created_on, is_deleted)
+VALUES
+('IT', 'Information Technology', NOW(), 0),
+('HR', 'Human Resources', NOW(), 0),
+('Finance', 'Finance Department', NOW(), 0);
+
+
+
+---------------------27/03/2026----------------------
+##Table Role Map
+
+CREATE TABLE IF NOT EXISTS ers.user_role_map
+(
+    map_id serial primary key,
+    role_id integer NOT NULL,
+    menu_id integer NOT NULL
+
+)
+
+
+
+------------------------------------27/03/2026-----------
+
+CREATE TABLE IF NOT EXISTS ers.menu_mst
+(
+    menu_id serial primary key,
+    menu_name character varying(200) NOT NULL,
+    is_deleted integer DEFAULT 0
+
+)
+
+------02/04/2026--------
+ALTER TABLE ers.menu_mst 
+RENAME TO mst_menu;
+
+CREATE TABLE IF NOT EXISTS ers.mst_menu
+(
+    menu_id integer NOT NULL DEFAULT nextval('ers.menu_mst_menu_id_seq'::regclass),
+    menu_name character varying(200) COLLATE pg_catalog."default" NOT NULL,
+    is_deleted integer DEFAULT 0,
+    CONSTRAINT menu_mst_pkey PRIMARY KEY (menu_id)
+)
+
+----------------------31/03/26-------------------
+CREATE TABLE IF NOT EXISTS ers.email_job_mst
+(
+    email_job_id integer NOT NULL DEFAULT nextval('ers.email_job_mst_email_job_id_seq'::regclass),
+    email_server_id integer NOT NULL,
+    email_module character varying(50) COLLATE pg_catalog."default",
+    email_to character varying(500) COLLATE pg_catalog."default" NOT NULL,
+    email_cc character varying(500) COLLATE pg_catalog."default",
+    email_bcc character varying(500) COLLATE pg_catalog."default",
+    email_subject character varying(500) COLLATE pg_catalog."default" NOT NULL,
+    email_type character varying(50) COLLATE pg_catalog."default",
+    email_body text COLLATE pg_catalog."default",
+    email_attachment_count integer,
+    total_attempts integer DEFAULT 3,
+    send_attempts integer DEFAULT 0,
+    attempt_delay integer DEFAULT 5000,
+    next_attempt_at timestamp without time zone,
+    send_status character varying(20) COLLATE pg_catalog."default",
+    created_on timestamp without time zone DEFAULT now(),
+    created_by integer DEFAULT 1,
+    is_deleted integer DEFAULT 0,
+    CONSTRAINT email_job_mst_pkey PRIMARY KEY (email_job_id)
+)
+
+------02/04/2026--------
+ALTER TABLE ers.email_job_mst 
+RENAME TO mst_email_job;
+
+------------------------------------31/03/2026--------------------
+CREATE TABLE IF NOT EXISTS ers.email_server
+(
+    email_server_id integer NOT NULL DEFAULT nextval('ers.email_server_email_server_id_seq'::regclass),
+    outgoing_server_type character varying(20) COLLATE pg_catalog."default",
+    outgoing_server_ip character varying(100) COLLATE pg_catalog."default",
+    outgoing_email_user character varying(250) COLLATE pg_catalog."default",
+    outgoing_email_password character varying(100) COLLATE pg_catalog."default",
+    outgoing_email_encryption integer DEFAULT 0,
+    outgoing_email_port integer,
+    created_on timestamp without time zone,
+    created_by integer,
+    modified_on timestamp without time zone,
+    modified_by integer,
+    is_deleted integer DEFAULT 0,
+    CONSTRAINT email_server_pkey PRIMARY KEY (email_server_id)
+)

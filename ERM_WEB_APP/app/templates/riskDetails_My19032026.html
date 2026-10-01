@@ -1,0 +1,1994 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  #DescTable tr.selected {
+    background-color: #d9edf7 !important; /* light blue */
+}
+  /* Make progress input same height as other inputs */
+#PopUpTable--1 .progress {
+    height: calc(2.25rem + 2px);   /* Bootstrap default input height */
+    padding: .375rem .75rem;
+    line-height: 1.5;
+    background-color: #fff !important;
+}
+
+/* Remove spinner buttons */
+#PopUpTable--1 .progress::-webkit-inner-spin-button,
+#PopUpTable--1 .progress::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#PopUpTable--1 .progress {
+    -moz-appearance: textfield;
+}
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <!-- <h3 class="mb-0">Risk Register</h3> -->
+                  <h5 style="float:left; margin-right:20px">Risk Register</h5>
+        <!-- Title Icon Start -->
+        <span>
+            <a class="pl-5 navigate plus-icon-color"  href="#"><i class="bi bi-plus-lg" data-toggle="tooltip" data-placement="top" title=""></i></a>
+            <a class="pl-5 edit-icon-color" href="#"><i class="bi bi-pencil-square" data-toggle="tooltip" data-p`lacement="top" title="" style="font-size: 15px;"></i></a>
+            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px;" data-original-title="Delete"></i></a>
+            <a class="pl-5 export-icon-color" href="#"><i class="bi bi-file-earmark-fill" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px; " data-original-title="Export"></i></a>
+
+        </span>
+
+              </div>
+              <div class="col-sm-6">
+                <!-- <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item"><a href="#">Home</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                </ol> -->
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+
+ <!-- Start Risk Details -->
+   <div class="row">
+
+  <div class="col-lg-8">
+ <div class="col-lg-12">
+        <h6><b>Risk Details</b></h6>
+      </div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk ID</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="Risk_Id" placeholder="Risk ID" value="" readonly>
+    <!-- <hidden type="text" class="form-control form-control-sm" id="Risk_Id" placeholder="Risk ID" value="" readonly> -->
+   
+    <input type="hidden" id="rrid" name="rrid" value="">
+    <input type="hidden" id="risk_description_id" name="rrid" value="">
+  </div>
+  </div>
+</div>
+
+  <div class="col-lg-6">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Department</label>
+  <div class="col-sm-8">
+     <!-- <input type="text" class="form-control form-control-sm" id="Department" placeholder="Department" value="HR" readonly> -->
+     <select class="form-select form-select-sm" id="Department" name="Department" disabled>
+     </select> 
+  </div>
+  </div>
+</div>
+
+  <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Owner</label>
+  <div class="col-sm-8">
+    <!-- <input type="text" class="form-control form-control-sm" id="Risk_Owner" placeholder="Risk Owner" value="Sanya" readonly> -->
+  <select class="form-select form-select-sm" id="Risk_Owner" name="Risk_Owner" disabled>
+   
+</select>
+  </div>
+  </div>
+</div>
+
+  <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Co Risk Owner</label>
+  <div class="col-sm-8">
+    <!-- <input type="text" class="form-control form-control-sm" id="Co_Owner" placeholder="Risk Co Owner" value="John" readonly> -->
+     <select class="form-select form-select-sm" id="CoRisk_Owner" name="CoRisk_Owner">
+    
+</select> 
+  </div>
+  </div>
+</div>
+
+<!-- <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Target Date</label>
+  <div class="col-sm-8">
+    <input type="date" class="form-control form-control-sm" id="Target_Date" placeholder="Target Date">
+  </div>
+  </div>
+</div> -->
+
+<div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Financial Year</label>
+  <div class="col-sm-8">
+    <select class="form-select form-select-sm" id="Financial_Year" name="Financial_Year">
+    <!-- <option>--Select--</option> -->
+    <option value="2026-2027">2026-2027</option>
+    <option value="2025-2026">2025-2026</option>
+    <option value="2024-2025">2024-2025</option>
+</select>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-5 col-form-label col-form-label-sm">Approval Status</label>
+  <div class="col-sm-7">
+    <!-- <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Target Date</label> -->
+    <!-- <input type="text" class="form-control form-control-sm" id="Approval_Status" placeholder="Approval Status" value="New" readonly> -->
+  <select class="form-select form-select-sm" id="Approval_Status" name="Approval_Status" disabled>
+    <option value="1">Pending</option>
+</select> 
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-12">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-2 col-form-label col-form-label-sm">Risk Name</label>
+  <div class="col-sm-10">
+  <textarea class="form-control form-control-sm" rows="3" id="Risk_Name" placeholder=""></textarea>
+  </div>
+  </div>
+</div>
+<!-- <button class="btn btn-primary text-white" onclick="AddNewRisk()" type="button">Save</button> -->
+</div>
+
+    </div>
+
+    <div class="col-lg-4">
+      <div class="col-lg-12">
+   <a href="#" style="color:#020264; float: right; font-size: 24px;" title="Help"><i class="bi bi-info-circle-fill" aria-hidden="true"></i></a>
+   </div>
+
+<img src="{{ url_for('static', filename='assets/img/riskDetailGraph.jpg') }}"  alt="" class="img-fluid">
+    </div>
+
+   </div>
+<!-- End Risk Details -->
+
+<!-- Start Risk Description -->
+
+<div class="row mt-2 mb-2">
+      <div class="col-lg-6">
+    <h6><b>Risk Description</b></h6>
+      </div>
+<div class="col-lg-6">
+ <button class="btn btn-primary text-white float-sm-end" type="button" data-bs-toggle="modal" data-bs-target="#staticBackdrop"  onclick="ResetDescValue()"> <i class="bi bi-plus-lg" aria-hidden="true"></i> </button>
+   </div>
+
+   </div>
+
+<div class="row">
+
+<div class="col-lg-12">
+<div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0 table-responsive"> 
+<table id="DescTable" class="table table-striped table-hover table-bordered" style="width: 100%;">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col">Risk Description</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Mitigation</th>
+      <th scope="col">Current Risk Level</th>
+      <!-- <th scope="col">Risk Owner</th>
+      <th scope="col">Risk Co Owner</th> -->
+      <th scope="col">Created On</th>
+      <th scope="col">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table> 
+</div>  
+</div>
+
+</div>
+
+</div>
+<!--End Risk Description-->         
+
+<!-- Start Risk Treatment -->
+
+<div class="row mt-2 mb-2">
+      <div class="col-lg-6">
+    <h6><b>Risk Treatment</b></h6>
+      </div>
+<div class="col-lg-6">
+ <!-- <button class="btn btn-primary text-white float-sm-end" type="button" data-bs-toggle="modal" data-bs-target="#staticBackdrop"> <i class="bi bi-plus-lg" aria-hidden="true"></i> </button> -->
+   </div>
+
+   </div>
+
+<div class="row">
+
+<div class="col-lg-12">
+
+<div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0"> 
+<table id="TreatmentTable" class="table table-striped table-hover table-bordered" width="100%" style="width: 100%;">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col">Action Plan</th>
+      <th scope="col">Action Owner</th>
+      <th scope="col">Created On</th>
+      <th scope="col">Target Date</th>
+      <th scope="col">Progress</th>
+      <th scope="col">Last Activity Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- <tr>
+      <td>Tie-ups with reputed recruitment agencies that can help quickly identify and secure qualified candiates</td>
+      <td>Shruti N.</td>
+      <td>16-02-2026</td>
+      <td>16-02-2026</td>
+      <td>0%</td>
+      <td>16-02-2026</td>
+      <td align="center"><a href="/riskActionPlan"><i class="bi bi-pencil-square edit-icon-color" title="Edit"></i></a></td>
+    </tr>
+    <tr>
+      <td>Internal Job Posting (IJPs) and sourcing through internal referrals</td>
+      <td>Manali</td>
+      <td>16-02-2026</td>
+      <td>16-02-2026</td>
+      <td>0%</td>
+      <td>16-02-2026</td>
+      <td align="center"><a href="/riskActionPlan"><i class="bi bi-pencil-square edit-icon-color" title="Edit"></i></a></td>
+    </tr> -->
+   
+  </tbody>
+</table> 
+</div>  
+</div>
+
+</div>
+
+</div>
+<!--End Risk Treatment-->
+
+<div class="row mt-2 mb-2">
+      <div class="col-lg-6">
+   &nbsp;
+      </div>
+<div class="col-lg-6" style="text-align: right;">
+   <button class="btn btn-primary text-white" id="save" type="button" onclick="AddNewRisk_All()">Save</button>
+   <button class="btn btn-secondary text-white" id="close" type="button" onclick="LoadRegister()">Close</button>
+   </div>
+
+   </div>
+
+
+<!-- Start Approval Status -->
+<div style="display: none;">
+<div class="row mt-2 mb-2">
+      <div class="col-lg-6">
+    <h6><b>Approval Status</b></h6>
+      </div>
+<div class="col-lg-6">
+ <!-- <button class="btn btn-warning pull-right" type="button"> <i class="fa fa-plus" aria-hidden="true"></i> </button> -->
+   </div>
+
+   </div>
+
+<div class="row">
+
+<div class="col-lg-12">
+
+<div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0"> 
+<table id="dtApprovalStatus" class="table table-striped table-hover table-bordered" width="100%" style="width: 100%;">
+  <thead>
+    <tr class="tb-head text-center--1">
+      <th scope="col">Head</th>
+      <th scope="col">Approved By</th>
+      <th scope="col">Approved On</th>
+      <th scope="col">Status</th>
+      <th scope="col">Remark</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Functional Head</td>
+      <td>Shruti N.</td>
+      <td>16-02-2026</td>
+      <td>Approved</td>
+      <td>Approved and risk is forwarded to risk manager for review.</td>
+      <td align="center"><a href="#"><i class="bi bi-clock-history history-icon-color" title="History"></i></a></td>
+    </tr>
+    <tr>
+      <td>Risk Manager</td>
+      <td>Manali</td>
+      <td>16-02-2026</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td align="center"><a href="#"><i class="bi bi-clock-history history-icon-color" title="History"></i></a></td>
+    </tr>
+   <tr>
+      <td>Risk Head</td>
+      <td>Manali</td>
+      <td>16-02-2026</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td align="center"><a href="#"><i class="bi bi-clock-history history-icon-color" title="History"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+</div>
+
+</div>
+
+</div>
+<!--End Approval Status-->
+
+<div class="row mt-2 mb-2">
+      <div class="col-lg-6">
+   <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-2 col-form-label col-form-label-sm">Remark</label>
+  <div class="col-sm-10">
+    <input type="text" class="form-control form-control-sm" id="Remark" placeholder="Remark">
+  </div>
+  </div>
+      </div>
+<div class="col-lg-6" style="text-align: right;">
+   <button class="btn btn-primary text-white" type="button">Approve</button>
+   <button class="btn btn-warning" type="button">Rejected</button>
+   </div>
+
+   </div>
+   </div>
+
+   <!-- Start PopUp -->
+   
+   <!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">Add/Edit Risk Register</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+       <div class="row">
+
+      <div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Risk Owner</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="P_Risk_Owner" placeholder="Risk Owner" value="Sanya" readonly>
+  <!-- <select class="form-control form-control-sm" id="Risk_Owner" name="Risk_Owner">
+    <option>Select</option>
+    <option value="">Sanyam</option>
+    <option value="">Sanya</option>
+    <option value="">KD Bhullar</option>
+    <option value="">Lavisha</option>
+    <option value="">Aakriti</option>
+    <option value="">Kajal</option>
+    <option value="">Meenakshi</option>
+    <option value="">Kirti saini</option>
+    <option value="">Kartik Bajaj</option>
+</select> -->
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Co Risk Owner</label>
+  <div class="col-sm-8">
+    <input type="text" class="form-control form-control-sm" id="P_CoRisk_Owner" placeholder="Risk Owner" value="John" readonly>
+    <!-- <select class="form-control form-control-sm" id="CoRisk_Owner" name="CoRisk_Owner">
+    <option>Select</option>
+    <option value="">John</option>
+    <option value="">Shruti</option>
+    <option value="">Kirandeep</option>
+    <option value="">Ankit</option>
+    <option value="">Sanjay</option>
+    <option value="">Sneha</option>
+    <option value="">Bhawna</option>
+    <option value="">Devendra</option>
+    <option value="">Mayank</option>
+</select> -->
+  </div>
+  </div>
+</div>
+<div class="col-lg-12">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-2 col-form-label col-form-label-sm">Risk Name</label>
+  <div class="col-sm-10">
+  <textarea class="form-control form-control-sm" rows="3" id="P_Risk_Name" readonly placeholder="Recruitment &amp; Hiring" aria-label="Recruitment &amp; Hiring"></textarea>
+  </div>
+  </div>
+</div>
+
+ <div class="col-lg-6">
+  <div class="row">
+  <div class="col-lg-9">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Risk Description</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="6" id="Risk_Desc" placeholder="Description"></textarea>
+  </div>
+  </div>
+</div>
+
+<!-- <div class="col-lg-12">
+<b>Note : -</b><br>
+<p style="font-size: 10px;">All mitigation steps needs to be entered in a single box<br>
+You can define multiple action plan for single risk description.</p>
+</div>  -->
+
+<div class="col-lg-3">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Inherent Risk Level</label>
+  <div class="col-sm-12">
+    <!-- <button class="btn btn-gradient text-white w-100 mb-2">Likelihood</button> <br>
+    <button class="btn btn-gradient text-white w-100 mb-2">Impact</button> -->
+
+     <!-- Likelihood button -->
+<div class="btn-group mb-2 w-100">
+  <!-- <input type="hidden" id="InherentLikelihoodValue">
+  <button id="InherentLikelihoodBtn" type="button" class="btn btn-primary text-white dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Likelihood
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="InherentLikelidropdown-item" data-value="1">Remote</a></li>
+    <li><a class="InherentLikelidropdown-item" data-value="2">Unlikely</a></li>
+    <li><a class="InherentLikelidropdown-item" data-value="3">Possible</a></li>
+    <li><a class="InherentLikelidropdown-item" data-value="4">Probable</a></li>
+    <li><a class="InherentLikelidropdown-item" data-value="5">Expected</a></li>
+  </ul> -->
+  <select class="form-select form-select-sm" id="InherentLikelihoodBtn" name="InherentLikelihoodBtn">
+    <option value="1">Remote</option>
+    <option value="2">Unlikely</option>
+    <option value="3">Possible</option>
+    <option value="4">Probable</option>
+    <option value="5">Expected</option>
+</select>
+</div>
+<!-- End Likelihood button -->
+ 
+<!-- Impact button -->
+<div class="btn-group w-100">
+    <select class="form-select form-select-sm" id="InherentImpactBtn" name="InherentImpactBtn">
+    <option value="1">Negligible</option>
+    <option value="2">Minor</option>
+    <option value="3">Moderate</option>
+    <option value="4">Major</option>
+    <option value="5">Extreme</option>
+</select>
+  <!-- <input type="hidden" id="InherentImpactValue">
+  <button id="InherentImpactBtn" type="button" id="InherentImpactBtn" class="btn btn-primary text-white dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Impact
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="InherentImpactdropdown-item" data-value="1">Negligible</a></li>
+    <li><a class="InherentImpactdropdown-item" data-value="2">Minor</a></li>
+    <li><a class="InherentImpactdropdown-item" data-value="3">Moderate</a></li>
+    <li><a class="InherentImpactdropdown-item" data-value="4">Major</a></li>
+    <li><a class="InherentImpactdropdown-item" data-value="5">Extreme</a></li>
+  </ul> -->
+</div>
+<!--End Impact button -->
+
+  </div>
+  </div>
+</div>
+
+</div>
+
+</div> 
+
+<div class="col-lg-6">
+<div class="row">
+  <div class="col-lg-9">
+  <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Risk Mitigation</label>
+  <div class="col-sm-12">
+    <textarea class="form-control form-control-sm" rows="6" id="Risk_Mitigation" placeholder="Mitigation"></textarea>
+  </div>
+  </div>
+</div>
+
+<!-- <div class="col-lg-12">
+<b>Note : -</b><br>
+<p style="font-size: 10px;">All mitigation steps needs to be entered in a single box<br>
+You can define multiple action plan for single risk description.</p>
+</div> -->
+
+<div class="col-lg-3">
+    <div class="row mb-3">
+  <label for="colFormLabelSm" class="col-sm-12 col-form-label col-form-label-sm">Current Risk Level</label>
+  <div class="col-sm-12">
+    <!-- <button class="btn btn-warning w-100 mb-2">Likelihood</button> <br>
+    <button class="btn btn-warning w-100 mb-2">Impact</button> -->
+
+     <!-- Likelihood button -->
+<div class="btn-group mb-2 w-100">
+    <select class="form-select form-select-sm" id="CurrentLikelihoodBtn" name="CurrentLikelihoodBtn">
+    <option value="1">Remote</option>
+    <option value="2">Unlikely</option>
+    <option value="3">Possible</option>
+    <option value="4">Probable</option>
+    <option value="5">Expected</option>
+</select>
+  <!-- <input type="hidden" id="CurrentLikelihoodValue">
+  <button id="CurrentLikelihoodBtn" type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Likelihood
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="CurrentLikelidropdown-item" data-value="1">Remote</a></li>
+    <li><a class="CurrentLikelidropdown-item" data-value="2">Unlikely</a></li>
+    <li><a class="CurrentLikelidropdown-item" data-value="3">Possible</a></li>
+    <li><a class="CurrentLikelidropdown-item" data-value="4">Probable</a></li>
+    <li><a class="CurrentLikelidropdown-item" data-value="5">Expected</a></li>
+  </ul> -->
+</div>
+<!-- End Likelihood button -->
+ 
+<!-- Impact button -->
+<div class="btn-group w-100">
+    <select class="form-select form-select-sm" id="CurrentImpactBtn" name="CurrentImpactBtn">
+    <option value="1">Negligible</option>
+    <option value="2">Minor</option>
+    <option value="3">Moderate</option>
+    <option value="4">Major</option>
+    <option value="5">Extreme</option>
+</select>
+  <!-- <input type="hidden" id="CurrentImpactValue">
+  <button id="CurrentImpactBtn" type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    Impact
+  </button>
+  <ul class="dropdown-menu">
+    <li><a class="CurrentImpactdropdown-item" data-value="1">Negligible</a></li>
+    <li><a class="CurrentImpactdropdown-item" data-value="2">Minor</a></li>
+    <li><a class="CurrentImpactdropdown-item" data-value="3">Moderate</a></li>
+    <li><a class="CurrentImpactdropdown-item" data-value="4">Major</a></li>
+    <li><a class="CurrentImpactdropdown-item" data-value="5">Extreme</a></li>
+  </ul> -->
+</div>
+<!--End Impact button -->
+
+  </div>
+  </div>
+</div>
+
+</div>
+
+</div>
+<!-- <div>
+  <button class="btn btn-primary text-white" onclick="AddNewRisk_All()" type="button">AddNewDescription</button>
+</div>  -->
+<!-- AddNewRiskDescription() -->
+<div class="col-lg-12">
+<p style="font-size: 12px;"> <b>Note : -</b> All mitigation steps needs to be entered in a single box. 
+You can define multiple action plan for single risk description.</p>
+</div> 
+
+
+<!-- <div class="col-lg-12">
+  <h5>Risk Treatment</h5>
+</div>
+ 
+  <div class="col-lg-6">
+    <div class="row mb-2">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Action Owner</label>
+  <div class="col-sm-8">
+    <select class="form-control form-control-sm" id="Action_Owner" name="Action_Owner">
+    <option>Select</option>
+    <option value="">John</option>
+    <option value="">Shruti</option>
+    <option value="">Kirandeep</option>
+    <option value="">Ankit</option>
+    <option value="">Sanjay</option>
+    <option value="">Sneha</option>
+    <option value="">Bhawna</option>
+    <option value="">Devendra</option>
+    <option value="">Mayank</option>
+</select>
+  </div>
+  </div>
+</div>
+
+<div class="col-lg-6">
+    <div class="row mb-2">
+  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Target Date</label>
+  <div class="col-sm-8">
+    <input type="date" class="form-control form-control-sm" id="Target_Date" placeholder="Target Date">
+  </div>
+  </div>
+</div>
+
+ <div class="col-lg-12">
+    <div class="row mb-2">
+  <label for="colFormLabelSm" class="col-sm-2 col-form-label col-form-label-sm">Action Plan</label>
+  <div class="col-sm-10">
+   <textarea class="form-control form-control-sm" rows="2" id="Action_Plan" placeholder="Action Plan"></textarea>
+  </div>
+  </div>
+</div> -->
+
+<div class="col-lg-6">
+  <h5>Risk Treatment</h5>
+</div>
+<div class="col-lg-6 mb-2">
+   <button class="btn btn-primary text-white float-sm-end" id="AddRowBtn" type="button"> <i class="bi bi-plus-lg" aria-hidden="true"></i> </button>
+</div>
+
+      </div>
+
+      <div class="row">
+        <div class="col-lg-12">
+
+<div class="bd-example-snippet bd-code-snippet"> 
+<div class="bd-example m-0 border-0"> 
+<table id="PopUpTable--1" class="table table-striped table-hover table-bordered" style="width: 100%;">
+  <thead>
+    <tr class="tb-head text-center">
+      <th scope="col">Action Plan</th>
+      <th scope="col">Action Owner</th>
+      <th scope="col">Target Date</th>
+      <th scope="col">Status</th>
+      <th scope="col">Progress</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table> 
+</div>  
+</div>
+
+</div>
+      </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <!-- <button type="button" class="btn btn-primary text-white" onclick="AddNewRiskTreatment()">Save</button> -->
+          <button type="button" id="p_save" class="btn btn-primary text-white" onclick="AddNewRisk_All()">Save</button>
+        <!-- <button type="button" class="btn btn-gradient text-white">Cancel</button> -->
+        <button type="button" id="p_close" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <!--End PopUp-->
+
+
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content-->
+      
+<script>
+  const APP_DATA = {{ session_data | tojson }};
+</script>
+ <script>
+  var table;
+  var descTable;
+$(document).ready(function () {
+  //const APP_DATA = {{ session_data | tojson }};
+  //const userDept = APP_DATA.userDept ;
+ // const userId = APP_DATA.user;
+  // alert(APP_DATA.userDept)
+  // alert("user -> " + APP_DATA.userId)
+    //alert({{ userdept }});
+     //alert("add use" + {{ userdept }});
+    //$("#tbldept").DataTable();
+    $("#rrid").val('0');  
+    FillDepartment();
+    
+    FillApprovalStatusList('risk');
+    FillActionStatusList('action_plan')
+    FillUserList();
+
+    // let risk_id = sessionStorage.getItem("rrid");
+    // //alert("editing id -> " + risk_id);
+    // if (risk_id !== null && risk_id !== "") {
+    //     console.log("Risk ID:", risk_id);
+    //     //getRiskRegisterbyid(risk_id);
+    //     getRiskRegisterbyid_all(risk_id);
+    // }
+
+    table = $('#PopUpTable--1').DataTable({
+        paging: false,
+        searching: false,
+        info: false,
+        ordering: false,
+        ordering: false,
+    autoWidth: false,   // IMPORTANT
+
+    columnDefs: [
+        { width: "35%", targets: 0 }, // Action Plan (bigger)
+        { width: "15%", targets: 1 }, // Action Owner
+        { width: "12%", targets: 2 }, // Target Date (smaller)
+        { width: "15%", targets: 3 }, // Status
+        { width: "10%", targets: 4 }, // Progress
+        { width: "5%", targets: 5 }   // Delete icon
+    ]
+
+    });
+
+    
+    
+    // ADD ROW
+    $("#AddRowBtn").click(function () {
+
+        table.row.add([
+            `<input type="text" class="form-control action-plan" placeholder="Enter Action Plan">`,
+
+            `<select class="form-control action-owner">
+                ${optionHTML_User}
+            </select>`,
+
+            `<input type="date" class="form-control target-date">`,
+
+            `<select class="form-control status">
+                ${optionHTML_Status_Action}
+            </select>`,
+
+            `<input type="number" class="form-control progress" min="0" max="100" placeholder="0">`,
+
+            `<i class="bi bi-trash text-danger remove-row" style="cursor:pointer;font-size:18px"></i>`
+        ]).draw(false);
+
+    });
+
+
+    // REMOVE ROW
+    $('#PopUpTable--1 tbody').on('click', '.remove-row', function () {
+        table.row($(this).parents('tr')).remove().draw();
+    });
+});
+
+function hideButton() {
+  //     //alert("hide")
+  //     document.getElementById("save").disabled = true;
+  //     document.getElementById("p_save").disabled = true;
+  //     const btn = document.getElementById("p_save");
+  // if (btn) {
+  //   btn.disabled = true;
+  // }
+    }
+
+// function GetAllDepartment() {
+// alert("GetAllDepartment");
+//     axios.get("/getalldpt")
+//     .then(response => {
+
+//         if (response.data.Error.Error === false) {
+
+//             var data = response.data.data;
+
+//             $('#tbldept').DataTable({
+//                 destroy: true,   // reinitialize ke liye
+//                 data: data,
+//                 columns: [
+//                     { data: "dept_name" },
+//                     { data: "description" },
+//                     {
+//                         data: "id",
+//                         render: function (data) {
+//                             return `
+//                             <a href="#"><i class="fa fa-edit" style="color:#248742" onclick="getdpt(${data})"></i></a>
+//                             |
+//                             <a href="#"><i class="fa fa-trash" style="color:red"></i></a>
+//                             `;
+//                         }
+//                     }
+//                 ]
+//             });
+//         } else {
+//             showToast(response.data.Error.Error_message);
+//         }
+
+//     })
+//     .catch(error => {
+//         showToast("Failed to load departments");
+//     });
+// }
+
+function FillDepartment() {
+    axios.get("/getalldpt")
+    .then(response => {
+
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+            var optionHTML = '<option value="" disabled>--Select--</option>';
+            for (var i = 0; i < data.length; i++) {
+                optionHTML += '<option value="' + data[i].id + '">' 
+                            + data[i].dept_short_name +'-'
+                            + data[i].dept_name + 
+                            ' </option>';
+            }
+            document.getElementById("Department").innerHTML = optionHTML;
+            document.getElementById("Department").value = APP_DATA.userDept;
+          } else {
+            showToast(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        showToast("Failed to load departments");
+    });
+}
+var optionHTML="";
+var optionHTML_User="";
+var optionHTML_Status_Action="";
+function FillUserList() {
+  
+    axios.get("/getalluser")
+    .then(response => {
+
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+           optionHTML_User = '<option value="">--Select--</option>';
+            for (var i = 0; i < data.length; i++) {
+                optionHTML_User += '<option value="' + data[i].id + '">' 
+                            + data[i].first_name + ' - ' 
+                            + data[i].last_name+ 
+                            '</option>';
+            }
+            document.getElementById("Risk_Owner").innerHTML = optionHTML_User;
+            document.getElementById("Risk_Owner").value = APP_DATA.userId;
+
+            document.getElementById("CoRisk_Owner").innerHTML = optionHTML_User;
+            //alert("fill user")
+            let risk_id = sessionStorage.getItem("rrid");
+            //alert("editing id -> " + risk_id);
+            if (risk_id !== null && risk_id !== "") {
+                console.log("Risk ID:", risk_id);
+                //getRiskRegisterbyid(risk_id);
+                getRiskRegisterbyid_all(risk_id);
+                hideButton();
+            }
+
+          } else {
+            showToast(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        showToast("Failed to load departments");
+    });
+}
+
+function FillActionStatusList(status_type) {
+    //axios.get("/getapprovalstatus")
+    axios.get("/getstatus", {
+        params: { type: status_type}
+    })
+    .then(response => {
+
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+           optionHTML_Status_Action = '<option value="">--Select--</option>';
+            for (var i = 0; i < data.length; i++) {
+                optionHTML_Status_Action += '<option value="' + data[i].id + '">' 
+                            + data[i].status_name + 
+                            '</option>';
+            }
+            //document.getElementById("Approval_Status").innerHTML = optionHTML;
+            //document.getElementById("Approval_Status").innerHTML = optionHTML;
+
+          } else {
+            showToast(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        showToast("Failed to load departments");
+    });
+}
+function selectDropdownByText(dropdownId, textToSelect) {
+    let dropdown = document.getElementById(dropdownId);
+
+    for (let i = 0; i < dropdown.options.length; i++) {
+        if (dropdown.options[i].text.trim() === textToSelect.trim()) {
+            dropdown.selectedIndex = i;
+            break;
+        }
+    }
+}
+function FillApprovalStatusList(status_type) {
+    //axios.get("/getapprovalstatus")
+    axios.get("/getstatus", {
+        params: { type: status_type}
+    })
+    .then(response => {
+
+        if (response.data.Error.Error === false) {
+            var data = response.data.data;
+           optionHTML = '<option value="">--Select--</option>';
+            for (var i = 0; i < data.length; i++) {
+                optionHTML += '<option value="' + data[i].id + '">' 
+                            + data[i].status_name + 
+                            '</option>';
+            }
+            document.getElementById("Approval_Status").innerHTML = optionHTML;
+            selectDropdownByText("Approval_Status", "Closed");
+            //document.getElementById("Approval_Status").innerHTML = optionHTML;
+
+          } else {
+            showToast(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        showToast("Failed to load departments");
+    });
+}
+
+$("#Risk_Name").on("blur", function () {
+  //alert('fill')
+    $("#P_Risk_Name").val($(this).val());
+     // get dropdown selected text
+    let dropdown = document.getElementById("Risk_Owner");
+    let selectedText = dropdown.options[dropdown.selectedIndex].text;
+
+    // fill textbox with dropdown text
+    document.getElementById("P_Risk_Owner").value = selectedText;
+    // get dropdown selected text
+    let dropdown_co = document.getElementById("CoRisk_Owner");
+    let selectedText_co = "";
+    if (dropdown_co.selectedIndex > 0){
+      selectedText_co = dropdown.options[dropdown_co.selectedIndex].text;
+    }
+
+    // fill textbox with dropdown text
+    document.getElementById("P_CoRisk_Owner").value = selectedText_co;
+    
+});
+
+function LoadRegister(){
+  window.location.href = "/riskRegister";
+}
+
+function AddNewRisk_All() {
+    //alert("AddNewRisk_All");
+    const risk_name = document.getElementById("Risk_Name").value;
+    const dept_id = document.getElementById("Department").value;
+    const risk_owner_id = document.getElementById("Risk_Owner").value;
+    const risk_co_owner_id = document.getElementById("CoRisk_Owner").value;
+    const financial_year = document.getElementById("Financial_Year").value;
+    const risk_status = document.getElementById("Approval_Status").value;
+    const risk_progress="0";
+    const is_active = "0";
+    const risk_register_id =  document.getElementById("rrid").value;
+    let risk_id = document.getElementById("Risk_Id").value;
+
+    const params = {
+    risk_id,
+    risk_register_id,  
+    risk_name,
+    dept_id,
+    risk_owner_id,
+    risk_co_owner_id,
+    financial_year,
+    risk_status,
+    risk_progress,
+    is_active
+    };
+
+    const risk_description = document.getElementById("Risk_Desc").value;
+    const inherent_risk_likelihood_id = document.getElementById("InherentLikelihoodBtn").value;
+    const inherent_risk_impact_id = document.getElementById("InherentImpactBtn").value;
+    const mitigation = document.getElementById("Risk_Mitigation").value;
+    const current_risk_likelihood_id = document.getElementById("CurrentLikelihoodBtn").value;
+    const current_risk_impact_id = document.getElementById("CurrentImpactBtn").value;
+    const risk_description_id = document.getElementById("risk_description_id").value;
+
+    let params_riskdesc = {}
+    if (risk_description.trim().length>0 && mitigation.trim().length>0)
+    {
+       params_riskdesc = {
+        risk_register_id,
+        risk_description_id,
+        risk_description,
+        inherent_risk_likelihood_id,
+        inherent_risk_impact_id,
+        mitigation,
+        current_risk_likelihood_id,
+        current_risk_impact_id
+      };
+    }
+    // else{
+    //   let params_riskdesc = {};
+    // }
+    let dataList = [];
+ 
+    var table = $('#PopUpTable--1').DataTable();
+
+    if (table.rows().count() > 0) {
+        console.log("Table has rows");
+      $("#PopUpTable--1 tbody tr").each(function () {
+          let risk_treatment_id = "0";
+          //let risk_description_id = "0";
+          //let risk_register_id = "0";
+          
+
+          let actionPlan = $(this).find(".action-plan").val();
+          let actionOwner = $(this).find(".action-owner").val();
+          let targetDate = $(this).find(".target-date").val();
+          let status = $(this).find(".status").val();
+          let progress = $(this).find(".progress").val();
+
+          let obj = {
+              risk_treatment_id : risk_treatment_id,
+              risk_description_id: risk_description_id,
+              risk_register_id: risk_register_id,
+              risk_id: risk_id,
+              action_plan: actionPlan,
+              action_owner_id: actionOwner,
+              target_date: targetDate,
+              progress: progress,
+              action_status_id: status,
+              next_followup_date: targetDate
+          };
+
+          if (actionPlan.trim().length>0)
+          {
+            dataList.push(obj);
+          }
+
+      });
+    }
+    axios.post("/addnewrisk_all", 
+        { params, params_riskdesc, dataList})
+
+        .then(response => {
+              console.log("response", response);
+              let risk_id = sessionStorage.getItem("rrid");
+              //alert("editing id -> " + risk_id);
+              //alert(response.data.data[0].risk_register_id)
+              if (risk_id == null)
+              {
+                document.getElementById("Risk_Id").value = response.data.data[0].risk_id;
+                sessionStorage.setItem("rrid", response.data.data[0].risk_register_id);
+              }
+              if (risk_id !== null && risk_id !== "") {
+                  console.log("Risk ID:", risk_id);
+                  //getRiskRegisterbyid(risk_id);
+                  getRiskRegisterbyid_all(risk_id);
+              }
+              window.location.href = "/riskDetails";
+              alert("Risk detail saved successfully!!");
+        })
+        .catch(error => {
+            alert("Failed to load risk detail");
+            //showToast("Failed to load risk detail");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+  }
+
+ function AddNewRisk() {
+    alert("AddNewRisk");
+    const risk_name = document.getElementById("Risk_Name").value;
+    const dept_id = document.getElementById("Department").value;
+    const risk_owner_id = document.getElementById("Risk_Owner").value;
+    const financial_year = document.getElementById("Financial_Year").value;
+    const risk_status = document.getElementById("Approval_Status").value;
+    const risk_progress=0;
+    const is_active = 0;
+    axios.get("/addnewrisk", {
+        params: {
+        risk_name: risk_name,
+        dept_id: dept_id,
+        risk_owner_id: risk_owner_id,
+        financial_year: financial_year,
+        risk_status: risk_status,
+        risk_progress:risk_progress,
+        is_active: is_active
+      }
+    })
+
+        .then(response => {
+               console.log("response", response);
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+  }
+
+$(document).ready(function () {
+  
+   
+});
+
+// Keep track of selected row
+var selectedDescRow = null;
+
+$('#DescTable tbody').on('click', 'tr', function () {
+
+    // Remove previous selection
+    // if (selectedDescRow) {
+    //     $(selectedDescRow).removeClass('selected');
+    // }
+    $('#DescTable tbody tr').removeClass('selected');
+
+    // Add selection to clicked row
+    $(this).addClass('selected');
+    selectedDescRow = this;
+    // Get row data from DataTable
+    var rowData = descTable.row(this).data();
+
+    // Pick the 2 columns you need (example: risk_description and mitigation)
+    var riskDescValue = rowData.risk_description;
+    var mitigationValue = rowData.mitigation;
+    var riskDescId = rowData.risk_description_id;
+    
+    $("#InherentLikelihoodBtn").val(rowData.inherent_risk_likelihood_id);
+    $("#InherentImpactBtn").val(rowData.inherent_risk_impact_id);
+
+    $("#CurrentLikelihoodBtn").val(rowData.current_risk_likelihood_id);
+    $("#CurrentImpactBtn").val(rowData.current_risk_impact_id);
+
+    try{
+    document.getElementById("P_Risk_Name").value = document.getElementById("Risk_Name").value
+    document.getElementById("CoRisk_Owner").value = "";
+    let dropdown = document.getElementById("Risk_Owner");
+    let selectedText = dropdown.options[dropdown.selectedIndex].text;
+
+    // fill textbox with dropdown text
+    document.getElementById("P_Risk_Owner").value = selectedText;
+    // get dropdown selected text
+    let dropdown_co = document.getElementById("CoRisk_Owner");
+    let selectedText_co = "";
+    if (dropdown_co.selectedIndex > 0){
+      selectedText_co = dropdown.options[dropdown_co.selectedIndex].text;
+    }
+
+    // fill textbox with dropdown text
+    document.getElementById("P_CoRisk_Owner").value = selectedText_co;
+    }
+    catch(exception)
+    {}
+    
+    //response.data.data[0].risk_descriptions[0].treatments
+    var selectedDesc = MASTER_DATA.risk_descriptions.find(d =>
+        d.risk_description === riskDescValue &&
+        d.mitigation === mitigationValue
+    );
+
+    
+    document.getElementById("Risk_Desc").value = riskDescValue;
+    document.getElementById("Risk_Mitigation").value = mitigationValue;
+    document.getElementById("risk_description_id").value = riskDescId;
+
+    // Pass treatments to TreatmentTable
+    if (selectedDesc) {
+        bindTreatmentTable(selectedDesc.treatments || []);
+        BindRiskTreatment(selectedDesc.treatments)
+    } else {
+        bindTreatmentTable([]); // fallback empty
+        BindRiskTreatment([])
+    }
+    //bindTreatmentTable(MASTER_DATA.risk_descriptions[0].treatments);
+    // Get row data
+    //var rowData = descTable.row(this).data();
+
+    // Bind TreatmentTable with selected row's treatments
+    //bindTreatmentTable(rowData.treatments);
+});
+
+function bindTreatmentTable(data) {
+
+    $('#TreatmentTable').DataTable({
+        destroy: true,
+        data: data,
+        columns: [
+            { data: "action_plan" },
+            { data: "risk_owner_name" },
+            { 
+                data: "created_on",
+                render: function(data){
+                    return data ? data.split('T')[0] : "";
+                }
+            },
+            { 
+                data: "target_date",
+                render: function(data){
+                    return data ? data.split('T')[0] : "";
+                }
+            },
+            { data: "progress" },
+            { 
+                data: "next_followup_date",
+                render: function(data){
+                    return data ? data.split('T')[0] : "";
+                }
+            },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `<a href="#"><i class="bi bi-clock-history text-primary" 
+                            onclick="goToActionPlan(${row.risk_treatment_id},${row.risk_description_id},${row.risk_register_id})"></i></a>`;
+                }
+            }
+        ]
+    });
+
+}
+
+// Initialize MASTER_DATA empty
+var MASTER_DATA = {
+    risk_data: []
+};
+function getRiskRegisterbyid_all(id) {
+   //alert("rrrr alll");
+    axios.get("/getRiskRegisterbyid_all", {
+        params: { RiskRegister_id:id }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+          MASTER_DATA = response.data.data[0];
+    
+          //alert("risk_register_id:", response.data.data.dept_name);
+          //alert(response.data.data.description);
+          $("#rrid").val(response.data.data[0].risk_register_id);
+          $("#Risk_Id").val(response.data.data[0].risk_id);
+          $("#Department").val(response.data.data[0].dept_id);
+          //alert(response.data.data[0].risk_owner_id)
+          //showToast("sss");
+          $("#Risk_Owner").val(response.data.data[0].risk_owner_id);
+          $("#CoRisk_Owner").val(response.data.data[0].risk_co_owner_id);
+          $("#Financial_Year").val(response.data.data[0].financial_year);
+          $("#Approval_Status").val(response.data.data[0].risk_status);
+          $("#Risk_Name").val(response.data.data[0].risk_name);
+          $("#risk_description_id").val(response.data.data[0].risk_descriptions[0].risk_description_id);
+          //alert(response.data.data[0].risk_name)
+          //alert([response.data.data[0].risk_descriptions[0].risk_description])
+          //getRiskDescriptionbyid($("#Risk_Id").val());
+
+            var data = response.data.data[0].risk_descriptions;
+            descTable = $('#DescTable').DataTable({
+                destroy: true,
+                data: data,
+                order: [],
+                columns: [
+                   // { data: "risk_description" },
+                   {
+                      data: "risk_description",
+                      render: function (data) {
+                        if (!data) return "";
+                        return data.replace(/\n/g, "<br>");
+                      }
+                    },
+                    { data: "inherent_color_code" },
+                    //{ data: "mitigation" },
+                    {
+                      data: "mitigation",
+                      render: function (data) {
+                        if (!data) return "";
+                        return data.replace(/\n/g, "<br>");
+                      }
+                    },                                                  
+                    { data: "current_color_code" },
+                    { 
+                      data: "created_on" ,
+                      render: function(data){
+                        return data.split('T')[0] ;
+                      }
+                    },
+                   // { data: "risk_progress" },
+                    {
+                        data: "risk_description_id",
+                        render: function (data) {
+                            return `
+                            <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskDescriptiondetailsbyid(${data})"></i></a>
+                            </a>
+                            `;
+                        }
+                    }
+                ],
+
+    createdRow: function (row, data) {
+
+        $('td:eq(1)', row).css({
+            'background-color': data.inherent_color_str,
+            'color': 'black',
+            'font-weight': 'bold',
+            'text-align': 'center'
+        });
+
+        $('td:eq(3)', row).css({
+            'background-color': data.current_color_str,
+            'color': 'black',
+            'font-weight': 'bold',
+            'text-align': 'center'
+        });
+
+    }
+            });
+            // highlight first row
+        //$('#DescTable tbody tr:eq(0)').addClass('selected');
+
+//|                            <a href="#"><i class="bi bi-clock-history text-primary"></i>
+            var data = response.data.data[0].risk_descriptions[0].treatments;
+            $('#TreatmentTable').DataTable({
+                destroy: true,
+                data: data,
+                columns: [
+                    { data: "action_plan" },
+                    { data: "risk_owner_name" },
+                    //{ data: "created_on" },
+                    { 
+                      data: "created_on" ,
+                      render: function(data){
+                        return data.split('T')[0] ;
+                      }
+                    },
+
+                    //{ data: "target_date" },
+                    { 
+                      data: "target_date" ,
+                      render: function(data){
+                          if (!data) {
+                            return "";
+                          }
+                        return data.split('T')[0] ;
+                      }
+                    },
+
+                    { data: "progress" },
+                    //{ data: "next_followup_date" },
+                    { 
+                      data: "next_followup_date" ,
+                      render: function(data){
+                         if (!data) {
+                            return "";
+                          }
+                        return data.split('T')[0] ;
+                      }
+                    },
+
+                    //{
+                    //    data: "risk_treatment_id",
+                    //    render: function (data) {
+                    //        return `
+                    //        <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskTreatmentbyTreatmentid(${data})"></i></a>
+                    //        |
+                    //        <a href="/riskActionPlan"><i class="bi bi-clock-history text-primary"></i></a>
+                    //        `;
+                    //    }
+                    //}
+                   // {
+                   // data: null,
+                   // render: function (data, type, row) {
+                   //     return `
+                   //     <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskTreatmentbyTreatmentid(${row.risk_treatment_id})"></i></a>
+                   //     |
+                   //     <a href="/riskActionPlan?rtid=${row.risk_treatment_id}&rdid=${row.risk_description_id}&rrid=${row.risk_register_id}">
+                   //         <i class="bi bi-clock-history text-primary"></i>
+                   //     </a>
+                   //     `;
+                   //    }
+                   //   }
+                   {
+                      data: null,
+                      render: function (data, type, row) {
+                          return `
+                          
+                          <a href="#"><i class="bi bi-clock-history text-primary" 
+                          onclick="goToActionPlan(${row.risk_treatment_id},${row.risk_description_id},${row.risk_register_id})"></i></a>
+                          `;
+                      }
+                  }
+                ]
+            });
+          //getRiskTreatmentbyRiskid($("#Risk_Id").val());
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+
+function getRiskRegisterbyid(id) {
+   //alert("rrrr");
+    axios.get("/getRiskRegisterbyid", {
+        params: { RiskRegister_id:id }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+          //alert("risk_register_id:", response.data.data.dept_name);
+          //alert(response.data.data.description);
+          $("#rrid").val(response.data.data.risk_register_id);
+          $("#Risk_Id").val(response.data.data.risk_id);
+          $("#Department").val(response.data.data.dept_id);
+          $("#Risk_Owner").val(response.data.data.risk_owner_id);
+          $("#CoRisk_Owner").val(response.data.data.risk_owner_id);
+          $("#Financial_Year").val(response.data.data.financial_year);
+          $("#Approval_Status").val(response.data.data.risk_status);
+          $("#Risk_Name").val(response.data.data.risk_name);
+          getRiskDescriptionbyid($("#Risk_Id").val());
+          getRiskTreatmentbyRiskid($("#Risk_Id").val());
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+  function getRiskDescriptionbyid(id) {
+    //alert("ppp");
+    axios.get("/getRiskDescriptionbyid", {
+        params: { Risk_id:id }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+          //alert(response.data.data.risk_description);
+          var data = response.data.data;
+            $('#DescTable').DataTable({
+                destroy: true,
+                data: data,
+                columns: [
+                    { data: "risk_description" },
+                    { data: "inherent_risk_likelihood_id" },
+                    { data: "mitigation" },
+                    { data: "current_risk_likelihood_id" },
+                    { data: "created_on" },
+                   // { data: "risk_progress" },
+                    {
+                        data: "risk_description_id",
+                        render: function (data) {
+                            return `
+                            <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskDescriptiondetailsbyid(${data})"></i></a>
+                            |
+                            <a href="#"><i class="bi bi-clock-history text-primary"></i></a>
+                            `;
+                        }
+                    }
+                ]
+            });
+             $('#DescTable tbody tr:first').addClass('selected');
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+//AddNewRiskDescription()
+function AddNewRiskDescription() {
+    alert("AddNewRiskDescription");
+    //const risk_register_id = document.getElementById("risk_register_id").value;
+    const risk_register_id = 24
+    const risk_description = document.getElementById("Risk_Desc").value;
+    const inherent_risk_likelihood_id = document.getElementById("InherentLikelihoodValue").value;
+    const inherent_risk_impact_id = document.getElementById("InherentImpactValue").value;
+    const mitigation = document.getElementById("Risk_Mitigation").value;
+    const current_risk_likelihood_id = document.getElementById("CurrentLikelihoodValue").value;
+    const current_risk_impact_id = document.getElementById("CurrentImpactValue").value;
+
+    axios.get("/AddNewRiskDescription", {
+        params: {
+        risk_register_id: risk_register_id,
+        risk_description: risk_description,
+        inherent_risk_likelihood_id: inherent_risk_likelihood_id,
+        inherent_risk_impact_id: inherent_risk_impact_id,
+        mitigation: mitigation,
+        current_risk_likelihood_id:current_risk_likelihood_id,
+        current_risk_impact_id: current_risk_impact_id
+      }
+    })
+
+        .then(response => {
+               console.log("response", response);
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+  }
+//AddNewRiskTreatment()
+function AddNewRiskTreatment() {
+
+    let dataList = [];
+
+    $("#PopUpTable--1 tbody tr").each(function () {
+
+        let risk_description_id = 24;
+        let risk_register_id = 10;
+        let risk_id = 0;
+
+        let actionPlan = $(this).find(".action-plan").val();
+        let actionOwner = $(this).find(".action-owner").val();
+        let targetDate = $(this).find(".target-date").val();
+        let status = $(this).find(".status").val();
+        let progress = $(this).find(".progress").val();
+
+        let obj = {
+            risk_description_id: risk_description_id,
+            risk_register_id: risk_register_id,
+            risk_id: risk_id,
+            action_plan: actionPlan,
+            action_owner_id: parseInt(actionOwner),
+            target_date: targetDate,
+            progress: parseInt(progress),
+            action_status_id: parseInt(status),
+            next_followup_date: targetDate
+        };
+
+        dataList.push(obj);
+
+    });
+
+    console.log("Send Data:", dataList);
+
+    axios.post("/AddNewRiskTreatment", dataList)
+    .then(response => {
+        console.log(response);
+        alert("Data Saved Successfully");
+    })
+    .catch(error => {
+        console.log(error);
+    });
+
+}
+
+function ResetDescValue(){
+  //alert("clear values")
+  document.getElementById("Risk_Desc").value = "";
+  document.getElementById("Risk_Mitigation").value = ""
+  document.getElementById("risk_description_id").value = "";
+
+  document.getElementById("P_Risk_Name").value = document.getElementById("Risk_Name").value;
+
+  	//$("#P_Risk_Name").val($(this).val());
+     // get dropdown selected text
+    let dropdown = document.getElementById("Risk_Owner");
+    let selectedText = dropdown.options[dropdown.selectedIndex].text;
+
+    // fill textbox with dropdown text
+    document.getElementById("P_Risk_Owner").value = selectedText;
+    // get dropdown selected text
+    let dropdown_co = document.getElementById("CoRisk_Owner");
+    let selectedText_co = dropdown.options[dropdown_co.selectedIndex].text;
+
+    // fill textbox with dropdown text
+    document.getElementById("P_CoRisk_Owner").value = selectedText_co;
+
+}
+
+
+function getRiskDescriptiondetailsbyid(id) {
+  return;
+   //alert("get desc -> " + id);
+    axios.get("/getRiskDescriptionbyid_all", {
+        params: { RiskRegisterDescriptiondetail_id:id }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+        console.log("risk Description", response.data.data[0]);
+
+       // alert("risk Description id: " + response.data.data[0].risk_description_id);
+
+        //let data = response.data.data.data[0];
+        document.getElementById("Risk_Desc").value = response.data.data.risk_description;
+        //document.getElementById("InherentLikelihoodValue").value = response.data.data[0].inherent_risk_likelihood_id;
+        //document.getElementById("InherentImpactValue").value = response.data.data[0].inherent_risk_impact_id;
+        document.getElementById("Risk_Mitigation").value = response.data.data.mitigation;
+        //document.getElementById("CurrentLikelihoodValue").value = response.data.data[0].current_risk_likelihood_id;
+        //document.getElementById("CurrentImpactValue").value = response.data.data[0].current_risk_impact_id;
+        BindRiskTreatment(response.data.data.treatments) 
+            // var data_treatments = response.data.data.treatments;
+            // $('#PopUpTable--1').DataTable({
+            //     destroy: true,
+            //     data: data_treatments,
+            //     columns: [
+            //         { data: "action_plan" },
+            //         { data: "action_owner_id" },
+            //         { data: "target_date" },
+            //         { data: "action_status_id" },
+            //         { data: "progress" },
+                   
+            //        {
+            //           data: null,
+            //           render: function (data, type, row) {
+            //               return `
+            //               <i class="bi bi-trash text-danger remove-row" style="cursor:pointer;font-size:18px"></i>`;
+            //           }
+            //       }
+            //     ]
+            // });
+
+
+        // setDropdownValue("InherentLikelihoodValue","InherentLikelihoodBtn","InherentLikelidropdown-item",response.data.data[0].inherent_risk_likelihood_id);
+
+        // setDropdownValue("InherentImpactValue","InherentImpactBtn","InherentImpactdropdown-item",response.data.data[0].inherent_risk_impact_id);
+
+        // setDropdownValue("CurrentLikelihoodValue","CurrentLikelihoodBtn","CurrentLikelidropdown-item",response.data.data[0].current_risk_likelihood_id);
+
+        // setDropdownValue("CurrentImpactValue","CurrentImpactBtn","CurrentImpactdropdown-item",response.data.data[0].current_risk_impact_id);
+
+
+          //alert(response.data.data.description);
+         //$("#rrid").val(response.data.data.risk_register_id);
+         //$("#Risk_Id").val(response.data.data.risk_id);
+         //$("#Department").val(response.data.data.dept_id);
+         //$("#Risk_Owner1").val(response.data.data.risk_owner_id);
+         //$("#CoRisk_Owner1").val(response.data.data.risk_owner_id);
+         //$("#Financial_Year").val(response.data.data.financial_year);
+         //$("#Approval_Status").val(response.data.data.risk_status);
+         //$("#Risk_Name").val(response.data.data.risk_name);
+         //getRiskDescriptionbyid($("#Risk_Id").val());
+
+
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+// $(document).on("click", ".InherentLikelidropdown-item", function () {
+//     setDropdownValue("InherentLikelihoodValue", "InherentLikelihoodBtn", "InherentLikelidropdown-item", $(this).data("value"));
+// });
+
+// $(document).on("click", ".InherentImpactdropdown-item", function () {
+//     setDropdownValue("InherentImpactValue", "InherentImpactBtn", "InherentImpactdropdown-item", $(this).data("value"));
+// });
+
+// $(document).on("click", ".CurrentLikelidropdown-item", function () {
+//     setDropdownValue("CurrentLikelihoodValue", "CurrentLikelihoodBtn", "CurrentLikelidropdown-item", $(this).data("value"));
+// });
+
+// $(document).on("click", ".CurrentImpactdropdown-item", function () {
+//     setDropdownValue("CurrentImpactValue", "CurrentImpactBtn", "CurrentImpactdropdown-item", $(this).data("value"));
+// });
+
+
+
+// function setDropdownValue(hiddenId, btnId, itemClass, value) {
+
+//     $("#" + hiddenId).val(value);
+
+//     let text = $("." + itemClass + "[data-value='" + value + "']").text();
+
+//     $("#" + btnId).text(text);
+// }
+  
+// // Inherent Likelihood
+// $(document).on("click", ".InherentLikelidropdown-item", function () {
+
+//     var value = $(this).data("value");
+//     var text = $(this).text();
+//     $("#InherentLikelihoodValue").val(value);
+//     $("#InherentLikelihoodBtn").text(text);
+
+// });
+
+
+// // Inherent Impact
+// $(document).on("click", ".InherentImpactdropdown-item", function () {
+
+//     var value = $(this).data("value");
+//     var text = $(this).text();
+//     $("#InherentImpactValue").val(value);
+//     $("#InherentImpactBtn").text(text);
+
+// });
+
+
+// // Current Likelihood
+// $(document).on("click", ".CurrentLikelidropdown-item", function () {
+
+//     var value = $(this).data("value");
+//     var text = $(this).text();
+//     $("#CurrentLikelihoodValue").val(value);
+//     $("#CurrentLikelihoodBtn").text(text);
+
+// });
+
+
+// // Current Impact
+// $(document).on("click", ".CurrentImpactdropdown-item", function () {
+
+//     var value = $(this).data("value");
+//     var text = $(this).text();
+//     $("#CurrentImpactValue").val(value);
+//     $("#CurrentImpactBtn").text(text);
+
+// });
+
+
+
+
+function getRiskTreatmentbyRiskid(ids) {
+    //alert(id);
+    id="HR-001";
+    axios.get("/getRiskTreatmentbyRiskid", {
+        params: { Risk_id:id}
+    })
+        .then(response => {
+               console.log("response getRiskTreatmentbyid", response);
+
+        if (response.data.Error.Error === false) {
+          //alert(response.data.data.risk_description);
+          var data = response.data.data;
+            $('#TreatmentTable').DataTable({
+                destroy: true,
+                data: data,
+                columns: [
+                    { data: "action_plan" },
+                    { data: "risk_owner_name" },
+                    { data: "created_on" },
+                    { data: "target_date" },
+                    { data: "progress" },
+                    { data: "next_followup_date" },
+                    //{
+                    //    data: "risk_treatment_id",
+                    //    render: function (data) {
+                    //        return `
+                    //        <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskTreatmentbyTreatmentid(${data})"></i></a>
+                    //        |
+                    //        <a href="/riskActionPlan"><i class="bi bi-clock-history text-primary"></i></a>
+                    //        `;
+                    //    }
+                    //}
+                   // {
+                   // data: null,
+                   // render: function (data, type, row) {
+                   //     return `
+                   //     <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskTreatmentbyTreatmentid(${row.risk_treatment_id})"></i></a>
+                   //     |
+                   //     <a href="/riskActionPlan?rtid=${row.risk_treatment_id}&rdid=${row.risk_description_id}&rrid=${row.risk_register_id}">
+                   //         <i class="bi bi-clock-history text-primary"></i>
+                   //     </a>
+                   //     `;
+                   //    }
+                   //   }
+                   {
+                      data: null,
+                      render: function (data, type, row) {
+                          return `
+                          <a href="#"><i class="bi bi-pencil-square" data-bs-toggle="modal" data-bs-target="#staticBackdrop" style="color:#248742" onclick="getRiskTreatmentbyTreatmentid(${row.risk_treatment_id})"></i></a>
+                          |
+                          <a href="#"><i class="bi bi-clock-history text-primary" 
+                          onclick="goToActionPlan(${row.risk_treatment_id},${row.risk_description_id},${row.risk_register_id})"></i></a>
+                          `;
+                      }
+                  }
+                ]
+            });
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+
+  function getRiskTreatmentbyTreatmentid(id) {
+    axios.get("/getRiskTreatmentbyTreatmentid", {
+        params: { Risk_id:id}
+    })
+        .then(response => {
+               console.log("response getRiskTreatmentbyid", response);
+
+        if (response.data.Error.Error === false) {
+          //alert(response.data.data.risk_description);
+          var data = response.data.data;
+           BindRiskTreatment(data);
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+        });
+  }
+
+function BindRiskTreatment(data) {
+
+    table.clear();
+
+    data.forEach(function (item) {
+
+        let rowNode = table.row.add([
+
+            `<input type="text" class="form-control action-plan"
+                value="${item.action_plan || ''}">`,
+
+            `<select class="form-control action-owner">
+                ${optionHTML_User}
+            </select>`,
+
+            `<input type="date" class="form-control target-date"
+                value="${item.target_date ? item.target_date.split('T')[0] : ''}">`,
+
+            `<select class="form-control status">
+                ${optionHTML_Status_Action}
+            </select>`,
+
+            `<input type="number" class="form-control progress"
+                value="${item.progress || 0}">`,
+
+            `<i class="bi bi-trash text-danger remove-row"
+                style="cursor:pointer;font-size:18px"></i>`
+
+        ]).node();
+
+        // Store selected values as data attributes
+        $(rowNode).find(".action-owner").attr("data-selected", item.action_owner_id);
+        $(rowNode).find(".status").attr("data-selected", item.action_status_id);
+
+    });
+
+    table.draw(false);
+
+    // After draw, apply selected values
+    $('#PopUpTable--1 tbody tr').each(function () {
+
+        let owner = $(this).find(".action-owner").data("selected");
+        let status = $(this).find(".status").data("selected");
+
+        if(owner){
+            $(this).find(".action-owner").val(owner);
+        }
+
+        if(status){
+            $(this).find(".status").val(status);
+        }
+
+    });
+
+}
+
+//   function BindRiskTreatment(data) {
+
+//     let tableBody = $("#PopUpTable--1 tbody");
+//     tableBody.empty();
+
+//     data.forEach(function (item) {
+
+//         let row = `<tr>
+//             <td>
+//                 <input type="text" class="form-control action-plan" value="${item.action_plan ?? ''}">
+//             </td>
+
+//             <td>
+//                 <select class="form-control action-owner">
+//                     <option value="${item.action_owner_id}">
+//                         ${item.action_owner_name ?? 'Select'}
+//                     </option>
+//                 </select>
+//             </td>
+
+//             <td>
+//                 <input type="date" class="form-control target-date"
+//                 value="${item.target_date ? item.target_date.split('T')[0] : ''}">
+//             </td>
+//             <td>
+//                 <select class="form-control action-owner">
+//                     <option value="${item.action_status_id}">
+//                         ${item.action_status_id ?? 'Select'}
+//                     </option>
+//                 </select>
+//             </td>
+//             <td>
+//                 <input type="number" class="form-control progress"
+//                 value="${item.progress ?? 0}">
+//             </td>
+
+          
+//         </tr>`;
+
+//         tableBody.append(row);
+//     });
+// }
+ </script>  
+
+ <script>
+  $(document).ready(function () {
+
+    
+
+});
+
+
+
+ </script>
+
+<script>
+  //riskActionPlan
+function goToActionPlan(rtid, rdid, rrid) {
+
+    sessionStorage.setItem("risk_treatment_id", rtid);
+    sessionStorage.setItem("risk_description_id", rdid);
+    sessionStorage.setItem("risk_register_id", rrid);
+
+    window.location.href = "/riskActionPlan";
+}
+
+
+  
+</script>
+
+
+{% endblock %}

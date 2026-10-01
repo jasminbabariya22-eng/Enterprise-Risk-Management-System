@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .disabled {
+        pointer-events: none;
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+
+<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+
+<!--begin::App Content Header-->
+<div class="app-content-header">
+    <div class="container-fluid">
+        <div class="row">
+
+            <div class="col-sm-6">
+
+                <span style="float:left; margin-right:20px">
+                    Upload Risk
+                </span>
+
+                <!-- Title Icons -->
+                  <span>
+            <a class="pl-5 navigate plus-icon-color" href="" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()"><i class="bi bi-plus-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Add"></i></a>
+            <a class="pl-5 edit-icon-color disabled" href="#"><i class="bi bi-pencil-square" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"></i></a>
+            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"></i></a>
+            <a class="pl-5 export-icon-color" href="#"><i class="bi bi-file-earmark-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Export"></i></a>
+
+        </span>
+
+            </div>
+
+            <div class="col-sm-6">
+
+            </div>
+
+        </div>
+    </div>
+</div>
+<!--end::App Content Header-->
+
+
+
+<!--begin::App Content-->
+<div class="app-content">
+    <div class="container-fluid">
+
+        <div id="div1">
+
+            <div class="modal-body">
+
+                <div class="row">
+
+                    <div class="col-lg-8">
+
+                        <div class="row mb-3">
+
+                            <label class="col-sm-3 col-form-label col-form-label-sm">
+                                Upload Excel
+                                <span class="star">*</span>
+                            </label>
+
+                            <div class="col-sm-9">
+
+                                <input
+                                    type="file"
+                                    class="form-control"
+                                    id="riskFile"
+                                    accept=".xlsx">
+
+                                <small class="text-muted">
+                                    Only Excel (.xlsx) files are allowed.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    id="btnProceed"
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="uploadRisk()">
+
+                    Proceed
+
+                </button>
+
+                <button
+                    id="btnCancel"
+                    type="button"
+                    class="btn btn-secondary ms-2"
+                    onclick="cancelUpload()">
+
+                    Cancel
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+<!-- Toast -->
+<div class="toast position-fixed top-0 end-0 p-3 mt-5"
+     id="toastMsg"
+     style="z-index:9999!important;">
+
+    <div class="toast-body bg-success text-white"></div>
+
+</div>
+
+
+
+<script>
+
+$(document).ready(function(){
+
+});
+
+
+function validateFile(){
+
+    let fileInput=document.getElementById("riskFile");
+
+    if(fileInput.files.length===0){
+
+        showToast("Please select an Excel file.","bg-danger");
+        return false;
+    }
+
+    let file=fileInput.files[0];
+
+    let extension=file.name.split('.').pop().toLowerCase();
+
+    if(extension!="xlsx"){
+
+        showToast("Only Excel (.xlsx) files are allowed.","bg-danger");
+
+        fileInput.value="";
+
+        return false;
+    }
+
+    return true;
+
+}
+
+
+
+async function uploadRisk(){
+
+    if(!validateFile())
+        return;
+
+    let btn=document.getElementById("btnProceed");
+
+    btn.disabled=true;
+    btn.innerHTML="Uploading...";
+
+    let formData=new FormData();
+
+    formData.append(
+        "file",
+        document.getElementById("riskFile").files[0]
+    );
+
+    try{
+
+        const response=await axios.post(
+            "/uploadRisk/Proceed",
+            formData,
+            {
+                headers:{
+                    "Content-Type":"multipart/form-data"
+                }
+            }
+        );
+
+        console.log(response.data);
+
+        if(response.data.Error){
+
+            if(response.data.Error.Error==false){
+
+                showToast(
+                    response.data.Error.Error_message,
+                    "bg-success"
+                );
+
+            }
+            else{
+
+                showToast(
+                    response.data.Error.Error_message,
+                    "bg-danger"
+                );
+
+            }
+
+        }
+        else if(response.data.message){
+
+            showToast(
+                response.data.message,
+                "bg-success"
+            );
+
+        }
+        else{
+
+            showToast(
+                "Risk uploaded successfully.",
+                "bg-success"
+            );
+
+        }
+
+        document.getElementById("riskFile").value="";
+
+    }
+    catch(error){
+
+        console.log(error);
+
+        if(error.response &&
+           error.response.data &&
+           error.response.data.message){
+
+            showToast(
+                error.response.data.message,
+                "bg-danger"
+            );
+
+        }
+        else{
+
+            showToast(
+                "Failed to upload Excel file.",
+                "bg-danger"
+            );
+
+        }
+
+    }
+    finally{
+
+        btn.disabled=false;
+        btn.innerHTML="Proceed";
+
+    }
+
+}
+
+
+
+function cancelUpload(){
+
+    document.getElementById("riskFile").value="";
+
+}
+
+
+
+function showToast(msg,cls="bg-success"){
+
+    let toastEl=document.getElementById("toastMsg");
+
+    toastEl.querySelector(".toast-body").innerText=msg;
+
+    toastEl.querySelector(".toast-body").className=
+        "toast-body text-white "+cls;
+
+    new bootstrap.Toast(toastEl).show();
+
+}
+
+</script>
+
+{% endblock %}

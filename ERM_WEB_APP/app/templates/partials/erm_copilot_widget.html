@@ -1,0 +1,825 @@
+<!-- ========================================================= -->
+<!-- ERM COPILOT & AUTOMATION AGENT FLOATING CHAT WIDGET       -->
+<!-- ========================================================= -->
+
+<style>
+  /* Floating Action Button */
+  #erm-copilot-launcher {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 99999;
+    background: linear-gradient(135deg, #0d11fd 0%, #020264 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  #erm-copilot-launcher:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(13, 110, 253, 0.55);
+  }
+
+  #erm-copilot-launcher .copilot-badge {
+    background: #00ffaa;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: copilot-pulse 2s infinite;
+  }
+
+  @keyframes copilot-pulse {
+    0% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(0, 255, 170, 0.7);
+    }
+
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 6px rgba(0, 255, 170, 0);
+    }
+
+    100% {
+      transform: scale(0.95);
+      box-shadow: 0 0 0 0 rgba(0, 255, 170, 0);
+    }
+  }
+
+  /* Chat Window Drawer */
+  #erm-copilot-window {
+    position: fixed;
+    bottom: 84px;
+    right: 24px;
+    width: 440px;
+    height: 600px;
+    max-height: 84vh;
+    z-index: 99999;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(2, 2, 100, 0.25);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(2, 2, 100, 0.12);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    animation: copilot-slide-up 0.25s ease-out forwards;
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+
+  #erm-copilot-window.expanded {
+    width: 760px;
+    max-width: 92vw;
+    height: 680px;
+    max-height: 88vh;
+  }
+
+  @keyframes copilot-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Header */
+  .copilot-header {
+    background: linear-gradient(135deg, #020264 0%, #0d6efd 100%);
+    color: #fff;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+
+  .copilot-header h6 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .copilot-header .sub-text {
+    font-size: 11px;
+    opacity: 0.85;
+    margin: 0;
+  }
+
+  .copilot-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .copilot-btn-icon {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: background 0.2s;
+  }
+
+  .copilot-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Messages Body */
+  .copilot-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    background: #f4f6fa;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chat-msg {
+    max-width: 92%;
+    padding: 12px 15px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    word-break: break-word;
+  }
+
+  .chat-msg.bot {
+    align-self: flex-start;
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    width: calc(100% - 10px);
+    max-width: 100%;
+  }
+
+  .chat-msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #0d6efd 0%, #020264 100%);
+    color: #ffffff;
+    font-weight: 500;
+    box-shadow: 0 3px 8px rgba(13, 110, 253, 0.25);
+  }
+
+  /* Executive Table Styling */
+  .copilot-table-wrapper {
+    overflow-x: auto;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #d0d7de;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    background: #ffffff;
+  }
+
+  .copilot-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  .copilot-table th {
+    background: #020264;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 8px 10px;
+    border-bottom: 2px solid #01014a;
+    white-space: nowrap;
+  }
+
+  .copilot-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+
+  .copilot-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .copilot-table tr:hover {
+    background: #edf2f7;
+  }
+
+  /* Headings in Bot Messages */
+  .copilot-h2,
+  .copilot-h3 {
+    color: #020264;
+    font-weight: 700;
+    margin: 10px 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+  }
+
+  .copilot-h2 {
+    font-size: 14px;
+  }
+
+  .copilot-h3 {
+    font-size: 13px;
+  }
+
+  /* Badges & Pills */
+  .copilot-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 10.5px;
+    font-weight: 700;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  .badge-critical {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+
+  .badge-high {
+    background: #ffedd5;
+    color: #c2410c;
+    border: 1px solid #fdba74;
+  }
+
+  .badge-medium {
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fde047;
+  }
+
+  .badge-low {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+  }
+
+  .badge-info {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+  }
+
+  /* Callout Blockquotes */
+  .copilot-callout {
+    background: #f0fdf4;
+    border-left: 4px solid #16a34a;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: #14532d;
+  }
+
+  .copilot-callout.note {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+    color: #1e3a8a;
+  }
+
+  .copilot-divider {
+    border: 0;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 10px 0;
+  }
+
+  .copilot-list {
+    margin: 6px 0 8px 18px;
+    padding: 0;
+  }
+
+  .copilot-list li {
+    margin-bottom: 4px;
+  }
+
+  .copilot-code {
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Quick Suggestion Chips */
+  .copilot-chips {
+    padding: 8px 12px;
+    background: #ffffff;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .copilot-chip {
+    background: #f0f4ff;
+    color: #020264;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copilot-chip:hover {
+    background: #020264;
+    color: #fff;
+    border-color: #020264;
+  }
+
+  /* Interactive Inline Action Buttons (Wizard Chips) */
+  .copilot-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f0f4ff;
+    color: #020264;
+    border: 1.5px solid #0d6efd;
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: 4px 6px 4px 0;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.1);
+  }
+
+  .copilot-action-btn:hover {
+    background: #020264;
+    color: #ffffff;
+    border-color: #020264;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(2, 2, 100, 0.25);
+  }
+
+  .copilot-action-btn.btn-confirm {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #10b981;
+  }
+
+  .copilot-action-btn.btn-confirm:hover {
+    background: #059669;
+    color: #ffffff;
+    border-color: #047857;
+  }
+
+  .copilot-action-btn.btn-cancel {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #f87171;
+  }
+
+  .copilot-action-btn.btn-cancel:hover {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #b91c1c;
+  }
+
+  /* Footer & Input */
+  .copilot-footer {
+    padding: 10px 12px;
+    background: #ffffff;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 8px;
+  }
+
+  .copilot-footer input {
+    flex: 1;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  .copilot-footer input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+  }
+
+  .copilot-footer button {
+    background: #020264;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .copilot-footer button:hover {
+    background: #0d6efd;
+    transform: scale(1.05);
+  }
+</style>
+
+<!-- Floating Launcher Button -->
+<button id="erm-copilot-launcher" onclick="toggleERMCopilot()" title="Open ERM AI Copilot">
+  <span class="copilot-badge"></span>
+  <span>🛡️ ERM Copilot</span>
+</button>
+
+<!-- Chat Window Drawer -->
+<div id="erm-copilot-window">
+  <div class="copilot-header">
+    <div>
+      <h6>🛡️ ERM Risk Copilot <span
+          style="font-size:10px; font-weight:normal; background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:10px;">AI
+          v2.0</span></h6>
+      <p class="sub-text">Connected to MassERS Knowledge Base</p>
+    </div>
+    <div class="copilot-header-actions">
+      <button class="copilot-btn-icon" onclick="toggleERMExpand()" title="Expand / Shrink Window">⛶</button>
+      <button class="copilot-btn-icon" onclick="toggleERMCopilot()" title="Close Copilot">✕</button>
+    </div>
+  </div>
+
+  <div class="copilot-body" id="erm-chat-body">
+    <div class="chat-msg bot">
+      👋 <b>Welcome! I am your ERM Risk Intelligence Copilot.</b><br><br>
+      I can help you search the <b>MassERS Risk Register</b> in real time, draft risk mitigation and treatment plans,
+      and track pending or overdue action items.<br><br>
+      <i>Try one of the quick prompts below or type your question:</i>
+    </div>
+  </div>
+
+  <!-- Quick Suggestion Chips Container -->
+  <div class="copilot-chips" id="copilot-chips-container">
+    <button class="copilot-chip" onclick="sendQuickPrompt('Show top open high-severity risks in the plant')">🔥 High
+      Risks</button>
+    <button class="copilot-chip" onclick="sendQuickPrompt('Which risk action plans are overdue or pending?')">⏰ Overdue
+      Actions</button>
+    <button class="copilot-chip"
+      onclick="sendQuickPrompt('Draft a risk mitigation plan for crude pump seal failure')">✍️ Draft Treatment</button>
+    <button class="copilot-chip" onclick="sendQuickPrompt('Give department-wise risk profile summary')">📊 Department
+      Summary</button>
+  </div>
+
+  <div class="copilot-footer">
+    <input type="text" id="erm-chat-input" placeholder="Ask about risks, treatments, actions..."
+      onkeypress="handleERMKeyPress(event)" />
+    <button onclick="sendERMMessage()" title="Send">➤</button>
+  </div>
+</div>
+
+<script>
+  function renderRoleSpecificChips() {
+    const container = document.getElementById('copilot-chips-container');
+    if (!container) return;
+
+    let role = "";
+    if (typeof APP_DATA !== "undefined" && APP_DATA) {
+      role = (APP_DATA.userType || APP_DATA.role_name || "").toLowerCase();
+    }
+
+    let chips = [];
+    if (role.includes("owner")) {
+      chips = [
+        { label: "💾 Save Risk as Draft", prompt: "Save this drafted risk into database as Draft for Refining department" },
+        { label: "✍️ Draft Treatment Plan", prompt: "Draft an inherent risk assessment for Crude Distillation Column Overhead Pipe Corrosion with high H2S concentration" },
+        { label: "🎯 Assess Score (4x5)", prompt: "Assess a risk with likelihood 4 and impact 5" },
+        { label: "⏰ My Overdue Actions", prompt: "Which risk action plans are overdue or pending?" },
+        { label: "🔍 Search Plant Risks", prompt: "Search risks related to gas compressor vibration" }
+      ];
+    } else if (role.includes("function") || role.includes("head") && !role.includes("risk head")) {
+      chips = [
+        { label: "📋 Pending FH Approvals", prompt: "Show all risks currently pending Functional Head approval" },
+        { label: "📊 Department Summary", prompt: "Give department-wise risk profile summary" },
+        { label: "⏰ Overdue Actions", prompt: "Which risk action plans are overdue or pending?" },
+        { label: "✍️ Draft Mitigation", prompt: "Draft a risk treatment for H2S toxic gas release" }
+      ];
+    } else if (role.includes("manager")) {
+      chips = [
+        { label: "🟣 Pending RM Validation", prompt: "Show risks awaiting Risk Manager validation review" },
+        { label: "📊 Enterprise Summary", prompt: "Give department-wise risk profile summary" },
+        { label: "⏰ Overdue Action Tracking", prompt: "Which risk action plans are overdue or pending?" },
+        { label: "📜 Audit Trail RSK-REF-001", prompt: "Show audit trail and history for RSK-REF-001" }
+      ];
+    } else if (role.includes("risk head") || role.includes("super admin") || role.includes("admin")) {
+      chips = [
+        { label: "👑 Final Approval Queue", prompt: "Show all risks awaiting final Risk Head sign-off" },
+        { label: "📊 Enterprise Risk Fleet", prompt: "Give department-wise risk profile summary" },
+        { label: "📜 Audit Trail RSK-REF-001", prompt: "Show audit trail and history for RSK-REF-001" },
+        { label: "🔥 Critical Plant Hazards", prompt: "Show top open high-severity risks in the plant" }
+      ];
+    } else if (role.includes("auditor")) {
+      chips = [
+        { label: "📜 Audit Trail: RSK-REF-001", prompt: "Show audit trail and history for RSK-REF-001" },
+        { label: "🔍 Approval History RSK-GAS-002", prompt: "Show approval history and remarks for RSK-GAS-002" },
+        { label: "⏰ Overdue Compliance", prompt: "Which risk action plans are overdue or pending?" },
+        { label: "📊 Department Heatmap", prompt: "Give department-wise risk profile summary" }
+      ];
+    } else {
+      chips = [
+        { label: "🔥 High Risks", prompt: "Show top open high-severity risks in the plant" },
+        { label: "⏰ Overdue Actions", prompt: "Which risk action plans are overdue or pending?" },
+        { label: "✍️ Draft Treatment", prompt: "Draft a risk mitigation plan for crude pump seal failure" },
+        { label: "📊 Department Summary", prompt: "Give department-wise risk profile summary" }
+      ];
+    }
+
+    container.innerHTML = "";
+    chips.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = "copilot-chip";
+      btn.textContent = c.label;
+      btn.onclick = () => sendQuickPrompt(c.prompt);
+      container.appendChild(btn);
+    });
+  }
+
+  function toggleERMCopilot() {
+    const win = document.getElementById('erm-copilot-window');
+    if (win.style.display === 'none' || win.style.display === '') {
+      win.style.display = 'flex';
+      renderRoleSpecificChips();
+      document.getElementById('erm-chat-input').focus();
+    } else {
+      win.style.display = 'none';
+    }
+  }
+
+  function toggleERMExpand() {
+    const win = document.getElementById('erm-copilot-window');
+    win.classList.toggle('expanded');
+  }
+
+  function handleERMKeyPress(e) {
+    if (e.key === 'Enter') {
+      sendERMMessage();
+    }
+  }
+
+  function sendQuickPrompt(text) {
+    document.getElementById('erm-chat-input').value = text;
+    sendERMMessage();
+  }
+
+  // Robust Markdown & Executive Table Renderer
+  function renderExecutiveMarkdown(markdown) {
+    if (!markdown) return 'No response received.';
+
+    let lines = markdown.split('\n');
+    let out = [];
+    let inTable = false;
+    let tableRows = [];
+    let inList = false;
+    let listType = '';
+
+    function closeTable() {
+      if (!inTable) return;
+      if (tableRows.length > 0) {
+        let html = '<div class="copilot-table-wrapper"><table class="copilot-table">';
+        let headerRow = tableRows[0];
+        html += '<thead><tr>';
+        headerRow.forEach(cell => {
+          html += `<th>${cell.trim()}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        for (let i = 1; i < tableRows.length; i++) {
+          html += '<tr>';
+          tableRows[i].forEach(cell => {
+            html += `<td>${cell.trim()}</td>`;
+          });
+          html += '</tr>';
+        }
+        html += '</tbody></table></div>';
+        out.push(html);
+      }
+      inTable = false;
+      tableRows = [];
+    }
+
+    function closeList() {
+      if (!inList) return;
+      out.push(listType === 'ol' ? '</ol>' : '</ul>');
+      inList = false;
+      listType = '';
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+
+      // Check Table Row
+      if (line.startsWith('|') && line.endsWith('|')) {
+        closeList();
+        // Check if it's separator row |---|---|
+        let isSep = /^\|(\s*[-:]+\s*\|)+$/.test(line);
+        if (isSep) {
+          continue; // Skip separator line
+        }
+        let cells = line.split('|').slice(1, -1);
+        if (!inTable) {
+          inTable = true;
+          tableRows = [cells];
+        } else {
+          tableRows.push(cells);
+        }
+        continue;
+      } else {
+        closeTable();
+      }
+
+      // Check Headings
+      if (line.startsWith('### ')) {
+        closeList();
+        out.push(`<h6 class="copilot-h3">${line.substring(4)}</h6>`);
+        continue;
+      }
+      if (line.startsWith('## ') || line.startsWith('# ')) {
+        closeList();
+        let title = line.startsWith('## ') ? line.substring(3) : line.substring(2);
+        out.push(`<h5 class="copilot-h2">${title}</h5>`);
+        continue;
+      }
+
+      // Check Blockquote / Notes
+      if (line.startsWith('> ')) {
+        closeList();
+        out.push(`<div class="copilot-callout note">${line.substring(2)}</div>`);
+        continue;
+      }
+
+      // Check Dividers
+      if (line === '---' || line === '***' || line === '___') {
+        closeList();
+        out.push('<hr class="copilot-divider" />');
+        continue;
+      }
+
+      // Check Ordered List (1. ...)
+      let olMatch = line.match(/^(\d+)\.\s+(.*)$/);
+      if (olMatch) {
+        if (!inList || listType !== 'ol') {
+          closeList();
+          inList = true;
+          listType = 'ol';
+          out.push('<ol class="copilot-list">');
+        }
+        out.push(`<li>${olMatch[2]}</li>`);
+        continue;
+      }
+
+      // Check Unordered List (- ... or * ...)
+      let ulMatch = line.match(/^[-*]\s+(.*)$/);
+      if (ulMatch) {
+        if (!inList || listType !== 'ul') {
+          closeList();
+          inList = true;
+          listType = 'ul';
+          out.push('<ul class="copilot-list">');
+        }
+        out.push(`<li>${ulMatch[1]}</li>`);
+        continue;
+      }
+
+      // Normal text
+      closeList();
+      if (line === '') {
+        out.push('<br>');
+      } else {
+        out.push(`<p style="margin:4px 0;">${line}</p>`);
+      }
+    }
+
+    closeTable();
+    closeList();
+
+    let fullHtml = out.join('');
+
+    // Inline formatting: Bold, Code, Badges, and Interactive Action Buttons
+    fullHtml = fullHtml
+      .replace(/\[btn-confirm:(.*?)\|(.*?)\]/g, (match, label, prompt) => {
+        const safePrompt = prompt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return `<button class="copilot-action-btn btn-confirm" onclick="sendQuickPrompt('${safePrompt}')">${label}</button>`;
+      })
+      .replace(/\[btn-cancel:(.*?)\|(.*?)\]/g, (match, label, prompt) => {
+        const safePrompt = prompt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return `<button class="copilot-action-btn btn-cancel" onclick="sendQuickPrompt('${safePrompt}')">${label}</button>`;
+      })
+      .replace(/\[btn:(.*?)\|(.*?)\]/g, (match, label, prompt) => {
+        const safePrompt = prompt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return `<button class="copilot-action-btn" onclick="sendQuickPrompt('${safePrompt}')">${label}</button>`;
+      })
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code class="copilot-code">$1</code>')
+      .replace(/\[CRITICAL\]/gi, '<span class="copilot-badge badge-critical">CRITICAL</span>')
+      .replace(/\[HIGH\]/gi, '<span class="copilot-badge badge-high">HIGH</span>')
+      .replace(/\[MEDIUM\]/gi, '<span class="copilot-badge badge-medium">MEDIUM</span>')
+      .replace(/\[LOW\]/gi, '<span class="copilot-badge badge-low">LOW</span>');
+
+    return fullHtml;
+  }
+
+  async function sendERMMessage() {
+    const input = document.getElementById('erm-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const chatBody = document.getElementById('erm-chat-body');
+
+    // Append User Message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'chat-msg user';
+    userDiv.textContent = msg;
+    chatBody.appendChild(userDiv);
+    input.value = '';
+
+    // Append Typing Indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-msg bot';
+    typingDiv.id = 'copilot-typing';
+    typingDiv.innerHTML = '<i>⚡ Analyzing MassERS database & synthesizing insights...</i>';
+    chatBody.appendChild(typingDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    try {
+      // Extract Logged-in User RBAC Context from Flask APP_DATA
+      let rbacUser = "erm_portal_user";
+      let rbacRole = "";
+      let rbacDeptId = null;
+      let rbacDeptName = "";
+
+      if (typeof APP_DATA !== "undefined" && APP_DATA) {
+        rbacUser = APP_DATA.userId || APP_DATA.user || APP_DATA.log_id || APP_DATA.email || (APP_DATA.fname ? `${APP_DATA.fname} ${APP_DATA.lname}` : "erm_portal_user");
+        rbacRole = APP_DATA.userType || APP_DATA.role_name || "";
+        rbacDeptId = APP_DATA.userDept || APP_DATA.dept_id || null;
+        rbacDeptName = APP_DATA.dept_name || APP_DATA.department || "";
+      }
+
+      // Direct call to MASS-QA / ERM API with NIST RBAC parameters
+      const response = await fetch('/api/erm/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: msg,
+          user_id: String(rbacUser),
+          role: rbacRole,
+          dept_id: rbacDeptId,
+          dept_name: rbacDeptName
+        })
+      });
+
+      const data = await response.json();
+      typingDiv.remove();
+
+      const botDiv = document.createElement('div');
+      botDiv.className = 'chat-msg bot';
+
+      botDiv.innerHTML = renderExecutiveMarkdown(data.answer || 'No response received.');
+      chatBody.appendChild(botDiv);
+    } catch (err) {
+      typingDiv.remove();
+      const errDiv = document.createElement('div');
+      errDiv.className = 'chat-msg bot';
+      errDiv.style.borderColor = '#dc3545';
+      errDiv.innerHTML = '<span style="color:#dc3545;">⚠️ Unable to connect to ERM Copilot service. Please ensure backend services are running.</span>';
+      chatBody.appendChild(errDiv);
+    }
+
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+</script>

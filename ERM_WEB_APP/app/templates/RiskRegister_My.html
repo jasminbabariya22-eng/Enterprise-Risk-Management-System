@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="generator" content="">
+    <title>PIL Risk Register</title>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.2/examples/sticky-footer-navbar/">
+
+
+<!-- <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+<link href="assets/css/main.css" rel="stylesheet">
+<link href="assets/css/font-awesome.min.css" rel="stylesheet"> -->
+<link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}"  rel="stylesheet">
+<link href="{{ url_for('static', filename='assets/css/main.css') }}"  rel="stylesheet">
+<link href="{{ url_for('static', filename='assets/css/font-awesome.min.css') }}"  rel="stylesheet">
+
+<!-- Axios -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+
+      .b-example-divider {
+        height: 3rem;
+        background-color: rgba(0, 0, 0, .1);
+        border: solid rgba(0, 0, 0, .15);
+        border-width: 1px 0;
+        box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+      }
+
+      .b-example-vr {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 100vh;
+      }
+
+      .bi {
+        vertical-align: -.125em;
+        fill: currentColor;
+      }
+
+      .nav-scroller {
+        position: relative;
+        z-index: 2;
+        height: 2.75rem;
+        overflow-y: hidden;
+      }
+
+      .nav-scroller .nav {
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 1rem;
+        margin-top: -1px;
+        overflow-x: auto;
+        text-align: center;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
+
+
+  </head>
+  <body class="d-flex flex-column h-100">
+    
+<header>
+  <!-- Fixed navbar -->
+  <nav class="navbar navbar-expand-md navbar-light fixed-top bg-light">
+    <div class="container-fluid">
+      <!-- <a class="navbar-brand" href="Dashboard.html"> <img src="assets/images/pil_logo.png" alt="" width="150" height="55"></a> -->
+       <a class="navbar-brand" href="Dashboard.html"> <img src="{{ url_for('static', filename='assets/images/pil_logo.png') }}"  alt="" width="150" height="55">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarCollapse">
+        <ul class="navbar-nav me-auto mb-2 mb-md-0">
+          <!-- <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#">Home</a>
+          </li> -->
+          <li class="nav-item text-center menubg">
+            <i class="fa fa-newspaper-o" aria-hidden="true"></i>
+            <a class="nav-link" href="RiskRegister.html">Risk Register</a>
+          </li>
+          <li class="nav-item text-center menubg">
+            <i class="fa fa-bullseye" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Objective</a>
+          </li>
+          <li class="nav-item text-center menubg">
+            <i class="fa fa-bar-chart" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Risk Treatments</a>
+          </li>
+           <li class="nav-item text-center menubg">
+            <i class="fa fa-suitcase" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Critical Assets</a>
+          </li>
+           <li class="nav-item text-center menubg">
+            <i class="fa fa-users" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Top 10 Risks</a>
+          </li>
+           <li class="nav-item text-center menubg">
+            <i class="fa fa-tachometer" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Risk Dashboard</a>
+          </li>
+           <li class="nav-item text-center menubg">
+            <i class="fa fa-pie-chart" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Risk Reporting</a>
+          </li>
+           <li class="nav-item text-center menubg">
+            <i class="fa fa-headphones" aria-hidden="true"></i>
+            <a class="nav-link" href="#">Help Center</a>
+          </li>
+
+          <!-- <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">Dropdown</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#">Action</a></li>
+              <li><a class="dropdown-item" href="#">Another action</a></li>
+              <li><a class="dropdown-item" href="#">Something else here</a></li>
+            </ul>
+          </li> -->
+
+        </ul>
+        <!-- <form class="d-flex" role="search">
+          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-success" type="submit">Search</button>
+        </form> -->
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Begin page content -->
+<main class="flex-shrink-0">
+  <div class="col-lg-12"><img src="{{ url_for('static', filename='assets/images/inner-banner.jpg') }}" alt="" class="img-fluid"></div>
+  <div class="container-fluid">
+    <div class="row mt-2 mb-2">
+      <div class="col-lg-6">
+    <h4>Risk Register</h4>
+      </div>
+<div class="col-lg-6" style="text-align: right;">
+  <button class="btn btn-gradient text-white" type="button">Export in Exel</button>
+   <button class="btn btn-gradient text-white" type="button">Add New</button>
+   </div>
+
+   </div>
+
+<div class="row">
+
+    <div class="col-lg-2">
+    <!-- <div class="col-lg-12">
+      <p>Function List</p>
+<ul>
+      <li>HR Risk</li>
+      <li>IT OT Risk</li>
+      <li>O$M Risk</li>
+      <li>ABC Risk</li>
+      <li>Commercial Risk</li>
+      <li>Finance Risk</li>
+</ul>
+    </div> -->
+
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-light">
+    <a class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+       <h5 class="mb-0">Function List</h5>
+    </a>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li class="nav-item">
+        <a href="#" class="nav-link tab-btn active" onclick="openTab(event,'div1')" aria-current="page">
+          <i class="fa fa-user-circle" aria-hidden="true"></i>
+          HR Risk
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link tab-btn" onclick="openTab(event,'div2')">
+          <i class="fa fa-recycle" aria-hidden="true"></i>
+          IT OT Risk
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link tab-btn" onclick="openTab(event,'div3')">
+          <i class="fa fa-cogs" aria-hidden="true"></i>
+          O$M Risk
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link tab-btn" onclick="openTab(event,'div4')">
+          <i class="fa fa-list" aria-hidden="true"></i>
+          ABC Risk
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link tab-btn" onclick="openTab(event,'div5')">
+          <i class="fa fa-industry" aria-hidden="true"></i>
+          Commercial Risk
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link tab-btn" onclick="openTab(event,'div6')">
+          <i class="fa fa-money" aria-hidden="true"></i>
+          Finance Risk
+        </a>
+      </li>
+    </ul>
+    <hr>
+    <button class="btn btn-gradient text-white">Export in Exel</button>
+    <!-- <div class="dropdown">
+      <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong>mdo</strong>
+      </a>
+      <ul class="dropdown-menu text-small shadow">
+        <li><a class="dropdown-item" href="#">New project...</a></li>
+        <li><a class="dropdown-item" href="#">Settings</a></li>
+        <li><a class="dropdown-item" href="#">Profile</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#">Sign out</a></li>
+      </ul>
+    </div>  -->
+  </div>
+
+  </div>
+
+<!-- Start Right Panel -->
+  <div class="col-lg-10">
+
+<div class="bd-example-snippet bd-code-snippet"> 
+
+<!--Start HR Risk-->
+  <div class="bd-example m-0 border-0 tab-content active" id="div1"> 
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+    <tr class="bg-secondary text-white">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Name</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Function Head</th>
+      <th scope="col">Risk Manager</th>
+      <th scope="col">Risk Head</th>
+      <th scope="col">Status</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Current Risk Level</th>
+      <th scope="col">Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>HR_0001</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>XXXX</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Medium</td>
+      <td>12-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>HR_0002</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>YYYY</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>1-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>HR_0003</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>8-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+   <tr>
+      <td>HR_0004</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+     <tr>
+      <td>HR_0005</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+<!--End HR Risk-->
+
+<!--Start IT OT Risk-->
+  <div class="bd-example m-0 border-0 tab-content" id="div2"> 
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+    <tr class="bg-secondary text-white">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Name</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Function Head</th>
+      <th scope="col">Risk Manager</th>
+      <th scope="col">Risk Head</th>
+      <th scope="col">Status</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Current Risk Level</th>
+      <th scope="col">Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ITOT_0001</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>XXXX</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Medium</td>
+      <td>12-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>ITOT_0002</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>YYYY</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>1-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>ITOT_0003</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>8-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+   <tr>
+      <td>ITOT_0004</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>ITOT_0005</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+<!--End IT OT Risk-->
+
+<!--Start O$M Risk-->
+  <div class="bd-example m-0 border-0 tab-content" id="div3"> 
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+    <tr class="bg-secondary text-white">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Name</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Function Head</th>
+      <th scope="col">Risk Manager</th>
+      <th scope="col">Risk Head</th>
+      <th scope="col">Status</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Current Risk Level</th>
+      <th scope="col">Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>O$M_0001</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>XXXX</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Medium</td>
+      <td>12-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>O$M_0002</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>YYYY</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>1-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>O$M_0003</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>8-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+   <tr>
+      <td>O$M_0004</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>O$M_0005</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+<!--End O$M Risk-->
+
+<!--Start ABC Risk-->
+  <div class="bd-example m-0 border-0 tab-content" id="div4"> 
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+    <tr class="bg-secondary text-white">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Name</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Function Head</th>
+      <th scope="col">Risk Manager</th>
+      <th scope="col">Risk Head</th>
+      <th scope="col">Status</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Current Risk Level</th>
+      <th scope="col">Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ABC_0001</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>XXXX</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Medium</td>
+      <td>12-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>ABC_0002</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>YYYY</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>1-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>ABC_0003</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>8-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+   <tr>
+      <td>ABC_0004</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>ABC_0005</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+<!--End ABC Risk-->
+
+<!--Start Commercial Risk-->
+  <div class="bd-example m-0 border-0 tab-content" id="div5"> 
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+    <tr class="bg-secondary text-white">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Name</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Function Head</th>
+      <th scope="col">Risk Manager</th>
+      <th scope="col">Risk Head</th>
+      <th scope="col">Status</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Current Risk Level</th>
+      <th scope="col">Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>COM_0001</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>XXXX</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Medium</td>
+      <td>12-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>COM_0002</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>YYYY</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>1-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>COM_0003</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>8-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+   <tr>
+      <td>COM_0004</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>COM_0005</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+</div>  
+<!--End Commercial Risk-->
+
+<!--Start Finance Risk-->
+  <div class="bd-example m-0 border-0 tab-content" id="div6"> 
+<table class="table table-striped table-hover table-bordered">
+  <thead>
+    <tr class="bg-secondary text-white">
+      <th scope="col">Risk ID</th>
+      <th scope="col">Risk Name</th>
+      <th scope="col">Risk Owner</th>
+      <th scope="col">Function Head</th>
+      <th scope="col">Risk Manager</th>
+      <th scope="col">Risk Head</th>
+      <th scope="col">Status</th>
+      <th scope="col">Inherent Risk Level</th>
+      <th scope="col">Current Risk Level</th>
+      <th scope="col">Date</th>
+      <th scope="col">Action</th>
+    </tr>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FIN_0001</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>XXXX</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Medium</td>
+      <td>12-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>FIN_0002</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>YYYY</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>Medium</td>
+      <td>High</td>
+      <td>1-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>FIN_0003</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Open</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>8-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+   <tr>
+      <td>FIN_0004</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+    <tr>
+      <td>FIN_0005</td>
+      <td>Recruitment And Hiring</td>
+      <td>Shruti N.</td>
+      <td>Shruti N.</td>
+      <td>ZZZZ</td>
+      <td>ABC</td>
+      <td>Closed</td>
+      <td>High</td>
+      <td>Low</td>
+      <td>4-Feb-2026</td>
+      <td align="center"><a href="#"><i class="fa fa-edit text-danger"></i></a> | <a href="#"><i class="fa fa-history text-primary"></i></a></td>
+    </tr>
+  </tbody>
+</table> 
+
+<div>
+<input type="hidden" id="id">
+
+  <label>Dpt</label>
+  <input type="text" name="username" id="Username" placeholder="Username" required>
+
+  <label>Dpt Details</label>
+  <input type="text" name="password" id="password" placeholder="password" required>
+
+  <label>first_name</label>
+  <input type="text" name="username" id="first_name" placeholder="first_name" required>
+
+  <label>last_name</label>
+  <input type="text" name="password" id="last_name" placeholder="last_name" required>
+
+  <button id="save_user" onclick="AddUser()">save</button>
+</div>
+<div>
+  <button id="getdpt" onclick="getdpt(10)">save</button>
+</div>
+<div>
+  <button id="Updatedpt" onclick="UpdateDptById()">UpdateDpt</button>
+</div>
+
+</div>  
+<!--End Finance Risk-->
+
+<style>
+    .tab-content {
+      display: none;
+      /* padding: 20px;
+      border: 1px solid #ccc;
+      margin-top: 10px; */
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: #ddd;
+      cursor: pointer;
+      margin-right: 5px;
+      font-weight: bold;
+    } */
+    .tab-btn { color:#000;}
+
+    .tab-btn.active {
+      background: #007bff;
+      color: #fff;
+    }
+
+  </style>
+
+<script>
+function openTab(evt, tabId) {
+
+  // hide all divs
+  document.querySelectorAll(".tab-content")
+    .forEach(div => div.classList.remove("active"));
+
+  // remove active color from all buttons
+  document.querySelectorAll(".tab-btn")
+    .forEach(btn => btn.classList.remove("active"));
+
+  // show selected div
+  document.getElementById(tabId).classList.add("active");
+
+  // active button color
+  evt.currentTarget.classList.add("active");
+}
+</script>
+
+</div>
+
+  </div>
+
+<!--End Right Panel-->
+
+</div>
+  </div>
+</main>
+
+<footer class="footer mt-auto py-3 bg-light">
+  <div class="container-fluid">
+    <span class="text-muted">© Copyright, Alethe Labs India Pvt Ltd.</span>
+  </div>
+</footer>
+
+    <!-- <script src="assets/js/bootstrap.bundle.min.js"></script> -->
+     <script src="{{ url_for('static', filename='assets/js/bootstrap.bundle.min.js') }}"></script>
+
+  </body>
+</html>
+<script>
+  function AddUser() {
+    alert("AddUser");
+    const dept_name = document.getElementById("Username").value;
+    const description = document.getElementById("password").value;
+    axios.get("/addnewdpt", {
+        params: { dept_name:dept_name, 
+                description:description }
+    })
+
+        .then(response => {
+               console.log("response", response);
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+  }
+
+  function getdpt(id) {
+    alert(id);
+    //const dept_id = 1;
+    //const description = document.getElementById("password").value;
+    axios.get("/getbyid", {
+        params: { dept_id:id }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+          alert(response.data.data.dept_name);
+          alert(response.data.data.description);
+          $("#id").val(response.data.data.id);
+          $("#Username").val(response.data.data.dept_name);
+          $("#password").val(response.data.data.description);
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+  }
+function UpdateDptByIdold(){
+    const id = document.getElementById("id").value;
+    const dept_name = document.getElementById("Username").value;
+    const description = document.getElementById("password").value;
+   axios.get("/UpdateDptById", {
+    
+        params: { dept_id:id, dptname:dept_name, dptdes:description }
+    })
+        .then(response => {
+               console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+          alert("upadte 200")
+          //alert(response.data.data.dept_name);
+          //alert(response.data.data.description);
+          //$("#Username").val(response.data.data.dept_name);
+          //$("#password").val(response.data.data.description);
+
+        } else {
+            showToast(response.data.Error.Error_message);
+        }
+        })
+        .catch(error => {
+            showToast("Failed to load categories");
+        })
+        .finally(() => {
+            //hideSpinner();
+        });
+}
+
+function UpdateDptById() {
+
+    const id = document.getElementById("id").value;
+    const dept_name = document.getElementById("Username").value;
+    const description = document.getElementById("password").value;
+
+    axios.post("/UpdateDptById", {
+        dept_id: id,
+        dptname: dept_name,
+        dptdes: description
+    })
+
+    .then(response => {
+
+        console.log("response", response);
+
+        if (response.data.Error.Error === false) {
+            alert("Update Success");
+        } 
+        else {
+            alert(response.data.Error.Error_message);
+        }
+
+    })
+    .catch(error => {
+        console.log(error);
+        alert("Update Failed");
+    });
+
+}
+
+</script>

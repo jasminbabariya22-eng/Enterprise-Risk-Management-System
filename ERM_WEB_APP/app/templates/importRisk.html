@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+</style>
+<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+        <!--begin::App Content Header-->
+        <div class="app-content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row">
+              <div class="col-sm-6">
+                <!-- <h3 class="mb-0">Risk Register</h3> -->
+                  <span style="float:left; margin-right:20px">Import Risk</span>
+        <!-- Title Icon Start -->
+        <span>
+            <a class="pl-5 navigate plus-icon-color disabled" href="#"><i class="bi bi-plus-lg" ></i></a>
+            <a class="pl-5 edit-icon-color disabled" href="#"><i class="bi bi-pencil-square" data-toggle="tooltip" data-p`lacement="top" title="" style="font-size: 15px;"></i></a>
+            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px;" data-original-title="Delete"></i></a>
+            <a class="pl-5 export-icon-color disabled" href="#" onclick="downloadExcel()"><i class="bi bi-file-earmark-fill" data-toggle="tooltip" data-placement="top" title="" style="font-size: 15px; " data-original-title="Export"></i></a>
+        </span>
+
+              </div>
+              <div class="col-sm-6">
+               
+              </div>
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::App Content Header-->
+        <!--begin::App Content-->
+        <div class="app-content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+          <!--Start HR Risk-->
+<div id="div1"> 
+ <div class="modal-body">
+    <div class="row">
+
+        <!-- Source Year -->
+        <div class="col-lg-6">
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label col-form-label-sm">
+                    Source Year <span class="star">*</span>
+                </label>
+                <div class="col-sm-8">
+                    <select class="form-control" id="sourceYear">
+                        <!-- <option value="">-- Select Year --</option>
+                        <option value="2024-2025">2024-2025</option>
+                        <option value="2025-2026">2025-2026</option>
+                        <option value="2026-2027">2026-2027</option>
+                        <option value="2026-2027">2027-2028</option> -->
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Destination Year -->
+        <div class="col-lg-6">
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label col-form-label-sm">
+                    Destination Year <span class="star">*</span>
+                </label>
+                <div class="col-sm-8">
+                    <select class="form-control" id="destinationYear">
+                        
+                    </select>
+                </div>
+            </div>
+        </div>
+         <div class="col-lg-6">
+            <div class="row mb-3">
+                <label class="col-sm-4 col-form-label col-form-label-sm">
+                    Function List
+                </label>
+                <div class="col-sm-8">
+                    <select class="form-control" id="functionlist">
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+        <button id="btn_save" class="btn btn-primary text-white" type="button" onclick="save()">Proceed</button>
+        <!-- <button type="button" id="btn_close_p" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+    </div>
+ </div>
+</div>
+
+<!-- Toast -->
+<div class="toast position-fixed top-0 end-0 p-3 mt-5" id="toastMsg" style="z-index:9999!important;">
+<div class="toast-body bg-success text-white"></div>
+</div>
+
+</div>  
+
+<style>
+  
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+   
+    .tab-btn { color:#000;}
+
+    .tab-btn.active {
+      background: #007bff!important;
+      color: #fff!important;
+    }
+
+  </style>
+  
+<script>
+  const APP_DATA = {{ session_data | tojson }};
+</script>
+<script>
+    $(document).ready(function () {
+    const currentYear = new Date().getFullYear();
+   // alert();
+    //$("#destinationYear").html(`
+    //    <option value="">-- Select Year --</option>
+    //    <option value="${currentYear}-${currentYear + 1}">${currentYear}-${currentYear + 1}</option>
+    //    <option value="${currentYear + 1}-${currentYear + 2}">${currentYear + 1}-${currentYear + 2}</option>
+    //`);
+    $("#destinationYear").html(`
+        <option value="">-- Select Year --</option>
+         <option value="${APP_DATA.financial_year}">${APP_DATA.financial_year}</option>
+    `);
+        
+    loadFinancialYears();
+    loadFunctionList();
+
+
+});
+
+async function loadFinancialYears() {
+    try {
+        const response = await axios.get("/risk-register/get-financial-years");
+
+        console.log("financial-years", response.data);
+
+        const sourceDDL = $("#sourceYear");
+
+        sourceDDL.empty();
+        sourceDDL.append('<option value="">-- Select Year --</option>');
+
+        if (response.data.data && Array.isArray(response.data.data)) {
+            //alert("2");
+            response.data.data.forEach(year => {
+                sourceDDL.append(
+                    `<option value="${year}">${year}</option>`
+                );
+            });
+        }
+
+    } catch (error) {
+        console.error("Error loading financial years:", error);
+        showToast("Failed to load financial years", "bg-danger");
+    }
+}
+
+
+async function loadFunctionList() {
+    try {
+        const response = await axios.get("/get_Department_all");
+
+        console.log("functionlist", response.data);
+
+        const sourceDDL = $("#functionlist");
+
+        sourceDDL.empty();
+        sourceDDL.append('<option value="">--All--</option>');
+
+        if (response.data.data && Array.isArray(response.data.data)) {
+
+        response.data.data.forEach(item => {
+        sourceDDL.append(
+            `<option value="${item.dept_short_name}">${item.dept_name}</option>`
+        );
+        });
+    }
+    } catch (error) {
+        console.error("Error loading financial years:", error);
+        showToast("Failed to load financial years", "bg-danger");
+    }
+}
+
+
+
+ function validate() {
+
+    if (!sourceYear.value || !destinationYear.value) {
+        showToast("Please select Source Year and Destination Year", "bg-danger");
+        return false;
+    }
+
+    return true;
+}
+
+
+
+async function save() {
+
+    if (!validate()) return;
+    const btn = document.getElementById("btn_save");
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+    const data = {
+        sourceYear: sourceYear.value,
+        destinationYear: destinationYear.value,
+        functionlist: $("#functionlist").val()
+    };
+    console.log("functionlist", data);
+    try {
+
+        const response = await axios.post('/importRisk/Proceed', data);
+
+        if (response.data.Error?.Error === false) {
+            showToast("Import risk successfully");
+            //sourceYear.value =response.data.data?.source_financial_year;
+            //destinationYear.value =response.data.data?.destination_financial_year;
+        } 
+        else {
+            console.log("response.data.Error?.Error_message", response.data.Error?.Error_message);
+            //console.log("response.data.Error", response.data.Error);
+            showToast(
+                response.data.Error?.Error_message,
+                "bg-danger"
+            );
+        }
+
+    } catch (error) {
+
+        console.error(error);
+        showToast("Failed to save record", "bg-danger");
+    }
+    finally {
+
+        btn.disabled = false;
+        btn.innerText = "Proceed";
+    }
+}
+
+
+function showToast(msg,cls="bg-success"){
+  let toastEl=document.getElementById('toastMsg');
+  toastEl.querySelector('.toast-body').innerText=msg;
+  toastEl.querySelector('.toast-body').className="toast-body text-white "+cls;
+  new bootstrap.Toast(toastEl).show();
+}
+
+
+</script>
+
+
+    </div>
+    <!--end::Container-->
+    </div>
+  </div>
+</div>
+ <!--end Modal-->
+      
+   
+{% endblock %}
