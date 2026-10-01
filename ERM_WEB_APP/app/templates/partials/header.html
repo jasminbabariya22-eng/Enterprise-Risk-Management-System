@@ -1,201 +1,158 @@
-
-  <!--begin::Header-->
-    
- <nav class="app-header navbar navbar-expand-lg navbar-dark menustrip">
-  <div class="container-fluid">
-    <!-- <a class="navbar-brand" href="#">Navbar</a> -->
-	<ul class="navbar-nav" role="navigation" aria-label="Navigation 1">
-	<li class="nav-item">
-              <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
-                <i class="bi bi-list"></i>
-              </a>
-            </li>
-			</ul>
-	
-	 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarCollapse">
-        <ul class="navbar-nav" style="width:100%">
-
-        <!-- <li class="nav-item">
-          <i class="fa fa-tachometer"></i>
-          <a class="nav-link" data-id="1" href="/dashboard">Dashboard</a>
-        </li> -->
-
+<!--begin::Header-->
+<nav class="app-header navbar navbar-expand-lg navbar-dark menustrip" style="background: #020264 !important; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); min-height: 56px;">
+  <div class="container-fluid d-flex align-items-center justify-content-between p-0">
+    <!-- Left: Hamburger + Menu Items -->
+    <div class="d-flex align-items-center">
+      <ul class="navbar-nav me-3" role="navigation" aria-label="Navigation 1">
         <li class="nav-item">
-          <i class="fa fa-newspaper-o"></i>
-          <a class="nav-link" data-id="2" href="/riskRegister">Risk Register</a>
+          <a class="nav-link text-white p-1" data-lte-toggle="sidebar" href="#" role="button" title="Toggle Sidebar">
+            <i class="bi bi-list fs-4"></i>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Main Navigation Links -->
+      <ul class="navbar-nav d-none d-lg-flex flex-row align-items-center" style="gap: 6px;">
+        <li class="nav-item">
+          <a class="nav-link text-white fw-semibold px-3 header-nav-link" data-id="2" href="/riskRegister">Risk Register</a>
         </li>
 
         <li class="nav-item dropdown">
-          <i class="fa fa-users"></i>
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">User Management</a>
-  <ul class="dropdown-menu">
-    <li><a class="dropdown-item" data-id="3" href="/users">Users</a></li>
-    <li><a class="dropdown-item" data-id="4" href="/userRole">User Role</a></li>
+          <a class="nav-link dropdown-toggle text-white fw-semibold px-3 header-nav-link" href="#" data-bs-toggle="dropdown">User Management</a>
+          <ul class="dropdown-menu shadow border-0" style="border-radius: 8px; font-size: 13.5px; margin-top: 6px;">
+            <li><a class="dropdown-item py-2" data-id="3" href="/users"><i class="bi bi-people me-2 text-primary"></i>Users</a></li>
+            <li><a class="dropdown-item py-2" data-id="4" href="/userRole"><i class="bi bi-shield-lock me-2 text-success"></i>User Role</a></li>
           </ul>
         </li>
 
         <li class="nav-item dropdown">
-          <i class="fa fa-suitcase"></i>
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">System Settings</a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" data-id="5" href="/department">Department</a></li>
-            <!-- <li><a class="dropdown-item" data-id="6" href="/status">Status</a></li> -->
-             <!-- <li><a class="dropdown-item" data-id="8" href="/ChangePassword">Change Password </a></li> -->
+          <a class="nav-link dropdown-toggle text-white fw-semibold px-3 header-nav-link" href="#" data-bs-toggle="dropdown">System Settings</a>
+          <ul class="dropdown-menu shadow border-0" style="border-radius: 8px; font-size: 13.5px; margin-top: 6px;">
+            <li><a class="dropdown-item py-2" data-id="5" href="/department"><i class="bi bi-building me-2 text-info"></i>Department</a></li>
           </ul>
         </li>
-        
+
         <li class="nav-item">
-          <i class="fa fa-newspaper-o"></i>
-          <a class="nav-link" data-id="7" href="/importRisk">Import Risk</a>
-        </li>
-		
-		<li class="nav-item">
-          <i class="fa fa-newspaper-o"></i>
-          <a class="nav-link" data-id="8" href="/uploadRisk">Upload Data</a>
+          <a class="nav-link text-white fw-semibold px-3 header-nav-link" data-id="7" href="/importRisk">Import Risk</a>
         </li>
 
-		  </ul>
+        <li class="nav-item">
+          <a class="nav-link text-white fw-semibold px-3 header-nav-link" data-id="8" href="/uploadRisk">Upload Data</a>
+        </li>
+      </ul>
+    </div>
 
-      <li class="nav-item d-flex align-items-center" style="white-space: nowrap;">
-          <span style="float:left;"><label class="form-control form-control-sm mb-0" id="card_on2"></label></span>
-      </li>
-
-		  <ul class="navbar-nav">
-		   <li class="nav-item">
-              <a class="nav-link" href="#" data-lte-toggle="fullscreen">
-                <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen"></i>
-                <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none"></i>
-              </a>
-            </li>
-			
-			<li class="nav-item dropdown1 user-menu">
-              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                
-                <i class="bi bi-person-circle"></i>
-                <!-- <span class="d-none d-md-inline">Alexander Pierce</span> -->
-              </a>
-              <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
-                <!--begin::User Image-->
-                <li class="user-header text-bg-primary--1 menustrip text-white">
-
-                 <p><i class="bi bi-person-circle"></i></p>
-                    <div id="card_user">Jimmy - Manager<br> </div>
-                    <small><div id="card_on"></div></small>
-              
-                </li>
-               
-                <!--begin::Menu Footer-->
-                <li class="user-footer">
-                 <a href="/logout" class="btn btn-outline-primary float-end">Sign out</a>
-                </li>
-                <!--end::Menu Footer-->
-              </ul>
-            </li>
-
-        </ul>
-
-
+    <!-- Right: FY Box, Fullscreen, User, Settings -->
+    <div class="d-flex align-items-center ms-auto" style="gap: 12px;">
+      <!-- Financial Year Pill Box -->
+      <div class="d-inline-flex align-items-center bg-white text-dark rounded px-2 py-1 shadow-sm header-fy-pill" title="Current Financial Year">
+        <i class="bi bi-calendar3 me-1" style="color: #020264; font-size: 14px;"></i>
+        <span id="card_on2" class="fw-bold" style="font-size: 12.5px; color: #020264; letter-spacing: 0.2px;">2026-2027</span>
       </div>
-	  
-		  
-	  </div>
-</nav>
 
-      <!--end::Header-->
+      <!-- Fullscreen Maximize -->
+      <a class="nav-link text-white p-1 d-flex align-items-center justify-content-center" href="#" data-lte-toggle="fullscreen" title="Toggle Fullscreen">
+        <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen" style="font-size: 15px;"></i>
+        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none; font-size: 15px;"></i>
+      </a>
+
+      <!-- User Profile Dropdown Pill -->
+      <div class="dropdown user-menu">
+        <a href="#" class="nav-link dropdown-toggle text-white d-flex align-items-center p-1 text-decoration-none" data-bs-toggle="dropdown" style="gap: 8px;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);">
+            <i class="bi bi-person-fill" style="font-size: 17px;"></i>
+          </div>
+          <span class="d-none d-md-inline fw-semibold text-nowrap" id="top_user_display_name" style="font-size: 13.5px;">ERM Admin</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 240px; border-radius: 10px; margin-top: 8px;">
+          <li class="px-3 py-3" style="background: #020264; color: #fff; border-radius: 10px 10px 0 0;">
+            <div class="d-flex align-items-center" style="gap: 10px;">
+              <i class="bi bi-person-circle fs-2"></i>
+              <div>
+                <div class="fw-bold text-nowrap" id="card_user">ERM Admin</div>
+                <small class="text-white-50 text-nowrap" id="card_role">System Administrator</small>
+              </div>
+            </div>
+          </li>
+          <li class="p-2">
+            <a href="/logout" class="dropdown-item rounded py-2 text-danger fw-medium d-flex align-items-center">
+              <i class="bi bi-power me-2"></i> Sign out
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Settings Shortcut -->
+      <a class="nav-link text-white p-1" href="/department" title="System Settings">
+        <i class="bi bi-gear fs-6"></i>
+      </a>
+    </div>
+  </div>
+</nav>
+<!--end::Header-->
+
+<style>
+  .header-nav-link {
+    font-size: 13.5px !important;
+    white-space: nowrap !important;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+  }
+
+  .header-nav-link:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+  }
+
+  .header-fy-pill {
+    white-space: nowrap !important;
+    height: 32px;
+    min-width: 105px;
+    user-select: none;
+  }
+</style>
+
 <script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
 <script>
   const APP_DATA = {{ session_data | tojson }};
 </script>
- <script>
+<script>
   let USER_MENU_IDS = [];
   document.addEventListener("DOMContentLoaded", async function () {
-  if (typeof APP_DATA !== "undefined") {
-    const el = document.getElementById("card_user");
-    const el_on = document.getElementById("card_on");
-    const el_on2 = document.getElementById("card_on2");
+    if (typeof APP_DATA !== "undefined" && APP_DATA) {
+      const el = document.getElementById("card_user");
+      const el_role = document.getElementById("card_role");
+      const topName = document.getElementById("top_user_display_name");
+      const el_on2 = document.getElementById("card_on2");
 
-    if (el) {
-      el.innerText = "Welcome " + (APP_DATA.fname || "") + " " + (APP_DATA.lname || "");
-      //el_on.innerText = "FY " + APP_DATA.financial_year;
-      el_on2.innerText = APP_DATA.financial_year;
+      const fullName = (APP_DATA.fname ? (APP_DATA.fname + " " + (APP_DATA.lname || "")) : (APP_DATA.userType || "ERM Admin"));
+      if (topName) topName.innerText = fullName;
+      if (el) el.innerText = fullName;
+      if (el_role) el_role.innerText = APP_DATA.userType || APP_DATA.role_name || "Enterprise User";
+      if (el_on2 && APP_DATA.financial_year) el_on2.innerText = APP_DATA.financial_year;
     }
-  }
-  //await validateusersrole(APP_DATA.roleid);
-  setSelectedMenus_Header(APP_DATA.menuIds);
-  // // CHECK IF ALREADY STORED
-  //   const storedMenus = sessionStorage.getItem("USER_MENU_IDS");
-
-  //   if (storedMenus) {
-  //       console.log("MENU FROM STORAGE");
-  //       USER_MENU_IDS = JSON.parse(storedMenus);
-  //       setSelectedMenus_Header(USER_MENU_IDS);
-  //   } else {
-  //       console.log("MENU FROM API");
-  //       await validateusersrole(APP_DATA.roleid);
-  //   }
-});
-
-async function validateusersrole(id) {
-    try {
-        const res = await axios.get(`/usersrole/${id}`);
-        const u = res.data.data;
-        console.log("Role Data:", u);
-        USER_MENU_IDS = u.menuids;
-        //alert("pk" + USER_MENU_IDS)
-        // STORE IN SESSION
-        sessionStorage.setItem(
-            "USER_MENU_IDS",
-            JSON.stringify(USER_MENU_IDS)
-        );
-        setSelectedMenus_Header(USER_MENU_IDS);
-    } catch (error) {
-        console.error(error);
+    if (typeof APP_DATA !== "undefined" && APP_DATA.menuIds) {
+      setSelectedMenus_Header(APP_DATA.menuIds);
     }
-}
+  });
 
-// $(document).ready(function(){
-//   //alert("page reloaded")
-//  console.log("session data", APP_DATA);
-//  validateusersrole(APP_DATA.roleid);
-// });
-
-// async function validateusersrole(id){
-//   const res = await axios.get(`/usersrole/${id}`);
-//   const u = res.data.data;
-//   console.log("Data Get  editusersrole:", u);
-//   setSelectedMenus_Header(u.menuids);
-// }
-
-function setSelectedMenus_Header(menuIds) {
-console.log("Applying Menus:", menuIds);
-    // HIDE ALL MENUS
+  function setSelectedMenus_Header(menuIds) {
+    if (!menuIds || !Array.isArray(menuIds)) return;
     document.querySelectorAll('[data-id]').forEach(el => {
-        el.style.display = 'none';
+      el.style.display = 'none';
     });
-
-    // SHOW ALLOWED MENUS
     menuIds.forEach(id => {
-        let el = document.querySelector(`[data-id="${id}"]`);
-        if (el) {
-            el.style.display = '';
-        }
+      let el = document.querySelector(`[data-id="${id}"]`);
+      if (el) el.style.display = '';
     });
-
-    // HIDE PARENT DROPDOWN IF NO CHILD VISIBLE
     document.querySelectorAll('.nav-item.dropdown').forEach(drop => {
-        const visibleChild =
-            drop.querySelector('.dropdown-item[style=""]');
-        if (!visibleChild) {
-            drop.style.display = 'none';
-        } else {
-            drop.style.display = '';
-        }
+      const visibleChild = drop.querySelector('.dropdown-item:not([style*="display: none"])');
+      if (!visibleChild) {
+        drop.style.display = 'none';
+      } else {
+        drop.style.display = '';
+      }
     });
-}
-
+  }
 </script>

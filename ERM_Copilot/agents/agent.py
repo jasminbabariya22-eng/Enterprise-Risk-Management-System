@@ -569,12 +569,56 @@ class ERMCopilotAgent(BaseAgent):
             answer = "\n".join(lines)
             return self._make_response(request, answer, "DAILY_BRIEFING")
 
-        # 0b. ROLE-SPECIFIC WELCOME GREETING & INTERACTIVE ACTION MENU
+        # 0b. ROLE-SPECIFIC WELCOME GREETING & CONVERSATIONAL SMALL TALK
         clean_prompt = " ".join(re.findall(r'[a-zA-Z0-9]+', lower_msg))
-        is_greeting = clean_prompt in ["hi", "hii", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "help", "menu", "start", "start copilot", "welcome"]
-        if is_greeting:
-            answer = self._get_role_specific_welcome(user_role, dept_name, is_enterprise_role)
-            return self._make_response(request, answer, "ROLE_WELCOME_MENU")
+        
+        greeting_patterns = [
+            "hi", "hii", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening",
+            "help", "menu", "start", "start copilot", "welcome", "how are you", "how are you doing",
+            "how do you do", "how r u", "hows it going", "how is it going", "whats up", "what is up",
+            "kaise ho", "kaisa hai", "namaste"
+        ]
+        is_greeting = any(clean_prompt == gp or clean_prompt.startswith(gp + " ") or clean_prompt.endswith(" " + gp) for gp in greeting_patterns) or clean_prompt in greeting_patterns
+
+        # Identity & Capabilities questions
+        is_identity_query = any(phrase in lower_msg for phrase in [
+            "who are you", "what can you do", "what are your capabilities", "tell me about yourself",
+            "what is your role", "what is erm copilot", "how can you help", "what do you do"
+        ])
+
+        # Appreciation & pleasantries
+        is_appreciation = clean_prompt in [
+            "thank you", "thanks", "thx", "thank u", "great", "awesome", "perfect", "good job",
+            "well done", "nice", "ok", "okay", "got it", "understood", "bye", "goodbye"
+        ]
+
+        if is_identity_query or is_greeting:
+            if any(q in lower_msg for q in ["how are you", "how are you doing", "how r u", "hows it going", "how is it going", "whats up"]):
+                answer = (
+                    f"### 👋 I'm doing great, thank you for asking!\n\n"
+                    f"I am your **ERM Risk Intelligence Copilot**, actively monitoring the Enterprise Risk Register for **{dept_name or 'Operations'}**.\n\n"
+                    f"Here is what I can assist you with right now:\n"
+                    f"- 🛡️ **Search & Track Risks:** Look up open high-severity risks or specific plant hazards.\n"
+                    f"- ✍️ **Draft Treatments:** Generate 4-tier industrial mitigation plans & assign Action Owners.\n"
+                    f"- 📊 **Assess & Score:** Calculate 5×5 Likelihood × Impact matrix ratings.\n"
+                    f"- 📥 **Approvals & Governance:** Review pending Stage 2 (FH), Stage 3 (RM), or Stage 4 (RH) approvals.\n\n"
+                    f"👉 *Try one of the quick actions below:*\n\n"
+                    f"[btn:🛡️ Show Top Open Risks|Show top open high-severity risks] "
+                    f"[btn:📝 Draft Mitigation Plan|Help draft a mitigation treatment plan for my risk] "
+                    f"[btn:📊 5×5 Risk Heatmap|Show 5x5 heatmap matrix]"
+                )
+                return self._make_response(request, answer, "CONVERSATIONAL_SMALL_TALK")
+            else:
+                answer = self._get_role_specific_welcome(user_role, dept_name, is_enterprise_role)
+                return self._make_response(request, answer, "ROLE_WELCOME_MENU")
+
+        elif is_appreciation:
+            answer = (
+                f"### 🛡️ You're very welcome!\n\n"
+                f"I'm here 24/7 to help you manage and mitigate risks across **{dept_name or 'Enterprise Operations'}**.\n\n"
+                f"Let me know whenever you need to search the register, draft a treatment plan, or verify approval queues."
+            )
+            return self._make_response(request, answer, "CONVERSATIONAL_APPRECIATION")
 
         # 0c. INTERACTIVE 5x5 RISK MATRIX HEATMAP
         elif any(w in lower_msg for w in ["heatmap", "5x5", "heat map", "risk matrix", "matrix heatmap", "distribution"]):
@@ -647,19 +691,41 @@ class ERMCopilotAgent(BaseAgent):
             dept_users = erm_db.get_department_action_owners(dept_id=filter_dept_id)
             raw_data = {"historical_treatments": hist_data, "available_department_personnel": dept_users}
 
-        # SEARCH RISKS
+        # SEARCH RISKS & HIGH SEVERITY LISTINGS
         else:
             intent = "SEARCH_RISK"
+            
+            # Check if query is asking for high-severity or critical risks
+            is_critical = any(w in lower_msg for w in ["critical risk", "critical risks", "view critical", "critical plant", "critical hazards"])
+            is_high_sev = is_critical or any(w in lower_msg for w in [
+                "high-severity", "high severity", "high risk", "high risks", "view high",
+                "top open", "top risk", "top risks", "top high", "critical plant hazards",
+                "top open high-severity risks in the plant", "top open high-severity risks"
+            ])
+            
             generic_fleet_triggers = [
                 "active risk register", "enterprise risk fleet", "risk register", "all risks",
                 "list risks", "show risks", "view risks", "risk fleet", "active risks",
                 "show all risks", "list all risks", "enterprise risks", "get all risks",
-                "critical plant hazards", "plant hazards", "fleet", "risk list"
+                "plant hazards", "fleet", "risk list", "department risks", "department risk register",
+                "show active risks in my department", "show active risk register"
             ]
-            clean_kw = msg.strip()
-            if any(trig in lower_msg for trig in generic_fleet_triggers) or len(clean_kw) <= 3:
-                clean_kw = None
-            raw_data = erm_db.search_risks(keyword=clean_kw, department=filter_dept_name, limit=10)
+
+            if is_critical:
+                raw_data = erm_db.search_risks(severity_level="critical", department=filter_dept_name, limit=10)
+            elif is_high_sev:
+                raw_data = erm_db.search_risks(severity_level="high_severity", department=filter_dept_name, limit=10)
+            elif any(trig in lower_msg for trig in generic_fleet_triggers) or len(lower_msg.strip()) <= 3:
+                raw_data = erm_db.search_risks(department=filter_dept_name, limit=10)
+            else:
+                # Extract clean topic/keyword
+                clean_kw = re.sub(
+                    r'^(show|search|find|view|list|get|look up|give me|check)\s+(me\s+)?(all\s+)?(the\s+)?(risks?|hazards?|items?)\s*(about|on|for|regarding|in)?\s*',
+                    '', lower_msg, flags=re.IGNORECASE
+                ).strip()
+                if not clean_kw or len(clean_kw) <= 2:
+                    clean_kw = None
+                raw_data = erm_db.search_risks(keyword=clean_kw, department=filter_dept_name, limit=10)
 
         user_scope = "Enterprise-Wide" if is_enterprise_role else f"Department: {dept_name or 'Assigned Unit'}"
 
@@ -715,11 +781,10 @@ class ERMCopilotAgent(BaseAgent):
                 f"I am your **AI Risk Intelligence Copilot**. I assist frontline engineers and department teams in formulating structured operational hazards, calculating 5×5 matrix scores, and tracking action follow-ups.\n\n"
                 f"🏢 **Assigned Department:** `{dept_str}`\n"
                 f"🛡️ **Governance Scope:** `5-Step Risk Registration & Mitigation Planning`\n\n"
-                f"👉 **Quick Actions for Risk Owner:**\n\n"
+                f"👉 **Quick Actions (3 Suggestions):**\n\n"
                 f"[btn:➕ Create New Risk|Create a new risk] "
-                f"[btn:📊 Calculate 5×5 Score|Calculate score for Likelihood 4 and Impact 4] "
-                f"[btn:📋 Department Risks|Show active risks in my department] "
-                f"[btn:⏰ Overdue Actions|Which risk action plans are overdue?]"
+                f"[btn:📝 Draft Mitigation Plan|Help draft a mitigation treatment plan for my risk] "
+                f"[btn:⏰ My Overdue Actions|Which risk action plans are overdue?]"
             )
 
         # 2. FUNCTIONAL HEAD
@@ -729,11 +794,10 @@ class ERMCopilotAgent(BaseAgent):
                 f"I am your **Stage 2 Governance AI Copilot**. I assist you with reviewing newly submitted department risks, technical mitigation adequacy assessments, and 1-click approvals.\n\n"
                 f"🏢 **Governed Department:** `{dept_str}`\n"
                 f"🛡️ **Governance Scope:** `Stage 2 Technical Review & Department Approval Queue`\n\n"
-                f"👉 **Quick Actions for Functional Head:**\n\n"
+                f"👉 **Quick Actions (3 Suggestions):**\n\n"
                 f"[btn:📥 Review Pending Approvals|Show pending approvals] "
-                f"[btn:📋 Department Risk Register|Show active risks in my department] "
-                f"[btn:🗺️ Department Heatmap|Show 5x5 heatmap matrix] "
-                f"[btn:👥 Action Owner Workload|Show department action owners and followups]"
+                f"[btn:📊 Department Summary|Provide department summary and risk profile] "
+                f"[btn:⏰ Overdue Action Items|Show overdue actions in department]"
             )
 
         # 3. RISK MANAGER
@@ -742,11 +806,10 @@ class ERMCopilotAgent(BaseAgent):
                 f"### 👋 Welcome, Risk Manager!\n"
                 f"I am your **Cross-Department Risk AI Advisor**. I assist you in Stage 3 audits, 4-tier matrix validation, enterprise risk aggregation, and mitigation adequacy verification.\n\n"
                 f"🏢 **Governance Scope:** `Multi-Department & Enterprise (Stage 3 Review Queue)`\n\n"
-                f"👉 **Quick Actions for Risk Manager:**\n\n"
+                f"👉 **Quick Actions (3 Suggestions):**\n\n"
                 f"[btn:📥 Stage 3 Audit Queue|Show pending Stage 3 approvals] "
-                f"[btn:🏢 Enterprise Risk Distribution|Show department risk summary] "
-                f"[btn:🗺️ 5×5 Risk Heatmap|Show 5x5 heatmap matrix] "
-                f"[btn:🔴 High Exposure Hazards|Show top open high-severity risks in the plant]"
+                f"[btn:🗺️ 5×5 Enterprise Heatmap|Show 5x5 heatmap matrix] "
+                f"[btn:⏱️ Treatment Bottlenecks|Identify overdue mitigation actions and treatment bottlenecks]"
             )
 
         # 4. RISK HEAD / CRO
@@ -755,11 +818,10 @@ class ERMCopilotAgent(BaseAgent):
                 f"### 👋 Welcome, Chief Risk Officer (Risk Head)!\n"
                 f"I am your **Executive AI Risk Advisor**. I assist you in Stage 4 final executive approvals, board-level risk profile summaries, plant exposure heatmaps, and high-impact escalations.\n\n"
                 f"🏛️ **Governance Scope:** `Enterprise-Wide (Stage 4 Final Executive Sign-off)`\n\n"
-                f"👉 **Executive Actions:**\n\n"
+                f"👉 **Executive Actions (3 Suggestions):**\n\n"
                 f"[btn:🏛️ Stage 4 Final Approvals|Show pending Stage 4 approvals] "
-                f"[btn:🗺️ 5×5 Enterprise Heatmap|Show 5x5 heatmap matrix] "
-                f"[btn:🔴 Critical Plant Hazards|Show top open high-severity risks in the plant] "
-                f"[btn:📊 Executive Summary|Show executive risk profile]"
+                f"[btn:📊 Executive Board Summary|Show executive risk profile] "
+                f"[btn:🔴 Critical Plant Hazards|Show top open high-severity risks in the plant]"
             )
 
         # 5. AUDITOR
@@ -768,10 +830,10 @@ class ERMCopilotAgent(BaseAgent):
                 f"### 👋 Welcome, Compliance Auditor!\n"
                 f"I am your **Audit & Regulatory Compliance AI Assistant**. I assist you in reconstructing immutable audit trails, verifying approval timestamps, and ensuring complete governance traceability.\n\n"
                 f"📜 **Governance Scope:** `Enterprise-Wide Audit Reconstruction & Evidence Verification`\n\n"
-                f"👉 **Audit Actions:**\n\n"
+                f"👉 **Audit Actions (3 Suggestions):**\n\n"
                 f"[btn:📜 Reconstruct Risk Audit Trail|Show audit trail for risk] "
                 f"[btn:✅ Approval Verification Logs|Show pending approvals] "
-                f"[btn:📋 Enterprise Risk Fleet|Show all risks in the register]"
+                f"[btn:📋 Compliance Register Overview|Show all risks in the register]"
             )
 
         # 6. MANAGEMENT / C-SUITE
@@ -780,7 +842,7 @@ class ERMCopilotAgent(BaseAgent):
                 f"### 👋 Welcome, Executive Management!\n"
                 f"I am your **Strategic Risk Intelligence Advisor**. I provide high-level enterprise risk exposure profiles, plant hazard summaries, and regulatory compliance metrics.\n\n"
                 f"📊 **Governance Scope:** `Board & Executive Governance Overview`\n\n"
-                f"👉 **Strategic Actions:**\n\n"
+                f"👉 **Strategic Actions (3 Suggestions):**\n\n"
                 f"[btn:📊 Executive Risk Summary|Show executive risk profile] "
                 f"[btn:🗺️ Plant Risk Heatmap|Show 5x5 heatmap matrix] "
                 f"[btn:🔴 Top Critical Exposures|Show top open high-severity risks in the plant]"
@@ -792,12 +854,10 @@ class ERMCopilotAgent(BaseAgent):
                 f"### 👋 Welcome to ERM Copilot!\n"
                 f"I am your **Enterprise Risk Management (ERM) AI Intelligence Agent**. I assist you with risk formulation, 5×5 matrix scoring, approval queues, audit trails, and mitigation workflows.\n\n"
                 f"🏢 **Current Scope:** `{dept_str}`\n\n"
-                f"👉 **Available Quick Actions:**\n\n"
+                f"👉 **Available Quick Actions (3 Suggestions):**\n\n"
                 f"[btn:➕ Create New Risk|Create a new risk] "
                 f"[btn:📥 Approval Queues|Show pending approvals] "
-                f"[btn:📊 Calculate 5×5 Score|Calculate score for Likelihood 4 and Impact 4] "
-                f"[btn:🗺️ 5×5 Risk Heatmap|Show 5x5 heatmap matrix] "
-                f"[btn:📋 Active Risk Register|Show active risk register]"
+                f"[btn:🗺️ 5×5 Risk Heatmap|Show 5x5 heatmap matrix]"
             )
 
     def _make_response(self, request: AgentRequest, answer_text: str, step_code: str) -> AgentResponse:
@@ -990,22 +1050,34 @@ class ERMCopilotAgent(BaseAgent):
                 f"{assignees_table}"
             )
 
-        # Default Search Table
-        lines = [
-            f"### 🛡️ Active Risk Register ({scope})\n",
-            "| Risk ID | Risk Name | Department | Status | Mitigation Summary |",
-            "| :--- | :--- | :--- | :--- | :--- |"
-        ]
+        # Default Search Output
         if isinstance(data, list) and len(data) > 0:
+            lines = [
+                f"### 🛡️ Active Risk Register ({scope})\n",
+                "| Risk ID | Risk Title & Description | Severity | Department | Current Status |",
+                "| :--- | :--- | :---: | :--- | :--- |"
+            ]
             for r in data:
                 rid = r.get("risk_id", "RSK-001")
                 title = r.get("risk_title") or r.get("risk_name") or "Operational Risk"
                 dept = r.get("department_name", "Enterprise")
-                mit = r.get("mitigation", "Standard operating controls")
-                lines.append(f"| `{rid}` | **{title}** | {dept} | ⚠️ Active | {mit} |")
+                l = r.get("inherent_likelihood", 3)
+                i = r.get("inherent_impact", 4)
+                score = r.get("inherent_score") or (l * i)
+                sev_badge = "`[CRITICAL]`" if score >= 15 else ("`[HIGH]`" if score >= 10 else ("`[MEDIUM]`" if score >= 5 else "`[LOW]`"))
+                st_code = r.get("risk_status", 1)
+                st_label = "Draft" if st_code == 1 else ("Submitted to FH" if st_code == 2 else ("FH Approved" if st_code == 3 else "Risk Head Approved"))
+                lines.append(f"| `{rid}` | **{title}** | {sev_badge} ({score}) | {dept} | ⚠️ {st_label} |")
+            return "\n".join(lines)
         else:
-            lines.append("| — | *No active risk records matched your search query in the current scope.* | — | — | — |")
-        return "\n".join(lines)
+            return (
+                f"### ℹ️ No Matching Risk Records Found\n\n"
+                f"No active risk items matched **\"{query.strip()}\"** within `{scope}`.\n\n"
+                f"👉 **Try one of the following actions:**\n\n"
+                f"[btn:📋 Show All Active Risks|Show all active risks in the register] "
+                f"[btn:➕ Create New Risk|Create a new risk] "
+                f"[btn:🗺️ 5×5 Risk Heatmap|Show 5x5 heatmap matrix]"
+            )
 
 
 erm_copilot_agent = ERMCopilotAgent()

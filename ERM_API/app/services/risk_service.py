@@ -27,7 +27,6 @@ from app.services.email_event_service import send_risk_created_email
 
 # Generate Risk ID
 def generate_risk_id(db: Session, dept_id: int):
-
     dept = db.query(Department).filter(
         Department.id == dept_id
     ).with_for_update().first()
@@ -35,27 +34,41 @@ def generate_risk_id(db: Session, dept_id: int):
     if not dept:
         raise Exception("Department not found")
 
+    if dept.last_risk_number is None:
+        dept.last_risk_number = 0
     dept.last_risk_number += 1
     number = dept.last_risk_number
 
-    risk_id = f"{dept.dept_short_name}-{str(number).zfill(4)}"
+    short_name = dept.dept_short_name or "RISK"
+    risk_id = f"{short_name}-{str(number).zfill(4)}"
 
     return risk_id
 
 
 # Type Conversion
 def to_int(val):
-    return int(val) if val not in [None, ""] else None
+    try:
+        return int(val) if val not in [None, ""] else None
+    except (ValueError, TypeError):
+        return None
 
 
 def to_float(val):
-    return float(val) if val not in [None, ""] else None
+    try:
+        return float(val) if val not in [None, ""] else None
+    except (ValueError, TypeError):
+        return None
 
 
 def to_datetime(val):
-#     from datetime import datetime
-# from sqlalchemy import desc
-    return datetime.fromisoformat(val) if val not in [None, ""] else None
+    if val in [None, ""]:
+        return None
+    try:
+        if isinstance(val, datetime):
+            return val
+        return datetime.fromisoformat(str(val))
+    except Exception:
+        return None
 
 
 def model_to_dict(obj):
@@ -64,15 +77,21 @@ def model_to_dict(obj):
 
 # Get Status ID
 def get_status_id(db: Session, status_name: str):
-    status = db.query(Status).filter(
-        Status.status_name == status_name,
-        Status.is_deleted == 0
-    ).first()
+    try:
+        status = db.query(Status).filter(
+            func.lower(Status.status_name) == func.lower(status_name),
+            Status.is_deleted == 0
+        ).first()
 
-    if not status:
-        raise Exception(f"Status '{status_name}' not found in mst_status")
+        if not status:
+            status = db.query(Status).filter(
+                Status.status_name.ilike(f"%{status_name}%"),
+                Status.is_deleted == 0
+            ).first()
 
-    return status.id
+        return status.id if status else None
+    except Exception:
+        return None
 
 
 def reset_risk_approvals(risk):
@@ -107,36 +126,55 @@ def create_update_risk(db: Session, data, current_user):
         register_data = data.risk_register
         desc_data = data.risk_description
         treatments = data.risk_treatments or []
-        user_type_name = current_user['user_type_name']
+        user_type_name = str(current_user.get('user_type_name') or current_user.get('user_type') or '')
         
-        pending_for_action = get_status_id(db,"Pending for Action")
-        opened_status = get_status_id(db,"Open")
+        now_dt = datetime.now(timezone.utc)
+        pending_for_action = get_status_id(db, "Pending for Action")
+        opened_status = get_status_id(db, "Open") or get_status_id(db, "Opened") or get_status_id(db, "New")
+
+        co_owner = to_int(register_data.risk_co_owner_id)
+        if co_owner is not None and co_owner <= 0:
+            co_owner = None
+
+        r_status = to_int(register_data.risk_status)
+        if not r_status or r_status <= 0:
+            draft_id = get_status_id(db, "Draft") or 1
+            submitted_id = get_status_id(db, "Submitted to Function Head") or 2
+            r_status = submitted_id if user_type_name.upper() == 'RISK OWNER' else draft_id
 
         # CREATE OR UPDATE RISK REGISTER
 
         if to_int(register_data.risk_register_id) == 0:
 
             risk_id = generate_risk_id(db, to_int(register_data.dept_id))
+            max_reg_id = db.query(func.max(RiskRegister.risk_register_id)).scalar() or 0
+            new_reg_id = max_reg_id + 1
 
             risk = RiskRegister(
+                risk_register_id=new_reg_id,
                 risk_id=risk_id,
                 risk_name=register_data.risk_name,
                 dept_id=to_int(register_data.dept_id),
                 risk_owner_id=to_int(register_data.risk_owner_id),
-                risk_co_owner_id=to_int(register_data.risk_co_owner_id),
+                risk_co_owner_id=co_owner,
                 financial_year=register_data.financial_year,
-                risk_status=to_int(register_data.risk_status),
-                risk_progress=register_data.risk_progress,
-                created_by=current_user["id"],
-                created_on=datetime.now(timezone.utc),
+                risk_status=r_status,
+                risk_progress=register_data.risk_progress or "0",
+                created_by=current_user.get("id", 1),
+                created_on=now_dt,
+                modified_by=current_user.get("id", 1),
+                modified_on=now_dt,
                 is_active=0,
                 is_deleted=0
             )
 
             db.add(risk)
             db.flush()
-            if risk.status.id == opened_status and user_type_name.upper() == 'RISK OWNER':
-                send_risk_created_email(db, risk.risk_register_id)
+            if opened_status and risk.risk_status == opened_status and user_type_name.upper() == 'RISK OWNER':
+                try:
+                    send_risk_created_email(db, risk.risk_register_id)
+                except Exception as ex_mail:
+                    pass
 
         else:
 
@@ -146,9 +184,6 @@ def create_update_risk(db: Session, data, current_user):
 
             if not risk:
                 raise ValueError("RiskRegister not found")
-            
-            # old_status = risk.risk_status
-            # old_risk_owner_id = risk.risk_owner_id
             
             if user_type_name.upper() == 'RISK OWNER':
                 risk.risk_head_approval_by = None
@@ -161,40 +196,29 @@ def create_update_risk(db: Session, data, current_user):
                 risk.risk_manager_approval_status = None
                 risk.risk_manager_approved_on = None
 
-                risk.function_head_status= None
+                risk.function_head_status = None
                 risk.risk_function_head_approval_by = None
                 risk.risk_function_head_approval_on = None
                 risk.risk_function_head_approval_remark = None
 
-                # if risk.status.id == opened_status:
-                #     send_risk_created_email(db, risk.risk_register_id)     # send email on risk creation or update
-            
-                # risk.risk_owner_id = to_int(register_data.risk_owner_id)
-                # risk.risk_status = to_int(register_data.risk_status)
-
-                # if (
-                #     user_type_name.upper() == "RISK OWNER"
-                #     and old_status == pending_for_action
-                # ):
-                #     send_risk_created_email(db, risk.risk_register_id)
-
             risk.risk_name = register_data.risk_name
             risk.dept_id = to_int(register_data.dept_id)
             risk.risk_owner_id = to_int(register_data.risk_owner_id)
-            risk.risk_co_owner_id = to_int(register_data.risk_co_owner_id)
+            risk.risk_co_owner_id = co_owner
             risk.financial_year = register_data.financial_year
-            risk.risk_status = to_int(register_data.risk_status)
-            risk.risk_progress = register_data.risk_progress
+            if to_int(register_data.risk_status):
+                risk.risk_status = to_int(register_data.risk_status)
+            risk.risk_progress = register_data.risk_progress or "0"
 
-            risk.modified_by = current_user["id"]
-            risk.modified_on = datetime.now(timezone.utc)
+            risk.modified_by = current_user.get("id", 1)
+            risk.modified_on = now_dt
             
-            if risk.status.id == opened_status and user_type_name.upper() == "RISK OWNER":
-                    send_risk_created_email(db, risk.risk_register_id)     # send email on risk creation or update
+            if opened_status and risk.risk_status == opened_status and user_type_name.upper() == "RISK OWNER":
+                try:
+                    send_risk_created_email(db, risk.risk_register_id)
+                except Exception as ex_mail:
+                    pass
             
-        #reset_risk_approvals(risk)
-
-
         # HISTORY - RISK REGISTER
 
         hist_register = RiskRegisterHist(
@@ -203,16 +227,16 @@ def create_update_risk(db: Session, data, current_user):
             risk_name=risk.risk_name,
             dept_id=risk.dept_id,
             risk_owner_id=risk.risk_owner_id,
-            risk_co_owner_id=risk.risk_co_owner_id,
+            risk_co_owner_id=co_owner,
             financial_year=risk.financial_year,
             risk_status=risk.risk_status,
             risk_progress=risk.risk_progress,
-            created_by=risk.created_by,
-            created_on=risk.created_on,
-            modified_by=risk.modified_by,
-            modified_on=risk.modified_on,
-            is_active=risk.is_active,
-            is_deleted=risk.is_deleted
+            created_by=risk.created_by or current_user.get("id", 1),
+            created_on=risk.created_on or now_dt,
+            modified_by=risk.modified_by or current_user.get("id", 1),
+            modified_on=risk.modified_on or now_dt,
+            is_active=risk.is_active or 0,
+            is_deleted=risk.is_deleted or 0
         )
 
         db.add(hist_register)
@@ -232,8 +256,11 @@ def create_update_risk(db: Session, data, current_user):
         ]):
 
             if to_int(desc_data.risk_description_id) == 0:
+                max_desc_id = db.query(func.max(RiskDescription.risk_description_id)).scalar() or 0
+                new_desc_id = max_desc_id + 1
 
                 description = RiskDescription(
+                    risk_description_id=new_desc_id,
                     risk_register_id=risk.risk_register_id,
                     risk_id=risk.risk_id,
                     risk_description=desc_data.risk_description,
@@ -242,8 +269,10 @@ def create_update_risk(db: Session, data, current_user):
                     mitigation=desc_data.mitigation,
                     current_risk_likelihood_id=to_int(desc_data.current_risk_likelihood_id),
                     current_risk_impact_id=to_int(desc_data.current_risk_impact_id),
-                    created_by=current_user["id"],
-                    created_on=datetime.now(timezone.utc),
+                    created_by=current_user.get("id", 1),
+                    created_on=now_dt,
+                    modified_by=current_user.get("id", 1),
+                    modified_on=now_dt,
                     is_deleted=0
                 )
 
@@ -267,10 +296,8 @@ def create_update_risk(db: Session, data, current_user):
                 description.current_risk_likelihood_id = to_int(desc_data.current_risk_likelihood_id)
                 description.current_risk_impact_id = to_int(desc_data.current_risk_impact_id)
 
-                description.modified_by = current_user["id"]
-                description.modified_on = datetime.now(timezone.utc)
-                
-                # reset_risk_approvals(risk)
+                description.modified_by = current_user.get("id", 1)
+                description.modified_on = now_dt
 
 
             # HISTORY DESCRIPTION
@@ -285,11 +312,11 @@ def create_update_risk(db: Session, data, current_user):
                 mitigation=description.mitigation,
                 current_risk_likelihood_id=description.current_risk_likelihood_id,
                 current_risk_impact_id=description.current_risk_impact_id,
-                created_by=description.created_by,
-                created_on=description.created_on,
-                modified_by=description.modified_by,
-                modified_on=description.modified_on,
-                is_deleted=description.is_deleted
+                created_by=description.created_by or current_user.get("id", 1),
+                created_on=description.created_on or now_dt,
+                modified_by=description.modified_by or current_user.get("id", 1),
+                modified_on=description.modified_on or now_dt,
+                is_deleted=description.is_deleted or 0
             )
 
             db.add(hist_desc)
@@ -303,26 +330,36 @@ def create_update_risk(db: Session, data, current_user):
 
             if desc_data and to_int(desc_data.risk_description_id) > 0:
                 
-                # #reset_risk_approvals(risk)
-                
                 db.query(RiskTreatment).filter(
                     RiskTreatment.risk_description_id == description.risk_description_id
                 ).delete()
 
-            for treatment in treatments:
+            max_treat_id = db.query(func.max(RiskTreatment.risk_treatment_id)).scalar() or 0
+
+            for t_idx, treatment in enumerate(treatments):
+                act_owner = to_int(treatment.action_owner_id)
+                if act_owner is None or act_owner <= 0:
+                    act_owner = to_int(register_data.risk_owner_id) or current_user.get("id", 1)
+
+                act_status = to_int(treatment.action_status_id)
+                if act_status is not None and act_status <= 0:
+                    act_status = None
 
                 new_treatment = RiskTreatment(
+                    risk_treatment_id=max_treat_id + t_idx + 1,
                     risk_register_id=risk.risk_register_id,
                     risk_description_id=description.risk_description_id,
                     risk_id=risk.risk_id,
                     action_plan=treatment.action_plan,
-                    action_owner_id=to_int(treatment.action_owner_id),
+                    action_owner_id=act_owner,
                     target_date=to_datetime(treatment.target_date),
-                    progress=treatment.progress or "0-0%",
-                    action_status_id=to_int(treatment.action_status_id),
-                    next_followup_date=to_datetime(treatment.next_followup_date),
-                    created_by=current_user["id"],
-                    created_on=datetime.now(timezone.utc),
+                    progress=treatment.progress or "0",
+                    action_status_id=act_status,
+                    next_followup_date=to_datetime(treatment.next_followup_date or treatment.target_date),
+                    created_by=current_user.get("id", 1),
+                    created_on=now_dt,
+                    modified_by=current_user.get("id", 1),
+                    modified_on=now_dt,
                     is_deleted=0
                 )
 
@@ -330,12 +367,6 @@ def create_update_risk(db: Session, data, current_user):
                 db.flush()
 
                 saved_treatments.append(new_treatment)
-                
-                
-                # AUTO UPDATE RISK STATUS → IN PROGRESS
-                #if len(saved_treatments) > 0:
-                #    in_progress_status = get_status_id(db, "In Progress")
-                #    risk.risk_status = in_progress_status
 
                 hist_treatment = RiskTreatmentHist(
                     risk_treatment_id=new_treatment.risk_treatment_id,
@@ -348,27 +379,16 @@ def create_update_risk(db: Session, data, current_user):
                     progress=new_treatment.progress,
                     action_status_id=new_treatment.action_status_id,
                     next_followup_date=new_treatment.next_followup_date,
-                    created_by=new_treatment.created_by,
-                    created_on=new_treatment.created_on,
-                    is_deleted=new_treatment.is_deleted
+                    created_by=new_treatment.created_by or current_user.get("id", 1),
+                    created_on=new_treatment.created_on or now_dt,
+                    modified_by=new_treatment.modified_by or current_user.get("id", 1),
+                    modified_on=new_treatment.modified_on or now_dt,
+                    is_deleted=new_treatment.is_deleted or 0
                 )
 
                 db.add(hist_treatment)
 
-        
-        # AUTO CALCULATE RISK PROGRESS
-        
-        # avg_progress = db.query(
-        #     func.avg(RiskTreatment.progress)
-        # ).filter(
-        #     RiskTreatment.risk_register_id == risk.risk_register_id,
-        #     RiskTreatment.is_deleted == 0
-        # ).scalar()
-
-        # risk.risk_progress = "0-0%"
-
         db.commit()
-        #send_risk_created_email(db, risk.risk_register_id)     # send email on risk creation or update
 
         return {
             "risk_register": model_to_dict(risk),

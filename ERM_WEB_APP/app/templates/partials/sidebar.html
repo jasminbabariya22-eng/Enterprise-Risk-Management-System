@@ -1,123 +1,114 @@
- <!--begin::Sidebar-->
-      <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="light">
-        <!--begin::Sidebar Brand-->
-        <!-- <div class="sidebar-brand">
-          <a href="./index.html" class="brand-link">
+<!--begin::Sidebar-->
+<aside class="app-sidebar bg-white shadow-sm" data-bs-theme="light" style="width: 250px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 56px);">
+  <!-- Sidebar Header -->
+  <div class="px-4 pt-3 pb-2">
+    <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 15px; letter-spacing: -0.2px;">Function List</h6>
+  </div>
 
-            <img
-              src="./assets/img/pil_logo.png"
-              alt="Logo"
-              class="brand-image opacity-75 shadow"
-            />
-            <span class="brand-text fw-light">PIL</span>
+  <!-- Function List Scrollable Area -->
+  <div class="sidebar-wrapper flex-grow-1" style="overflow-y: auto; padding: 6px 12px;">
+    <nav>
+      <ul class="nav flex-column" role="navigation" aria-label="Main navigation" style="gap: 4px;">
+        <!-- All Item -->
+        <li class="nav-item">
+          <a href="/risk_register/all" class="sidebar-func-link {% if active_dept|string == 'all' or not active_dept %}active{% endif %}" title="All Functions">
+            <span class="func-icon-wrap">
+              <i class="bi {% if active_dept|string == 'all' or not active_dept %}bi-circle-fill text-primary{% else %}bi-circle text-muted{% endif %}" style="font-size: 13px;"></i>
+            </span>
+            <span class="func-name">All</span>
           </a>
-        </div> -->
-        <!--end::Sidebar Brand-->
-        <!--begin::Sidebar Wrapper-->
-        <div class="sidebar-wrapper" style="height: 90vh; overflow: scroll;">
-          <nav>
-            <!--begin::Sidebar Menu-->
-            <ul
-              class="nav sidebar-menu flex-column"
-              data-lte-toggle="treeview"
-              role="navigation"
-              aria-label="Main navigation"
-              data-accordion="false"
-              id="navigation">
-              
-              <li class="nav-header menustrip text-white">Function List</li>
+        </li>
 
-		
-	      <li class="nav-item">
-    {% if usertype in privileged_roles %}
-        <a href="/risk_register/all"
-           class="nav-link {% if active_dept|string == 'all' %}active{% endif %}">
-    {% else %}
-        <a href="/risk_register/all"
-           class="nav-link
-                  {% if active_dept|string == 'all' %}active{% endif %}
-                  {% if usertype not in privileged_roles and 'all' != userdept %}disabled{% endif %}">
-    {% endif %}
+        <!-- Department / Function Items -->
+        {% for fn in functions %}
+          {% set dname = fn.dept_name|default('') %}
+          {% set icon_class = 'bi-folder2-open' %}
+          {% if 'finance' in dname|lower or 'commercial' in dname|lower %}
+            {% set icon_class = 'bi-wallet2' %}
+          {% elif 'gas' in dname|lower or 'processing' in dname|lower %}
+            {% set icon_class = 'bi-fire' %}
+          {% elif 'health' in dname|lower or 'safety' in dname|lower or 'hse' in dname|lower or 'environment' in dname|lower %}
+            {% set icon_class = 'bi-heart-pulse' %}
+          {% elif 'it' in dname|lower or 'information' in dname|lower or 'tech' in dname|lower %}
+            {% set icon_class = 'bi-display' %}
+          {% elif 'maintenance' in dname|lower or 'engineering' in dname|lower or 'mech' in dname|lower %}
+            {% set icon_class = 'bi-tools' %}
+          {% elif 'refining' in dname|lower or 'plant' in dname|lower or 'operation' in dname|lower %}
+            {% set icon_class = 'bi-buildings' %}
+          {% endif %}
 
-        <i class="bi {% if active_dept|string == 'all' %}
-                        bi-circle-fill text-success
-                     {% else %}
-                        bi-circle
-                     {% endif %}">
-        </i>
-
-        <p>All</p>
-    </a>
-</li>	
-              {% for fn in functions %}
-              <!-- <li>
-                  <a href="#">{{ fn.function_name }}</a>
-              </li> -->
-              <li class="nav-item">
-              {% if usertype in privileged_roles %}
-              <a href="/risk_register/{{fn.id}}" class="nav-link {% if active_dept|string == fn.id|string %}active{% endif %} ">
-              {%else%}
-              <a href="/risk_register/{{fn.id}}" class="nav-link {% if active_dept|string == fn.id|string %}active{% endif %} {% if usertype not in privileged_roles and fn.id != userdept %}
-              disabled
-              {% endif %}">
-              {% endif %}
-               <i class="bi {% if active_dept|string == fn.id|string %}
-                  bi-circle-fill text-success
-                  {% else %}
-                  bi-circle
-                  {% endif %}">
-               </i>
-              <p>{{fn.dept_name}}</p>
+          <li class="nav-item">
+            {% if usertype in privileged_roles %}
+              <a href="/risk_register/{{fn.id}}" class="sidebar-func-link {% if active_dept|string == fn.id|string %}active{% endif %}" title="{{ fn.dept_name }}">
+                <span class="func-icon-wrap"><i class="bi {{ icon_class }}"></i></span>
+                <span class="func-name">{{ fn.dept_name }}</span>
               </a>
-              </li>
-              {% endfor %}
-               
-  
-            </ul>
-            <!--end::Sidebar Menu-->
-          </nav>
+            {% else %}
+              <a href="/risk_register/{{fn.id}}" class="sidebar-func-link {% if active_dept|string == fn.id|string %}active{% endif %} {% if usertype not in privileged_roles and fn.id != userdept %}disabled opacity-50{% endif %}" title="{{ fn.dept_name }}">
+                <span class="func-icon-wrap"><i class="bi {{ icon_class }}"></i></span>
+                <span class="func-name">{{ fn.dept_name }}</span>
+              </a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
 
-          
-        </div>
-        <!--end::Sidebar Wrapper-->
+  <!-- Sidebar Footer: Sign Out -->
+  <div class="sidebar-footer p-3 border-top" style="border-color: #eef2f6 !important;">
+    <a class="d-flex align-items-center text-muted text-decoration-none fw-medium sidebar-signout" href="/logout" style="font-size: 13.5px; gap: 8px;">
+      <i class="bi bi-power" style="font-size: 16px;"></i>
+      <span>Sign out</span>
+    </a>
+  </div>
+</aside>
 
-        <div style="position: absolute; bottom: 0;;">
-            <ul style="list-style: none;"><li class="nav-item">
-                <a class="nav-link" style="color: #000;" href="/logout">
-                  <i  class="nav-icon bi bi-power"></i> Sign out
-                </a>
-              </li></ul></div>
-      </aside>
-      <!--end::Sidebar-->
+<style>
+  .sidebar-func-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    color: #334155;
+    font-size: 13.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
-     <style>
-    .nav-link.active {
-      background: #007bff!important;
-      color: #fff!important;
-    }
-    
+  .sidebar-func-link:hover {
+    background: #f1f5f9;
+    color: #020264;
+  }
+
+  .sidebar-func-link.active {
+    background: #eef2f8 !important;
+    color: #020264 !important;
+    font-weight: 600;
+  }
+
+  .sidebar-func-link .func-icon-wrap {
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #64748b;
+  }
+
+  .sidebar-func-link.active .func-icon-wrap {
+    color: #020264;
+  }
+
+  .sidebar-func-link .func-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-signout:hover {
+    color: #dc2626 !important;
+  }
 </style>
-<script>
-//   document.addEventListener("DOMContentLoaded", function () {
-
-//   const currentPath = window.location.pathname;
-
-//   document.querySelectorAll("#navigation .nav-link").forEach(link => {
-
-//     // set active based on URL
-//     if (link.getAttribute("href") === currentPath) {
-//       link.classList.add("active");
-//       currentDeptCode = link.dataset.dept;
-//       const icon = link.querySelector("i");
-//     if (icon) {
-//         icon.style.setProperty("color", "green", "important");
-//         icon.classList.remove("bi-circle");
-//         icon.classList.add("bi-circle-fill");
-//     }
-    
-//     }
-
-//   });
-
-// });
-</script>

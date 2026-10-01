@@ -58,11 +58,12 @@ class ERMDatabaseService:
         keyword: Optional[str] = None,
         department: Optional[str] = None,
         status: Optional[int] = None,
+        severity_level: Optional[str] = None,
         limit: int = 15
     ) -> List[Dict[str, Any]]:
-        """Search risk register entries with optional filters."""
+        """Search risk register entries with optional filters and severity bands."""
         # Tier 2 Cache Check
-        cached = erm_tool_cache.get("search_risks", keyword=keyword, department=department, status=status, limit=limit)
+        cached = erm_tool_cache.get("search_risks", keyword=keyword, department=department, status=status, severity=severity_level, limit=limit)
         if cached is not None:
             return cached
 
@@ -83,6 +84,7 @@ class ERMDatabaseService:
                     COALESCE(rd.mitigation, '') as mitigation,
                     COALESCE(rd.inherent_risk_likelihood_id, 3) as inherent_likelihood,
                     COALESCE(rd.inherent_risk_impact_id, 3) as inherent_impact,
+                    (COALESCE(rd.inherent_risk_likelihood_id, 3) * COALESCE(rd.inherent_risk_impact_id, 3)) as inherent_score,
                     COALESCE(u.first_name || ' ' || u.last_name, u.log_id, 'Risk Owner') as owner_name,
                     r.created_on
                 FROM {DB_SCHEMA}.risk_register r
@@ -105,8 +107,19 @@ class ERMDatabaseService:
             if status:
                 query += " AND r.risk_status = %s"
                 params.append(status)
+
+            if severity_level:
+                sev_lower = severity_level.lower()
+                if "crit" in sev_lower:
+                    query += " AND (COALESCE(rd.inherent_risk_likelihood_id, 3) * COALESCE(rd.inherent_risk_impact_id, 3)) >= 15"
+                elif "high" in sev_lower:
+                    query += " AND (COALESCE(rd.inherent_risk_likelihood_id, 3) * COALESCE(rd.inherent_risk_impact_id, 3)) >= 10"
+                elif "med" in sev_lower:
+                    query += " AND (COALESCE(rd.inherent_risk_likelihood_id, 3) * COALESCE(rd.inherent_risk_impact_id, 3)) BETWEEN 5 AND 9"
+                elif "low" in sev_lower:
+                    query += " AND (COALESCE(rd.inherent_risk_likelihood_id, 3) * COALESCE(rd.inherent_risk_impact_id, 3)) <= 4"
                 
-            query += " ORDER BY r.risk_register_id DESC LIMIT %s;"
+            query += " ORDER BY (COALESCE(rd.inherent_risk_likelihood_id, 3) * COALESCE(rd.inherent_risk_impact_id, 3)) DESC, r.risk_register_id DESC LIMIT %s;"
             params.append(limit)
             
             cur.execute(query, params)
@@ -115,7 +128,7 @@ class ERMDatabaseService:
             conn.close()
             formatted = [dict(r) for r in results]
             # Store in Tier 2 DB cache
-            erm_tool_cache.set("search_risks", formatted, ttl=300, keyword=keyword, department=department, status=status, limit=limit)
+            erm_tool_cache.set("search_risks", formatted, ttl=300, keyword=keyword, department=department, status=status, severity=severity_level, limit=limit)
             return formatted
         except Exception as e:
             logger.error(f"Error searching risks: {e}")

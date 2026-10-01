@@ -1,52 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
 
-<link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
- <!--begin::Third Party Plugin(Bootstrap Icons)-->
-    <link href="{{ url_for('static', filename='cdn/bootstrap-icons.min.css') }}" rel="stylesheet">
-    
-    <!--end::Third Party Plugin(Bootstrap Icons)-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - ERM Enterprise Risk Management</title>
 
-<link href="{{ url_for('static', filename='css/Login_main.css') }}"  rel="stylesheet">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<title>Login</title>
+  <!-- Bootstrap Icons & Bootstrap -->
+  <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='cdn/bootstrap-icons.min.css') }}" rel="stylesheet">
 
-<form method="post" action="/ERM" class="login100-form validate-form">
-    <div class="limiter">
-        <div class="container-login100">
-            <div class="wrap-login100" style="padding:0;">
-                <div class="login100-form validate-form wrap-login100" style="border-radius:0px">
-                    <div class="login100-form-avatar" style="overflow: visible; margin-bottom:26px;">
-                        <a href="/"><img src="{{ url_for('static', filename='assets/img/pil_logo.png') }}"  alt="" width="100"></a>
-                    </div>
-                    {% if error %}
-                    <div class="alert alert-danger py-2 px-3 mx-4 text-center" style="font-size:13px; border-radius:8px; background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; margin-bottom:15px;">
-                        ⚠️ {{ error }}
-                    </div>
-                    {% endif %}
-                    <div class="wrap-input100 validate-input" data-validate="Enter user name" style="margin-bottom:20px">
-                        <input class="input100" type="text" id="txtEmail" name="username" placeholder="User name" autocomplete="off" value="" required>
-                        <span class="focus-input100 icon2" data-placeholder=""><i class="bi bi-person"></i></span>
-                    </div>
-                    <div class="wrap-input100 validate-input" data-validate="Enter password" style="margin-bottom:20px">
-                        <input class="input100" type="password" id="txtPassword" name="password" placeholder="Password" autocomplete="new-password" value="" required>
-                        <span class="focus-input100 icon2" data-placeholder=""><i class="bi bi-lock"></i></span>
-                    </div>
-                    <div class="container-login100-form-btn">
-                        <button type="submit" class="login100-form-btn" id="btnLogin">Login</button>
-                        
-                    </div>
-                </div>
-                <div class="row pb-2" style="background: #fff; color: #fff;padding: 5px; border-radius:0px 0px 10px 10px">
-                    
-                    <div class="col-md-12">
-                            <p class="mb-0" style="font-size:12px; color:#666666; padding-left:15px; font-weight:500;">Copyright©2026  All rights reserved.</p>
-                    </div>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
 
-                </div>
-            </div>
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background-color: #071c24;
+    }
 
+    /* Main Container with Background Image */
+    .erm-login-wrapper {
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: url("{{ url_for('static', filename='assets/img/erm_login_bg.jpg') }}") no-repeat center center;
+      background-size: cover;
+      background-attachment: fixed;
+    }
+
+    /* Subtle dark teal vignette overlay */
+    .erm-login-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(7, 28, 36, 0.1) 0%, rgba(5, 20, 26, 0.45) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Top Navigation Header */
+    .erm-top-nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 24px 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .erm-brand-header {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .erm-header-link {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 14.5px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .erm-header-link:hover {
+      color: #ffffff;
+      opacity: 0.8;
+      text-decoration: none;
+    }
+
+    /* Centered Glassmorphic Login Card */
+    .erm-login-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 440px;
+      background: rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border: 1.5px solid rgba(255, 255, 255, 0.45);
+      border-radius: 24px;
+      padding: 38px 36px 26px 36px;
+      box-shadow: 0 25px 60px rgba(2, 18, 24, 0.55), inset 0 1px 1.5px rgba(255, 255, 255, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: cardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cardFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* Card Logo */
+    .card-logo-container {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Form Elements */
+    .erm-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .erm-input-group {
+      position: relative;
+      width: 100%;
+    }
+
+    .erm-input-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #526571;
+      font-size: 16px;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .erm-input {
+      width: 100%;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: 25px;
+      padding: 0 20px 0 48px;
+      font-size: 14.5px;
+      font-weight: 500;
+      color: #0b2533;
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .erm-input::placeholder {
+      color: #526571;
+      font-weight: 400;
+    }
+
+    .erm-input:focus {
+      background: rgba(255, 255, 255, 0.72);
+      border-color: #f97316;
+      box-shadow: 0 0 0 3.5px rgba(249, 115, 22, 0.28);
+    }
+
+    /* Forgot Password */
+    .erm-form-options {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -4px;
+      margin-bottom: 2px;
+    }
+
+    .erm-forgot-link {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.92);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .erm-forgot-link:hover {
+      color: #ffffff;
+      text-decoration: underline;
+    }
+
+    /* Submit Button */
+    .erm-btn-login {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #f95a00 0%, #eb4700 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(235, 71, 0, 0.45);
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      margin-top: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .erm-btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(235, 71, 0, 0.6);
+      background: linear-gradient(135deg, #ff6b14 0%, #f94c00 100%);
+    }
+
+    .erm-btn-login:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 14px rgba(235, 71, 0, 0.4);
+    }
+
+    /* Inner Card Copyright */
+    .card-footer-copyright {
+      margin-top: 20px;
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.85);
+      text-align: center;
+    }
+
+    /* Bottom Page Footer */
+    .erm-bottom-footer {
+      position: absolute;
+      bottom: 22px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      z-index: 10;
+    }
+
+    /* Alert Styling */
+    .erm-alert-error {
+      width: 100%;
+      background: rgba(254, 226, 226, 0.92);
+      border: 1px solid #f87171;
+      color: #991b1b;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="erm-login-wrapper">
+    <div class="erm-login-overlay"></div>
+
+    <!-- Top Navigation Header -->
+    <header class="erm-top-nav">
+      <a href="/" class="erm-brand-header">
+        <!-- ERM Top Left Logo -->
+        <svg width="150" height="42" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Orange Connected Node Icon -->
+          <path d="M6 8H26V14H13V20H24V26H13V32H26V38H6V8Z" fill="#F97316"/>
+          <circle cx="6" cy="8" r="3.5" fill="#F97316"/>
+          <circle cx="26" cy="8" r="3.5" fill="#F97316"/>
+          <circle cx="24" cy="23" r="3.5" fill="#F97316"/>
+          <circle cx="6" cy="38" r="3.5" fill="#F97316"/>
+          <circle cx="26" cy="38" r="3.5" fill="#F97316"/>
+          <circle cx="34" cy="14" r="3" fill="#F97316"/>
+          <circle cx="34" cy="31" r="3" fill="#F97316"/>
+          <line x1="26" y1="8" x2="34" y2="14" stroke="#F97316" stroke-width="2"/>
+          <line x1="24" y1="23" x2="34" y2="31" stroke="#F97316" stroke-width="2"/>
+          <!-- Teal 'R' mark -->
+          <path d="M28 8H39C45 8 48 11.5 48 16.5C48 20.5 45 23.5 40 24L48 38H41L34 25H34V38H28V8ZM34 13.5V19.5H38.5C41 19.5 42 18.5 42 16.5C42 14.5 41 13.5 38.5 13.5H34Z" fill="#14B8A6"/>
+          <!-- White ERM text -->
+          <text x="56" y="32" font-family="'Inter', sans-serif" font-size="28" font-weight="900" letter-spacing="1.5" fill="#FFFFFF">ERM</text>
+        </svg>
+      </a>
+      <a href="mailto:support@erm-risk.com?subject=ERM%20Platform%20Demo%20Request" class="erm-header-link" id="btnRequestDemo">Request Demo</a>
+    </header>
+
+    <!-- Glassmorphic Login Card -->
+    <main class="erm-login-card">
+      <!-- Card Center Logo -->
+      <div class="card-logo-container">
+        <svg width="170" height="48" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Orange Connected Node Icon -->
+          <path d="M6 8H26V14H13V20H24V26H13V32H26V38H6V8Z" fill="#F97316"/>
+          <circle cx="6" cy="8" r="3.5" fill="#F97316"/>
+          <circle cx="26" cy="8" r="3.5" fill="#F97316"/>
+          <circle cx="24" cy="23" r="3.5" fill="#F97316"/>
+          <circle cx="6" cy="38" r="3.5" fill="#F97316"/>
+          <circle cx="26" cy="38" r="3.5" fill="#F97316"/>
+          <circle cx="34" cy="14" r="3" fill="#F97316"/>
+          <circle cx="34" cy="31" r="3" fill="#F97316"/>
+          <line x1="26" y1="8" x2="34" y2="14" stroke="#F97316" stroke-width="2"/>
+          <line x1="24" y1="23" x2="34" y2="31" stroke="#F97316" stroke-width="2"/>
+          <!-- Dark Teal 'R' -->
+          <path d="M28 8H39C45 8 48 11.5 48 16.5C48 20.5 45 23.5 40 24L48 38H41L34 25H34V38H28V8ZM34 13.5V19.5H38.5C41 19.5 42 18.5 42 16.5C42 14.5 41 13.5 38.5 13.5H34Z" fill="#0C3440"/>
+          <!-- Bold Dark Teal ERM -->
+          <text x="56" y="32" font-family="'Inter', sans-serif" font-size="28" font-weight="900" letter-spacing="1.5" fill="#0C3440">ERM</text>
+        </svg>
+      </div>
+
+      {% if error %}
+      <div class="erm-alert-error" role="alert">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Login Form -->
+      <form method="POST" action="/ERM" class="erm-form" autocomplete="on">
+        <div class="erm-input-group">
+          <span class="erm-input-icon"><i class="bi bi-person"></i></span>
+          <input class="erm-input" type="text" id="txtEmail" name="username" placeholder="Username" autocomplete="username" required autofocus>
         </div>
-    </div>
- </form>
-   
- 
+
+        <div class="erm-input-group">
+          <span class="erm-input-icon"><i class="bi bi-key"></i></span>
+          <input class="erm-input" type="password" id="txtPassword" name="password" placeholder="Password" autocomplete="current-password" required>
+        </div>
+
+        <div class="erm-form-options">
+          <a href="javascript:void(0)" onclick="alert('Please contact your ERM System Administrator or IT Helpdesk to reset your password.')" class="erm-forgot-link">Forgot Password?</a>
+        </div>
+
+        <button type="submit" class="erm-btn-login" id="btnLogin">LOGIN</button>
+      </form>
+
+      <div class="card-footer-copyright">
+        Copyright©2026 All rights reserved.
+      </div>
+    </main>
+
+    <!-- Bottom Page Footer -->
+    <footer class="erm-bottom-footer">
+      © 2026 ERM. All Rights Reserved.
+    </footer>
+  </div>
+</body>
+
+</html>

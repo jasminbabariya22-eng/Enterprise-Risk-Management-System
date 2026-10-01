@@ -44,7 +44,12 @@ ERM_DOMAIN_KEYWORDS = [
     "pressure", "safety", "governance", "cro", "register", "heatmap", "incident",
     "control", "residual", "inherent", "vulnerability", "followup", "rejection",
     "remark", "status", "ro", "fh", "rm", "auditor", "admin", "hello", "hi", "hey",
-    "help", "summary", "dashboard", "report", "show", "view", "list"
+    "help", "summary", "dashboard", "report", "show", "view", "list",
+    "submit", "submission", "draft", "functional", "head", "manager", "assign",
+    "assigned", "co-owner", "coowner", "skip", "none", "option", "days", "timeline",
+    "target", "confirm", "save", "database", "commit", "review", "reject", "return",
+    "approve", "approved", "interlock", "sensor", "fmea", "ndt", "inspection",
+    "maintenance", "operations", "engineering", "gas", "valve", "pump", "seal"
 ]
 
 
@@ -83,22 +88,31 @@ class InputGuardrail:
     @classmethod
     def validate_domain_scope(cls, text: str) -> Tuple[bool, Optional[str]]:
         """Checks if the query has reasonable relevance to ERM / Plant Risk Operations."""
-        cleaned = re.sub(r'[^\w\s]', ' ', text.lower()).strip()
+        lower_text = text.lower().strip()
+        cleaned = re.sub(r'[^\w\s]', ' ', lower_text).strip()
         tokens = set(cleaned.split())
 
-        # If very short greeting/command, allow
-        if len(tokens) <= 3 and any(t in tokens for t in ["hi", "hello", "hey", "help", "status", "cancel"]):
+        # Always allow wizard actions and interactive button commands
+        wizard_action_prefixes = [
+            "option", "submit", "save as draft", "assign", "skip", "confirm",
+            "approve", "reject", "show", "view", "list", "calculate", "draft",
+            "create", "log", "add", "cancel", "how are you", "what can you do", "help", "menu"
+        ]
+        if any(lower_text.startswith(prefix) or prefix in lower_text for prefix in wizard_action_prefixes):
             return True, None
+
+        # If short message, allow
+        if len(tokens) <= 4:
+            return True, None
+
+        # Check for obvious out-of-scope requests (recipes, creative writing, non-ERM math/code)
+        out_of_scope_cues = ["recipe", "poem", "song", "movie review", "write code for flappy bird", "tell me a joke", "write a story"]
+        if any(cue in lower_text for cue in out_of_scope_cues):
+            return False, "Query is outside the Enterprise Risk Management (ERM) operational domain."
 
         # Check for ERM keyword overlap
         has_erm_context = any(kw in cleaned for kw in ERM_DOMAIN_KEYWORDS)
-        
-        # Check for obvious out-of-scope requests (recipes, creative writing, non-ERM math/code)
-        out_of_scope_cues = ["recipe", "poem", "song", "movie review", "write code for flappy bird", "joke"]
-        if any(cue in cleaned for cue in out_of_scope_cues):
-            return False, "Query is outside the Enterprise Risk Management (ERM) operational domain."
-
-        if not has_erm_context and len(tokens) > 5:
+        if not has_erm_context and len(tokens) > 6:
             # Gentle out-of-scope steer
             return False, "Please focus your request on Enterprise Risk Management, plant hazard evaluations, or governance workflows."
 
