@@ -92,28 +92,29 @@ class InputGuardrail:
         cleaned = re.sub(r'[^\w\s]', ' ', lower_text).strip()
         tokens = set(cleaned.split())
 
-        # Always allow wizard actions and interactive button commands
-        wizard_action_prefixes = [
-            "option", "submit", "save as draft", "assign", "skip", "confirm",
-            "approve", "reject", "show", "view", "list", "calculate", "draft",
-            "create", "log", "add", "cancel", "how are you", "what can you do", "help", "menu"
+        # Always allow workflow commands, button clicks, and wizard steps
+        bypass_keywords = [
+            "option", "submit", "save", "draft", "assign", "skip", "confirm",
+            "approve", "reject", "show", "view", "list", "calculate",
+            "create", "log", "add", "cancel", "how are you", "what can you do", "help", "menu",
+            "risk", "hazard", "pump", "gas", "valve", "seal", "days", "head", "manager",
+            "score", "likelihood", "impact", "mitigation", "owner", "department", "timeline"
         ]
-        if any(lower_text.startswith(prefix) or prefix in lower_text for prefix in wizard_action_prefixes):
+        if any(kw in lower_text for kw in bypass_keywords):
             return True, None
 
-        # If short message, allow
-        if len(tokens) <= 4:
+        # Short conversational inputs are always allowed
+        if len(tokens) <= 5:
             return True, None
 
-        # Check for obvious out-of-scope requests (recipes, creative writing, non-ERM math/code)
-        out_of_scope_cues = ["recipe", "poem", "song", "movie review", "write code for flappy bird", "tell me a joke", "write a story"]
+        # Only flag clear non-ERM adversarial / unrelated requests
+        out_of_scope_cues = ["recipe", "poem", "song", "movie review", "write code for flappy bird", "tell me a joke", "write a story", "weather today"]
         if any(cue in lower_text for cue in out_of_scope_cues):
             return False, "Query is outside the Enterprise Risk Management (ERM) operational domain."
 
         # Check for ERM keyword overlap
         has_erm_context = any(kw in cleaned for kw in ERM_DOMAIN_KEYWORDS)
-        if not has_erm_context and len(tokens) > 6:
-            # Gentle out-of-scope steer
+        if not has_erm_context and len(tokens) > 8:
             return False, "Please focus your request on Enterprise Risk Management, plant hazard evaluations, or governance workflows."
 
         return True, None

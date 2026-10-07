@@ -241,7 +241,10 @@ class ERMDatabaseService:
                 WHERE r.is_deleted = 0 AND (r.risk_id ILIKE %s OR r.risk_name ILIKE %s)
                 LIMIT 1;
             """
-            wildcard = f"%{risk_id.strip()}%"
+            import re
+            id_match = re.search(r'\b(RSK-[A-Z]+-\d+|[A-Z]{2,5}-\d{3,5}|RSK-\d+)\b', risk_id, re.IGNORECASE)
+            clean_target = id_match.group(1).upper() if id_match else risk_id.strip()
+            wildcard = f"%{clean_target}%"
             cur.execute(query, [wildcard, wildcard])
             row = cur.fetchone()
             if not row:
@@ -497,17 +500,16 @@ class ERMDatabaseService:
                     COALESCE(u.first_name || ' ' || u.last_name, u.log_id) as full_name,
                     u.dept_id,
                     COALESCE(d.dept_name, 'General') as department_name,
-                    COALESCE(ut.user_type_name, r.name, 'Staff') as role_name
+                    COALESCE(ut.name, 'Staff') as role_name
                 FROM {DB_SCHEMA}.mst_users u
                 LEFT JOIN {DB_SCHEMA}.mst_department d ON u.dept_id = d.id
                 LEFT JOIN {DB_SCHEMA}.mst_user_type ut ON u.user_type_id = ut.id
-                LEFT JOIN {DB_SCHEMA}.mst_role r ON u.role_id = r.id
                 WHERE (
                     u.log_id ILIKE %s OR 
                     u.first_name ILIKE %s OR 
                     u.last_name ILIKE %s OR 
                     (u.first_name || ' ' || u.last_name) ILIKE %s OR
-                    ut.user_type_name ILIKE %s
+                    ut.name ILIKE %s
                 )
                 ORDER BY (u.dept_id = %s) DESC, u.id ASC
                 LIMIT 1;
@@ -593,16 +595,29 @@ class ERMDatabaseService:
                     next_treat_id = cur.fetchone()["next_id"]
                     action_text = t_item.get("action_plan") if isinstance(t_item, dict) else str(t_item)
                     target_ao_id = t_item.get("action_owner_id") if isinstance(t_item, dict) else resolved_owner_id
+                    t_date = t_item.get("target_date") if isinstance(t_item, dict) else None
+                    t_progress = t_item.get("progress") if isinstance(t_item, dict) else 0
 
-                    cur.execute(f"""
-                        INSERT INTO {DB_SCHEMA}.risk_treatment (
-                            risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan,
-                            action_owner_id, target_date, created_by, created_on, modified_by, modified_on, is_deleted
-                        ) VALUES (%s, %s, %s, %s, %s, %s, NOW() + INTERVAL '30 days', %s, %s, %s, %s, 0);
-                    """, (
-                        next_treat_id, next_desc_id, next_reg_id, generated_risk_id, action_text,
-                        target_ao_id, resolved_owner_id, now_str, resolved_owner_id, now_str
-                    ))
+                    if t_date:
+                        cur.execute(f"""
+                            INSERT INTO {DB_SCHEMA}.risk_treatment (
+                                risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan,
+                                action_owner_id, target_date, progress, created_by, created_on, modified_by, modified_on, is_deleted
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0);
+                        """, (
+                            next_treat_id, next_desc_id, next_reg_id, generated_risk_id, action_text,
+                            target_ao_id, str(t_date), int(t_progress or 0), resolved_owner_id, now_str, resolved_owner_id, now_str
+                        ))
+                    else:
+                        cur.execute(f"""
+                            INSERT INTO {DB_SCHEMA}.risk_treatment (
+                                risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan,
+                                action_owner_id, target_date, progress, created_by, created_on, modified_by, modified_on, is_deleted
+                            ) VALUES (%s, %s, %s, %s, %s, %s, NOW() + INTERVAL '30 days', %s, %s, %s, %s, %s, 0);
+                        """, (
+                            next_treat_id, next_desc_id, next_reg_id, generated_risk_id, action_text,
+                            target_ao_id, int(t_progress or 0), resolved_owner_id, now_str, resolved_owner_id, now_str
+                        ))
                     inserted_treatments.append(action_text)
 
             cur.close()
@@ -620,6 +635,9 @@ class ERMDatabaseService:
                 "inherent_likelihood": inherent_likelihood,
                 "inherent_impact": inherent_impact,
                 "inherent_score": inherent_likelihood * inherent_impact,
+                "current_likelihood": current_likelihood,
+                "current_impact": current_impact,
+                "current_score": current_likelihood * current_impact,
                 "created_on": now_str,
                 "treatments": inserted_treatments
             }
@@ -627,26 +645,492 @@ class ERMDatabaseService:
             logger.error(f"Error creating risk in database: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
 
+    def get_treatments_for_risk(self, risk_ident: Any, dept_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Fetch all action plans / treatments for a specific risk by Risk ID or Register ID."""
+        conn = self._get_connection()
+        if not conn:
+            return []
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            ident_str = str(risk_ident).strip()
+            
+            query = f"""
+                SELECT 
+                    t.risk_treatment_id,
+                    t.risk_register_id,
+                    t.risk_description_id,
+                    t.risk_id,
+                    r.risk_name,
+                    t.action_plan,
+                    t.action_owner_id,
+                    COALESCE(u.first_name || ' ' || u.last_name, u.log_id, 'Unassigned') AS action_owner_name,
+                    u.email AS action_owner_email,
+                    t.target_date,
+                    COALESCE(t.progress, '0') AS progress,
+                    t.action_status_id,
+                    COALESCE(s.status_name, 'In Progress') AS action_status_name,
+                    t.next_followup_date,
+                    t.approval_status,
+                    t.approval_remark,
+                    t.created_on
+                FROM {DB_SCHEMA}.risk_treatment t
+                JOIN {DB_SCHEMA}.risk_register r ON t.risk_register_id = r.risk_register_id
+                LEFT JOIN {DB_SCHEMA}.mst_users u ON t.action_owner_id = u.id
+                LEFT JOIN {DB_SCHEMA}.mst_status s ON t.action_status_id = s.id
+                WHERE t.is_deleted = 0
+                  AND (r.risk_id ILIKE %s OR r.risk_register_id::text = %s OR r.risk_name ILIKE %s)
+            """
+            params = [ident_str, ident_str, f"%{ident_str}%"]
+            if dept_id:
+                query += " AND (r.dept_id = %s OR %s IS NULL)"
+                params.extend([dept_id, dept_id])
+
+            query += " ORDER BY t.risk_treatment_id ASC;"
+            cur.execute(query, params)
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+            return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"Error fetching treatments for risk '{risk_ident}': {e}", exc_info=True)
+            if conn:
+                conn.close()
+            return []
+
+    def get_treatment_by_id(self, treatment_id: int) -> Optional[Dict[str, Any]]:
+        """Fetch a single treatment record by its primary key with joined risk and user info."""
+        conn = self._get_connection()
+        if not conn:
+            return None
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            query = f"""
+                SELECT 
+                    t.risk_treatment_id,
+                    t.risk_register_id,
+                    t.risk_description_id,
+                    t.risk_id,
+                    r.risk_name,
+                    r.dept_id,
+                    t.action_plan,
+                    t.action_owner_id,
+                    COALESCE(u.first_name || ' ' || u.last_name, u.log_id, 'Unassigned') AS action_owner_name,
+                    u.email AS action_owner_email,
+                    t.target_date,
+                    COALESCE(t.progress, '0') AS progress,
+                    t.action_status_id,
+                    COALESCE(s.status_name, 'In Progress') AS action_status_name,
+                    t.created_on
+                FROM {DB_SCHEMA}.risk_treatment t
+                JOIN {DB_SCHEMA}.risk_register r ON t.risk_register_id = r.risk_register_id
+                LEFT JOIN {DB_SCHEMA}.mst_users u ON t.action_owner_id = u.id
+                LEFT JOIN {DB_SCHEMA}.mst_status s ON t.action_status_id = s.id
+                WHERE t.risk_treatment_id = %s AND t.is_deleted = 0;
+            """
+            cur.execute(query, (treatment_id,))
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Error fetching treatment #{treatment_id}: {e}", exc_info=True)
+            if conn:
+                conn.close()
+            return None
+
+    def add_risk_treatment(
+        self,
+        risk_register_id: int,
+        action_plan: str,
+        action_owner_id: int,
+        target_date: Optional[str] = None,
+        progress: int = 0,
+        action_status_id: int = 1,
+        created_by: int = 1
+    ) -> Dict[str, Any]:
+        """Add and persist a new treatment / action plan to an existing risk."""
+        now_str = datetime.now().isoformat()
+        try:
+            conn = self._get_connection(readonly=False)
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            # 1. Fetch risk details
+            cur.execute(f"""
+                SELECT r.risk_register_id, r.risk_id, r.risk_name, r.dept_id, rd.risk_description_id
+                FROM {DB_SCHEMA}.risk_register r
+                LEFT JOIN {DB_SCHEMA}.risk_description rd ON r.risk_register_id = rd.risk_register_id
+                WHERE r.risk_register_id = %s AND r.is_deleted = 0;
+            """, (risk_register_id,))
+            risk_row = cur.fetchone()
+            if not risk_row:
+                cur.close()
+                conn.close()
+                return {"status": "error", "message": f"Risk Register #{risk_register_id} not found."}
+
+            # Ensure created_by is integer or fallback to 1
+            created_by_int = int(created_by) if str(created_by).isdigit() else 1
+
+            desc_id = risk_row.get("risk_description_id")
+            if not desc_id:
+                # If no description exists, find or create one
+                cur.execute(f"SELECT COALESCE(MAX(risk_description_id), 0) + 1 AS next_id FROM {DB_SCHEMA}.risk_description;")
+                desc_id = cur.fetchone()["next_id"]
+                cur.execute(f"""
+                    INSERT INTO {DB_SCHEMA}.risk_description (
+                        risk_description_id, risk_register_id, risk_description, created_by, created_on, is_deleted
+                    ) VALUES (%s, %s, %s, %s, %s, 0);
+                """, (desc_id, risk_register_id, risk_row["risk_name"], created_by_int, now_str))
+
+            # 2. Get next treatment ID
+            cur.execute(f"SELECT COALESCE(MAX(risk_treatment_id), 0) + 1 AS next_id FROM {DB_SCHEMA}.risk_treatment;")
+            next_t_id = cur.fetchone()["next_id"]
+
+            t_date_sql = f"'{target_date}'" if target_date else "NOW() + INTERVAL '30 days'"
+
+            cur.execute(f"""
+                INSERT INTO {DB_SCHEMA}.risk_treatment (
+                    risk_treatment_id, risk_description_id, risk_register_id, risk_id,
+                    action_plan, action_owner_id, target_date, progress, action_status_id,
+                    created_by, created_on, modified_by, modified_on, is_deleted
+                ) VALUES (%s, %s, %s, %s, %s, %s, {t_date_sql}, %s, %s, %s, %s, %s, %s, 0);
+            """, (
+                next_t_id, desc_id, risk_register_id, risk_row.get("risk_id"),
+                action_plan.strip(), action_owner_id, str(progress), action_status_id,
+                created_by_int, now_str, created_by_int, now_str
+            ))
+
+            # 3. If risk was in draft (1), rejected/revision (6 or 3), or being updated by RO, reset approval statuses to NULL and advance to Stage 1 (FH)
+            current_r_status = risk_row.get("risk_status")
+            if current_r_status in [1, 3, 6] or current_r_status is not None:
+                cur.execute(f"""
+                    UPDATE {DB_SCHEMA}.risk_register
+                    SET 
+                        risk_status = 2,
+                        risk_function_head_approval_status = NULL,
+                        risk_function_head_approval_by = NULL,
+                        risk_function_head_approval_on = NULL,
+                        risk_function_head_approval_remark = NULL,
+                        risk_manager_approval_status = NULL,
+                        risk_manager_approval_by = NULL,
+                        risk_manager_approved_on = NULL,
+                        risk_manager_approval_remark = NULL,
+                        risk_head_approval_status = NULL,
+                        risk_head_approval_by = NULL,
+                        risk_head_approved_on = NULL,
+                        risk_head_approval_remark = NULL,
+                        modified_by = %s,
+                        modified_on = %s
+                    WHERE risk_register_id = %s;
+                """, (created_by_int, now_str, risk_register_id))
+
+                # Insert into risk_register_hist
+                try:
+                    cur.execute(f"""
+                        INSERT INTO {DB_SCHEMA}.risk_register_hist (
+                            risk_register_id, risk_id, risk_name, dept_id, risk_owner_id, risk_co_owner_id,
+                            financial_year, risk_status, risk_progress,
+                            risk_function_head_approval_status, risk_function_head_approval_remark,
+                            risk_function_head_approval_on, risk_function_head_approval_by,
+                            risk_manager_approval_status, risk_manager_approval_remark,
+                            risk_manager_approved_on, risk_manager_approval_by,
+                            risk_head_approval_status, risk_head_approval_remark,
+                            risk_head_approved_on, risk_head_approval_by,
+                            created_by, created_on, modified_by, modified_on, is_active, is_deleted
+                        ) VALUES (
+                            %s, %s, %s, %s, %s, %s,
+                            %s, %s, %s,
+                            NULL, %s,
+                            NULL, NULL,
+                            NULL, NULL,
+                            NULL, NULL,
+                            NULL, NULL,
+                            NULL, NULL,
+                            %s, %s, %s, %s, %s, %s
+                        );
+                    """, (
+                        risk_register_id, risk_row.get("risk_id"), risk_row.get("risk_name"), risk_row.get("dept_id"),
+                        risk_row.get("risk_owner_id"), risk_row.get("risk_co_owner_id"),
+                        risk_row.get("financial_year"), 2, risk_row.get("risk_progress"),
+                        f"Action plan #{next_t_id} added. Previous approval decisions reset to NULL and resubmitted to Functional Head.",
+                        risk_row.get("created_by") or created_by_int, risk_row.get("created_on") or now_str,
+                        created_by_int, now_str, risk_row.get("is_active", 1), 0
+                    ))
+                except Exception as hist_err:
+                    logger.warning(f"Could not record risk history on treatment add: {hist_err}")
+
+            # 4. Fetch Action Owner Name
+            cur.execute(f"SELECT COALESCE(first_name || ' ' || last_name, log_id) AS full_name FROM {DB_SCHEMA}.mst_users WHERE id = %s;", (action_owner_id,))
+            ao_row = cur.fetchone()
+            ao_name = ao_row["full_name"] if ao_row else "Action Owner"
+
+            cur.close()
+            conn.close()
+
+            return {
+                "status": "success",
+                "risk_treatment_id": next_t_id,
+                "risk_register_id": risk_register_id,
+                "risk_id": risk_row.get("risk_id"),
+                "risk_name": risk_row.get("risk_name"),
+                "action_plan": action_plan,
+                "action_owner_id": action_owner_id,
+                "action_owner_name": ao_name,
+                "target_date": target_date or (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
+                "progress": progress,
+                "created_on": now_str,
+                "risk_status": 2,
+                "status_reset": True
+            }
+        except Exception as e:
+            logger.error(f"Error adding risk treatment: {e}", exc_info=True)
+            return {"status": "error", "message": str(e)}
+
+    def update_treatment_progress(
+        self,
+        treatment_id: int,
+        progress: int,
+        modified_by: int = 1,
+        remarks: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Update progress percentage and completion status for a specific risk treatment."""
+        now_str = datetime.now().isoformat()
+        try:
+            conn = self._get_connection(readonly=False)
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            new_status_id = 8 if progress >= 100 else (7 if progress > 0 else 1)
+
+            cur.execute(f"""
+                UPDATE {DB_SCHEMA}.risk_treatment
+                SET progress = %s, action_status_id = %s, modified_by = %s, modified_on = %s
+                WHERE risk_treatment_id = %s AND is_deleted = 0
+                RETURNING risk_treatment_id, risk_register_id, risk_id, action_plan, action_owner_id, target_date, progress, action_status_id;
+            """, (str(progress), new_status_id, modified_by, now_str, treatment_id))
+
+            updated = cur.fetchone()
+            cur.close()
+            conn.close()
+
+            if not updated:
+                return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
+
+            return {
+                "status": "success",
+                "risk_treatment_id": updated["risk_treatment_id"],
+                "risk_id": updated["risk_id"],
+                "action_plan": updated["action_plan"],
+                "progress": updated["progress"],
+                "action_status_id": updated["action_status_id"],
+                "status_label": "Completed" if progress >= 100 else ("In Progress" if progress > 0 else "Draft"),
+                "modified_on": now_str
+            }
+        except Exception as e:
+            logger.error(f"Error updating treatment progress #{treatment_id}: {e}", exc_info=True)
+            return {"status": "error", "message": str(e)}
+
+    def reassign_treatment_owner(
+        self,
+        treatment_id: int,
+        new_action_owner_id: int,
+        modified_by: int = 1
+    ) -> Dict[str, Any]:
+        """Reassign designated Action Owner for a specific treatment."""
+        now_str = datetime.now().isoformat()
+        try:
+            conn = self._get_connection(readonly=False)
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            cur.execute(f"""
+                UPDATE {DB_SCHEMA}.risk_treatment
+                SET action_owner_id = %s, modified_by = %s, modified_on = %s
+                WHERE risk_treatment_id = %s AND is_deleted = 0
+                RETURNING risk_treatment_id, risk_register_id, risk_id, action_plan, action_owner_id;
+            """, (new_action_owner_id, modified_by, now_str, treatment_id))
+
+            updated = cur.fetchone()
+            if not updated:
+                cur.close()
+                conn.close()
+                return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
+
+            cur.execute(f"SELECT COALESCE(first_name || ' ' || last_name, log_id) AS full_name FROM {DB_SCHEMA}.mst_users WHERE id = %s;", (new_action_owner_id,))
+            ao_row = cur.fetchone()
+            ao_name = ao_row["full_name"] if ao_row else "Action Owner"
+
+            cur.close()
+            conn.close()
+
+            return {
+                "status": "success",
+                "risk_treatment_id": updated["risk_treatment_id"],
+                "risk_id": updated["risk_id"],
+                "action_plan": updated["action_plan"],
+                "action_owner_id": new_action_owner_id,
+                "action_owner_name": ao_name,
+                "modified_on": now_str
+            }
+        except Exception as e:
+            logger.error(f"Error reassigning treatment owner #{treatment_id}: {e}", exc_info=True)
+            return {"status": "error", "message": str(e)}
+
+    def get_status_options(self, status_type: str = "risk") -> List[Dict[str, Any]]:
+        """Fetch available governance risk/action statuses from master tables."""
+        conn = self._get_connection()
+        if not conn:
+            return [
+                {"id": 1, "status_name": "Draft", "type": "RISK"},
+                {"id": 2, "status_name": "Submitted to Functional Head", "type": "RISK"}
+            ]
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            type_str = str(status_type).lower() if status_type else "risk"
+            if type_str in ["risk", "approval"]:
+                cur.execute(f"""
+                    SELECT id, status_name, type 
+                    FROM {DB_SCHEMA}.mst_status 
+                    WHERE is_deleted = 0 AND UPPER(type) IN ('RISK', 'APPROVAL')
+                    ORDER BY id ASC;
+                """)
+            elif type_str in ["action", "treatment", "action_plan"]:
+                cur.execute(f"""
+                    SELECT id, status_name, type 
+                    FROM {DB_SCHEMA}.mst_status 
+                    WHERE is_deleted = 0 AND (UPPER(type) IN ('ACTION', 'RISK') OR id IN (1, 7, 8))
+                    ORDER BY id ASC;
+                """)
+            else:
+                cur.execute(f"""
+                    SELECT id, status_name, type 
+                    FROM {DB_SCHEMA}.mst_status 
+                    WHERE is_deleted = 0
+                    ORDER BY id ASC;
+                """)
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+            return [dict(r) for r in rows] if rows else [
+                {"id": 1, "status_name": "Draft", "type": "RISK"},
+                {"id": 2, "status_name": "Submitted to Functional Head", "type": "RISK"}
+            ]
+        except Exception as e:
+            logger.error(f"Error fetching status options: {e}")
+            if conn:
+                conn.close()
+            return [
+                {"id": 1, "status_name": "Draft", "type": "RISK"},
+                {"id": 2, "status_name": "Submitted to Functional Head", "type": "RISK"}
+            ]
+
+    def resolve_status_by_name(self, query_str: str) -> Optional[Dict[str, Any]]:
+        """Resolve a user-provided status keyword to authoritative status master row."""
+        if not query_str:
+            return None
+        lower = query_str.strip().lower()
+        if any(w in lower for w in ["draft", "save as draft", "new", "1"]):
+            return {"id": 1, "status_name": "Draft", "type": "RISK"}
+        elif any(w in lower for w in ["submit", "functional head", "fh", "stage 2", "2"]):
+            return {"id": 2, "status_name": "Submitted to Functional Head", "type": "RISK"}
+
+        statuses = self.get_status_options("risk")
+        for s in statuses:
+            s_name = (s.get("status_name") or "").lower()
+            if lower in s_name or s_name in lower or str(s.get("id")) == lower:
+                return s
+        return None
+
     def approve_or_reject_risk(
         self,
         risk_id: str,
         approver_id: int,
-        user_role: str = "Functional Head",
         action: str = "approve",
-        remark: str = "Approved via ERM Copilot"
+        remark: str = ""
     ) -> Dict[str, Any]:
-        """Execute 1-Click Governance Sign-off (Approve / Reject) directly in MassERS."""
+        """
+        Execute 1-Click Governance Sign-off (Approve / Reject).
+        Determines role & stage automatically from authenticated database identity.
+        Enforces strict FH -> RM -> RH approval sequence and preserves audit history.
+        """
+        # 1. Validate approver_id - NO FALLBACKS
+        if approver_id is None:
+            return {"success": False, "message": "Authentication required. Valid approver identity not found."}
+        try:
+            approver_id = int(approver_id)
+            if approver_id <= 0:
+                return {"success": False, "message": "Invalid approver identifier."}
+        except (ValueError, TypeError):
+            return {"success": False, "message": "Authentication error: Invalid approver identifier."}
+
+        if not risk_id or not str(risk_id).strip():
+            return {"success": False, "message": "A valid risk identifier is required."}
+
         conn = self._get_connection(readonly=False)
         if not conn:
-            return {"success": False, "message": "Database connection failed"}
+            return {"success": False, "message": "Database connection failed."}
+
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)
-            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            now_dt = datetime.now()
+            now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
+            # 2. Load authenticated user from DB to determine true role
             cur.execute(f"""
-                SELECT risk_register_id, risk_id, risk_name, risk_status, dept_id, risk_owner_id
-                FROM {DB_SCHEMA}.risk_register
-                WHERE (risk_id ILIKE %s OR risk_register_id::text = %s) AND is_deleted = 0
+                SELECT u.id, u.log_id, u.first_name, u.last_name, u.email, u.dept_id, u.role_id, u.user_type_id,
+                       COALESCE(ut.name, '') as user_type_name
+                FROM {DB_SCHEMA}.mst_users u
+                LEFT JOIN {DB_SCHEMA}.mst_user_type ut ON u.user_type_id = ut.id
+                WHERE u.id = %s AND (u.is_deleted = 0 OR u.is_deleted IS NULL);
+            """, [approver_id])
+            user_row = cur.fetchone()
+            if not user_row:
+                cur.close()
+                conn.close()
+                return {"success": False, "message": f"Authenticated user ID {approver_id} not found in database."}
+
+            u_type_name = str(user_row.get("user_type_name") or "").lower().strip()
+            u_log_id = str(user_row.get("log_id") or "").lower().strip()
+            user_display_name = f"{user_row.get('first_name', '')} {user_row.get('last_name', '')}".strip() or user_row.get("log_id")
+
+            # 3. Determine actual role and initial approval level from DB
+            role_category = None
+            approval_level = None
+            role_title = None
+
+            if "function" in u_type_name or "fh" in u_type_name or "_fh" in u_log_id or user_row.get("user_type_id") == 4:
+                role_category = "FH"
+                approval_level = 1
+                role_title = "Functional Head"
+            elif "risk manager" in u_type_name or "_rm" in u_log_id or "risk_manager" in u_log_id or (("manager" in u_type_name) and not ("function" in u_type_name)):
+                role_category = "RM"
+                approval_level = 2
+                role_title = "Risk Manager"
+            elif "risk head" in u_type_name or "cro" in u_type_name or "chief risk" in u_type_name or "_rh" in u_log_id or "risk_head" in u_log_id or ("head" in u_type_name and not "function" in u_type_name):
+                role_category = "RH"
+                approval_level = 3
+                role_title = "Risk Head"
+            elif "admin" in u_type_name or "admin" in u_log_id or user_row.get("user_type_id") == 1:
+                role_category = "ADMIN"
+                role_title = "Administrator"
+            else:
+                cur.close()
+                conn.close()
+                return {
+                    "success": False,
+                    "message": f"User '{user_display_name}' (Role: '{user_row.get('user_type_name') or 'User'}') is not authorized to approve or reject risks. Only Functional Head, Risk Manager, and Risk Head can perform governance sign-offs."
+                }
+
+            # 4. Load the risk record
+            cur.execute(f"""
+                SELECT 
+                    r.risk_register_id, r.risk_id, r.risk_name, r.dept_id, r.risk_owner_id, r.risk_co_owner_id,
+                    r.financial_year, r.risk_status, r.risk_progress,
+                    r.risk_function_head_approval_status, r.risk_function_head_approval_by, r.risk_function_head_approval_on, r.risk_function_head_approval_remark,
+                    r.risk_manager_approval_status, r.risk_manager_approval_by, r.risk_manager_approved_on, r.risk_manager_approval_remark,
+                    r.risk_head_approval_status, r.risk_head_approval_by, r.risk_head_approved_on, r.risk_head_approval_remark,
+                    r.created_by, r.created_on, r.modified_by, r.modified_on, r.is_active, r.is_deleted,
+                    COALESCE(st.status_name, '') as current_status_name
+                FROM {DB_SCHEMA}.risk_register r
+                LEFT JOIN {DB_SCHEMA}.mst_status st ON r.risk_status = st.id
+                WHERE (r.risk_id ILIKE %s OR r.risk_register_id::text = %s) AND (r.is_deleted = 0 OR r.is_deleted IS NULL)
                 LIMIT 1;
             """, [risk_id.strip(), risk_id.strip()])
             risk_row = cur.fetchone()
@@ -659,73 +1143,434 @@ class ERMDatabaseService:
             r_title = risk_row["risk_name"]
             r_id_code = risk_row["risk_id"]
 
-            role_lower = str(user_role).lower()
-            is_approve = action.lower() in ["approve", "approved", "signoff", "sign-off", "yes", "accept"]
+            fh_status = risk_row.get("risk_function_head_approval_status")
+            rm_status = risk_row.get("risk_manager_approval_status")
+            rh_status = risk_row.get("risk_head_approval_status")
+            curr_status_name = str(risk_row.get("current_status_name") or "").lower()
+
+            # 5. Check Draft & Rejection states
+            if "draft" in curr_status_name or risk_row.get("risk_status") == 1:
+                cur.close()
+                conn.close()
+                return {"success": False, "message": f"Risk '{r_id_code}' is currently in Draft status and has not been submitted for review."}
+
+            if fh_status == -1 or rm_status == -1 or rh_status == -1 or "pending for action" in curr_status_name:
+                cur.close()
+                conn.close()
+                return {"success": False, "message": f"Risk '{r_id_code}' has already been rejected/returned and must be modified and resubmitted by the Risk Owner before review can continue."}
+
+            # 6. Evaluate stage completion status
+            raw_r_status = risk_row.get("risk_status") or 0
+            try:
+                numeric_r_status = int(raw_r_status)
+            except (ValueError, TypeError):
+                numeric_r_status = 0
+
+            fh_done = (fh_status == 1) or (numeric_r_status >= 3)
+            rm_done = (rm_status == 1) or (numeric_r_status >= 4)
+            rh_done = (rh_status == 1) or (numeric_r_status >= 5)
+
+            # If Admin, determine the active approval level from the pending stage
+            if role_category == "ADMIN":
+                if not fh_done:
+                    approval_level = 1
+                    role_title = "Admin (Functional Head Stage)"
+                elif not rm_done:
+                    approval_level = 2
+                    role_title = "Admin (Risk Manager Stage)"
+                elif not rh_done:
+                    approval_level = 3
+                    role_title = "Admin (Risk Head Stage)"
+                else:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": f"Risk '{r_id_code}' has already been fully approved at all governance stages."}
+
+            # 7. Strict Governance Sequence Enforcement
+            if approval_level == 1:
+                if fh_done and not (rm_done or rh_done):
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": f"Risk '{r_id_code}' has already been approved by Functional Head."}
+            elif approval_level == 2:
+                if not fh_done:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": "This risk is not yet available for Risk Manager approval. Functional Head approval is still pending."}
+                if rm_done:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": f"Risk '{r_id_code}' has already been approved by Risk Manager."}
+            elif approval_level == 3:
+                if not fh_done:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": "This risk is not yet available for Risk Head approval. Functional Head approval is still pending."}
+                if not rm_done:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": "This risk is not yet available for Risk Head approval. Risk Manager approval is still pending."}
+                if rh_done:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": f"Risk '{r_id_code}' has already been approved by Risk Head (Final Approval complete)."}
+
+            # 8. Action & Remark Validation
+            is_approve = str(action).strip().lower() in ["approve", "approved", "signoff", "sign-off", "accept", "yes"]
+            is_reject = str(action).strip().lower() in ["reject", "rejected", "return", "returned", "no"]
+
+            if not is_approve and not is_reject:
+                cur.close()
+                conn.close()
+                return {"success": False, "message": f"Invalid action '{action}'. Action must be 'approve' or 'reject'."}
+
+            remark_str = (remark or "").strip()
+            if is_reject and not remark_str:
+                cur.close()
+                conn.close()
+                return {"success": False, "message": "A rejection reason/remark is mandatory when rejecting a risk."}
+
+            if not remark_str:
+                remark_str = f"Approved by {role_title} via ERM Copilot"
+
+            # 9. Resolve status IDs dynamically from DB
+            cur.execute(f"SELECT id, status_name FROM {DB_SCHEMA}.mst_status WHERE is_deleted = 0;")
+            status_rows = cur.fetchall()
+            status_map = {str(s["status_name"]).lower().strip(): s["id"] for s in status_rows}
+            pending_action_id = status_map.get("pending for action", 6)
+            approved_status_id = status_map.get("approved", 5)
+
+            new_fh_status = fh_status
+            new_fh_by = risk_row.get("risk_function_head_approval_by")
+            new_fh_on = risk_row.get("risk_function_head_approval_on")
+            new_fh_remark = risk_row.get("risk_function_head_approval_remark")
+
+            new_rm_status = rm_status
+            new_rm_by = risk_row.get("risk_manager_approval_by")
+            new_rm_on = risk_row.get("risk_manager_approved_on")
+            new_rm_remark = risk_row.get("risk_manager_approval_remark")
+
+            new_rh_status = rh_status
+            new_rh_by = risk_row.get("risk_head_approval_by")
+            new_rh_on = risk_row.get("risk_head_approved_on")
+            new_rh_remark = risk_row.get("risk_head_approval_remark")
 
             if is_approve:
-                if "function" in role_lower or "_fh" in role_lower:
-                    new_status = 3
-                    cur.execute(f"""
-                        UPDATE {DB_SCHEMA}.risk_register
-                        SET risk_status = %s, risk_function_head_approval_status = 1,
-                            risk_function_head_approval_by = %s, risk_function_head_approval_on = %s,
-                            risk_function_head_approval_remark = %s, modified_by = %s, modified_on = %s
-                        WHERE risk_register_id = %s;
-                    """, (new_status, approver_id, now_str, remark, approver_id, now_str, reg_id))
-                    stage_name = "Stage 2: Functional Head Sign-Off"
-                    next_queue = "Stage 3: Risk Manager Review Queue"
-                elif "manager" in role_lower or "_rm" in role_lower:
-                    new_status = 4
-                    cur.execute(f"""
-                        UPDATE {DB_SCHEMA}.risk_register
-                        SET risk_status = %s, risk_manager_approval_status = 1,
-                            risk_manager_approval_by = %s, risk_manager_approved_on = %s,
-                            risk_manager_approval_remark = %s, modified_by = %s, modified_on = %s
-                        WHERE risk_register_id = %s;
-                    """, (new_status, approver_id, now_str, remark, approver_id, now_str, reg_id))
-                    stage_name = "Stage 3: Risk Manager Review"
-                    next_queue = "Stage 4: Risk Head Final Approval Queue"
-                else:
-                    new_status = 5
-                    cur.execute(f"""
-                        UPDATE {DB_SCHEMA}.risk_register
-                        SET risk_status = %s, risk_head_approval_status = 1,
-                            risk_head_approval_by = %s, risk_head_approved_on = %s,
-                            risk_head_approval_remark = %s, modified_by = %s, modified_on = %s
-                        WHERE risk_register_id = %s;
-                    """, (new_status, approver_id, now_str, remark, approver_id, now_str, reg_id))
-                    stage_name = "Stage 4: Risk Head Final Sign-Off"
-                    next_queue = "Completed (Active in Register)"
-            else:
-                new_status = 6
-                cur.execute(f"""
-                    UPDATE {DB_SCHEMA}.risk_register
-                    SET risk_status = %s, risk_function_head_approval_status = -1,
-                        risk_function_head_approval_by = %s, risk_function_head_approval_on = %s,
-                        risk_function_head_approval_remark = %s, modified_by = %s, modified_on = %s
-                    WHERE risk_register_id = %s;
-                """, (new_status, approver_id, now_str, remark, approver_id, now_str, reg_id))
-                stage_name = "Governance Rejection / Return"
+                if approval_level == 1:
+                    new_fh_status = 1
+                    new_fh_by = approver_id
+                    new_fh_on = now_dt
+                    new_fh_remark = remark_str
+                    new_risk_status = status_map.get("opened", 3)
+                    stage_name = "Stage 1: Functional Head Approval"
+                    next_queue = "Stage 2: Risk Manager Validation Queue"
+                elif approval_level == 2:
+                    new_rm_status = 1
+                    new_rm_by = approver_id
+                    new_rm_on = now_dt
+                    new_rm_remark = remark_str
+                    new_risk_status = status_map.get("opened", 4)
+                    stage_name = "Stage 2: Risk Manager Validation"
+                    next_queue = "Stage 3: Risk Head Final Approval Queue"
+                else: # approval_level == 3
+                    new_rh_status = 1
+                    new_rh_by = approver_id
+                    new_rh_on = now_dt
+                    new_rh_remark = remark_str
+                    new_risk_status = approved_status_id
+                    stage_name = "Stage 3: Risk Head Final Sign-Off"
+                    next_queue = "Approved (Active Enterprise Risk Register)"
+            else: # is_reject
+                if approval_level == 1:
+                    new_fh_status = -1
+                    new_fh_by = approver_id
+                    new_fh_on = now_dt
+                    new_fh_remark = remark_str
+                elif approval_level == 2:
+                    new_rm_status = -1
+                    new_rm_by = approver_id
+                    new_rm_on = now_dt
+                    new_rm_remark = remark_str
+                else: # approval_level == 3
+                    new_rh_status = -1
+                    new_rh_by = approver_id
+                    new_rh_on = now_dt
+                    new_rh_remark = remark_str
+                new_risk_status = pending_action_id
+                stage_name = f"Stage {approval_level}: {role_title} Rejection"
                 next_queue = "Returned to Risk Owner for Revision"
 
+            # 10. Update risk_register
+            cur.execute(f"""
+                UPDATE {DB_SCHEMA}.risk_register
+                SET risk_status = %s,
+                    risk_function_head_approval_status = %s, risk_function_head_approval_by = %s,
+                    risk_function_head_approval_on = %s, risk_function_head_approval_remark = %s,
+                    risk_manager_approval_status = %s, risk_manager_approval_by = %s,
+                    risk_manager_approved_on = %s, risk_manager_approval_remark = %s,
+                    risk_head_approval_status = %s, risk_head_approval_by = %s,
+                    risk_head_approved_on = %s, risk_head_approval_remark = %s,
+                    modified_by = %s, modified_on = %s
+                WHERE risk_register_id = %s;
+            """, (
+                new_risk_status,
+                new_fh_status, new_fh_by, new_fh_on, new_fh_remark,
+                new_rm_status, new_rm_by, new_rm_on, new_rm_remark,
+                new_rh_status, new_rh_by, new_rh_on, new_rh_remark,
+                approver_id, now_dt, reg_id
+            ))
+
+            # 11. Insert Audit History into risk_register_hist
+            try:
+                cur.execute(f"""
+                    INSERT INTO {DB_SCHEMA}.risk_register_hist (
+                        risk_register_id, risk_id, risk_name, dept_id, risk_owner_id, risk_co_owner_id,
+                        financial_year, risk_status, risk_progress,
+                        risk_function_head_approval_status, risk_function_head_approval_remark,
+                        risk_function_head_approval_on, risk_function_head_approval_by,
+                        risk_manager_approval_status, risk_manager_approval_remark,
+                        risk_manager_approved_on, risk_manager_approval_by,
+                        risk_head_approval_status, risk_head_approval_remark,
+                        risk_head_approved_on, risk_head_approval_by,
+                        created_by, created_on, modified_by, modified_on, is_active, is_deleted
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s,
+                        %s, %s, %s, %s, %s, %s
+                    );
+                """, (
+                    reg_id, r_id_code, r_title, risk_row.get("dept_id"), risk_row.get("risk_owner_id"), risk_row.get("risk_co_owner_id"),
+                    risk_row.get("financial_year"), new_risk_status, risk_row.get("risk_progress"),
+                    new_fh_status, new_fh_remark, new_fh_on, new_fh_by,
+                    new_rm_status, new_rm_remark, new_rm_on, new_rm_by,
+                    new_rh_status, new_rh_remark, new_rh_on, new_rh_by,
+                    risk_row.get("created_by"), risk_row.get("created_on") or now_dt,
+                    approver_id, now_dt, risk_row.get("is_active", 1), 0
+                ))
+            except Exception as hist_err:
+                logger.warning(f"Could not insert risk history record: {hist_err}")
+
+            conn.commit()
             cur.close()
             conn.close()
+
+            # 12. Trigger Email Events if available (non-blocking)
+            try:
+                from ERM_API.app.core.database import SessionLocal
+                from ERM_API.app.services.email_event_service import (
+                    send_function_approval_email_seq,
+                    send_risk_rejection_email,
+                    send_treatment_email_after_approval
+                )
+                with SessionLocal() as db_session:
+                    if is_approve:
+                        send_function_approval_email_seq(db_session, reg_id, approval_level)
+                        if new_fh_status == 1 and new_rm_status == 1 and new_rh_status == 1:
+                            send_treatment_email_after_approval(db_session, reg_id)
+                    else:
+                        role_map = {1: "Functional Head", 2: "Risk Manager", 3: "Risk Head"}
+                        send_risk_rejection_email(
+                            db=db_session,
+                            risk_register_id=reg_id,
+                            rejected_by_role=role_map.get(approval_level, "Functional Head"),
+                            remark=remark_str
+                        )
+            except Exception as mail_err:
+                logger.debug(f"Email notification dispatch skipped or completed: {mail_err}")
+
             return {
                 "success": True,
                 "risk_id": r_id_code,
                 "risk_register_id": reg_id,
                 "risk_title": r_title,
-                "action": "Approved" if is_approve else "Rejected/Returned",
+                "action": "Approved" if is_approve else "Rejected",
                 "stage": stage_name,
-                "new_status_id": new_status,
+                "approval_level": approval_level,
+                "approver_name": user_display_name,
+                "approver_role": role_title,
                 "next_queue": next_queue,
                 "timestamp": now_str,
-                "remark": remark
+                "remark": remark_str
             }
         except Exception as e:
             logger.error(f"Error executing approve_or_reject_risk: {e}", exc_info=True)
             if conn:
+                try:
+                    conn.rollback()
+                    conn.close()
+                except Exception:
+                    pass
+            return {"success": False, "message": str(e)}
+
+    def resubmit_risk(
+        self,
+        risk_id: str,
+        user_id: int,
+        remark: Optional[str] = "Modified and resubmitted by Risk Owner for approval"
+    ) -> Dict[str, Any]:
+        """
+        Resubmit a draft or returned/rejected risk back into the Stage 1 Functional Head approval queue.
+        Clears all previous FH, RM, and RH approval statuses, timestamps, approver IDs, and remarks (sets them to NULL).
+        Updates risk_status to 2 ('Submitted to Functional Head') and records an immutable audit history entry.
+        """
+        if not risk_id or not str(risk_id).strip():
+            return {"success": False, "message": "A valid Risk ID or Register ID is required."}
+
+        if user_id is None:
+            return {"success": False, "message": "Authentication required. User ID must be provided."}
+
+        try:
+            valid_user_id = int(user_id)
+            if valid_user_id <= 0:
+                return {"success": False, "message": "Invalid user ID."}
+        except (ValueError, TypeError):
+            return {"success": False, "message": f"Invalid user ID '{user_id}'."}
+
+        conn = self._get_connection(readonly=False)
+        if not conn:
+            return {"success": False, "message": "Database connection unavailable."}
+
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            
+            # 1. Fetch user
+            cur.execute(f"""
+                SELECT u.id, u.log_id, u.first_name, u.last_name, u.email, u.dept_id,
+                       COALESCE(u.first_name || ' ' || u.last_name, u.log_id) as full_name,
+                       COALESCE(ut.name, 'User') as user_type_name
+                FROM {DB_SCHEMA}.mst_users u
+                LEFT JOIN {DB_SCHEMA}.mst_user_type ut ON u.user_type_id = ut.id
+                WHERE u.id = %s;
+            """, (valid_user_id,))
+            user_row = cur.fetchone()
+            user_display_name = user_row["full_name"] if user_row else "Risk Owner"
+            user_role = user_row.get("user_type_name", "Risk Owner") if user_row else "Risk Owner"
+
+            # 2. Fetch risk record
+            import re
+            id_match = re.search(r'\b(RSK-[A-Z0-9]+-\d{1,4}|[A-Z]{2,5}-\d{1,5}|RSK-\d+)\b', str(risk_id), re.IGNORECASE)
+            clean_id = id_match.group(1).upper() if id_match else str(risk_id).strip()
+
+            cur.execute(f"""
+                SELECT 
+                    r.risk_register_id, r.risk_id, r.risk_name, r.dept_id, r.risk_owner_id, r.risk_co_owner_id,
+                    r.financial_year, r.risk_status, r.risk_progress,
+                    r.created_by, r.created_on, r.modified_by, r.modified_on, r.is_active, r.is_deleted,
+                    COALESCE(st.status_name, '') as current_status_name
+                FROM {DB_SCHEMA}.risk_register r
+                LEFT JOIN {DB_SCHEMA}.mst_status st ON r.risk_status = st.id
+                WHERE (r.risk_id ILIKE %s OR r.risk_register_id::text = %s) AND (r.is_deleted = 0 OR r.is_deleted IS NULL)
+                LIMIT 1;
+            """, [clean_id, clean_id])
+            risk_row = cur.fetchone()
+            if not risk_row:
+                cur.close()
                 conn.close()
+                return {"success": False, "message": f"Risk record '{risk_id}' not found."}
+
+            reg_id = risk_row["risk_register_id"]
+            r_title = risk_row["risk_name"]
+            r_id_code = risk_row["risk_id"]
+
+            now_dt = datetime.now()
+            now_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+            # 3. Clear all previous FH, RM, and RH approval columns (NULL) and set status to 2 (Submitted to FH)
+            cur.execute(f"""
+                UPDATE {DB_SCHEMA}.risk_register
+                SET 
+                    risk_status = 2,
+                    risk_function_head_approval_status = NULL,
+                    risk_function_head_approval_by = NULL,
+                    risk_function_head_approval_on = NULL,
+                    risk_function_head_approval_remark = NULL,
+                    risk_manager_approval_status = NULL,
+                    risk_manager_approval_by = NULL,
+                    risk_manager_approved_on = NULL,
+                    risk_manager_approval_remark = NULL,
+                    risk_head_approval_status = NULL,
+                    risk_head_approval_by = NULL,
+                    risk_head_approved_on = NULL,
+                    risk_head_approval_remark = NULL,
+                    modified_by = %s,
+                    modified_on = %s
+                WHERE risk_register_id = %s;
+            """, (valid_user_id, now_dt, reg_id))
+
+            # 4. Insert Audit History into risk_register_hist
+            try:
+                cur.execute(f"""
+                    INSERT INTO {DB_SCHEMA}.risk_register_hist (
+                        risk_register_id, risk_id, risk_name, dept_id, risk_owner_id, risk_co_owner_id,
+                        financial_year, risk_status, risk_progress,
+                        risk_function_head_approval_status, risk_function_head_approval_remark,
+                        risk_function_head_approval_on, risk_function_head_approval_by,
+                        risk_manager_approval_status, risk_manager_approval_remark,
+                        risk_manager_approved_on, risk_manager_approval_by,
+                        risk_head_approval_status, risk_head_approval_remark,
+                        risk_head_approved_on, risk_head_approval_by,
+                        created_by, created_on, modified_by, modified_on, is_active, is_deleted
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s,
+                        NULL, %s,
+                        NULL, NULL,
+                        NULL, NULL,
+                        NULL, NULL,
+                        NULL, NULL,
+                        NULL, NULL,
+                        %s, %s, %s, %s, %s, %s
+                    );
+                """, (
+                    reg_id, r_id_code, r_title, risk_row.get("dept_id"), risk_row.get("risk_owner_id"), risk_row.get("risk_co_owner_id"),
+                    risk_row.get("financial_year"), 2, risk_row.get("risk_progress"),
+                    remark or "Resubmitted for Functional Head review (previous approvals reset)",
+                    risk_row.get("created_by"), risk_row.get("created_on") or now_dt,
+                    valid_user_id, now_dt, risk_row.get("is_active", 1), 0
+                ))
+            except Exception as hist_err:
+                logger.warning(f"Could not insert risk history on resubmission: {hist_err}")
+
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            # 5. Non-blocking email trigger if available
+            try:
+                from ERM_API.app.core.database import SessionLocal
+                from ERM_API.app.services.email_event_service import send_function_approval_email_seq
+                with SessionLocal() as db_session:
+                    send_function_approval_email_seq(db_session, reg_id, 1)
+            except Exception as mail_err:
+                logger.debug(f"Email notification dispatch skipped or completed: {mail_err}")
+
+            return {
+                "success": True,
+                "risk_id": r_id_code,
+                "risk_register_id": reg_id,
+                "risk_title": r_title,
+                "action": "Resubmitted",
+                "stage": "Stage 1: Functional Head Approval Queue",
+                "next_queue": "Stage 1: Functional Head Review",
+                "resubmitted_by": user_display_name,
+                "resubmitted_role": user_role,
+                "timestamp": now_str,
+                "remark": remark
+            }
+        except Exception as e:
+            logger.error(f"Error executing resubmit_risk: {e}", exc_info=True)
+            if conn:
+                try:
+                    conn.rollback()
+                    conn.close()
+                except Exception:
+                    pass
             return {"success": False, "message": str(e)}
 
     def get_user_daily_briefing(
@@ -772,6 +1617,33 @@ class ERMDatabaseService:
                 cur.execute(query)
                 items = cur.fetchall()
                 briefing_type = "Pending Risk Head Final Approvals"
+            elif "owner" in role_lower and "action" not in role_lower:
+                # Risk Owner: check for returned risks (status 6) or drafts (status 1) first
+                query = f"""
+                    SELECT 
+                        r.risk_register_id, r.risk_id, r.risk_name, 
+                        r.created_on, r.financial_year,
+                        COALESCE(r.risk_manager_approval_remark, r.risk_function_head_approval_remark, 'Revision / Action Required') as action_plan
+                    FROM {DB_SCHEMA}.risk_register r
+                    WHERE r.is_deleted = 0 
+                      AND (r.risk_status = 6 OR r.risk_status = 1)
+                      AND (r.risk_owner_id = %s OR r.created_by = %s OR (r.dept_id = %s AND %s IS NULL) OR %s IS NULL)
+                    ORDER BY r.risk_register_id DESC LIMIT 5;
+                """
+                cur.execute(query, (user_id, user_id, dept_id, user_id, user_id))
+                items = cur.fetchall()
+                briefing_type = "Risks Pending Revision / Action"
+                if not items:
+                    query = f"""
+                        SELECT t.risk_treatment_id, r.risk_id, r.risk_name, t.action_plan, t.target_date
+                        FROM {DB_SCHEMA}.risk_treatment t
+                        JOIN {DB_SCHEMA}.risk_register r ON t.risk_register_id = r.risk_register_id
+                        WHERE t.is_deleted = 0 AND (t.action_owner_id = %s OR r.risk_owner_id = %s OR %s IS NULL)
+                        ORDER BY t.risk_treatment_id DESC LIMIT 5;
+                    """
+                    cur.execute(query, (user_id, user_id, user_id))
+                    items = cur.fetchall()
+                    briefing_type = "Assigned Mitigation Action Plans"
             else:
                 query = f"""
                     SELECT t.risk_treatment_id, r.risk_id, r.risk_name, t.action_plan, t.target_date

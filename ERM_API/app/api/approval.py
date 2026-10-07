@@ -264,18 +264,13 @@ def get_risk_history(
         )
 
         if not data:
-
-            raise HTTPException(
-                status_code=404,
-                detail="No history found"
-            )
+            return success_response([])
 
         return success_response(
             [build_history_response(r) for r in data]
         )
 
     except Exception as e:
-
         return error_response(str(e), 400)
 
 

@@ -182,10 +182,15 @@ def create_update_risk(db: Session, data, current_user):
                 RiskRegister.risk_register_id == to_int(register_data.risk_register_id)
             ).first()
 
-            if not risk:
-                raise ValueError("RiskRegister not found")
-            
-            if user_type_name.upper() == 'RISK OWNER':
+            # Reset all previous FH, RM, and RH approvals to None (NaN) and set risk_status = 2 on ANY update by Risk Owner or on any draft/returned risk
+            is_ro_or_submit = (
+                "owner" in user_type_name.lower()
+                or user_type_name.upper() in ["RISK OWNER", "RO"]
+                or current_user.get("user_type_id") == 2
+                or to_int(register_data.risk_status) in [1, 2, 6]
+                or (risk and risk.risk_status in [1, 3, 6])
+            )
+            if is_ro_or_submit:
                 risk.risk_head_approval_by = None
                 risk.risk_head_approval_remark = None
                 risk.risk_head_approval_status = None
@@ -196,18 +201,20 @@ def create_update_risk(db: Session, data, current_user):
                 risk.risk_manager_approval_status = None
                 risk.risk_manager_approved_on = None
 
-                risk.function_head_status = None
+                risk.risk_function_head_approval_status = None
                 risk.risk_function_head_approval_by = None
                 risk.risk_function_head_approval_on = None
                 risk.risk_function_head_approval_remark = None
+
+                risk.risk_status = 2
+            elif to_int(register_data.risk_status):
+                risk.risk_status = to_int(register_data.risk_status)
 
             risk.risk_name = register_data.risk_name
             risk.dept_id = to_int(register_data.dept_id)
             risk.risk_owner_id = to_int(register_data.risk_owner_id)
             risk.risk_co_owner_id = co_owner
             risk.financial_year = register_data.financial_year
-            if to_int(register_data.risk_status):
-                risk.risk_status = to_int(register_data.risk_status)
             risk.risk_progress = register_data.risk_progress or "0"
 
             risk.modified_by = current_user.get("id", 1)
@@ -231,6 +238,18 @@ def create_update_risk(db: Session, data, current_user):
             financial_year=risk.financial_year,
             risk_status=risk.risk_status,
             risk_progress=risk.risk_progress,
+            risk_function_head_approval_status=risk.risk_function_head_approval_status,
+            risk_function_head_approval_remark=risk.risk_function_head_approval_remark,
+            risk_function_head_approval_on=risk.risk_function_head_approval_on,
+            risk_function_head_approval_by=risk.risk_function_head_approval_by,
+            risk_manager_approval_status=risk.risk_manager_approval_status,
+            risk_manager_approval_remark=risk.risk_manager_approval_remark,
+            risk_manager_approved_on=risk.risk_manager_approved_on,
+            risk_manager_approval_by=risk.risk_manager_approval_by,
+            risk_head_approval_status=risk.risk_head_approval_status,
+            risk_head_approval_remark=risk.risk_head_approval_remark,
+            risk_head_approved_on=risk.risk_head_approved_on,
+            risk_head_approval_by=risk.risk_head_approval_by,
             created_by=risk.created_by or current_user.get("id", 1),
             created_on=risk.created_on or now_dt,
             modified_by=risk.modified_by or current_user.get("id", 1),

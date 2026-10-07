@@ -86,7 +86,7 @@ def fetch_statuses(status_type="risk"):
             cur.execute(f"""
                 SELECT id, status_name, type 
                 FROM {DB_SCHEMA}.mst_status 
-                WHERE is_deleted = 0 AND UPPER(type) = 'ACTION'
+                WHERE is_deleted = 0 AND status_name IN ('Draft', 'In Progress', 'Completed')
                 ORDER BY id ASC;
             """)
         else:

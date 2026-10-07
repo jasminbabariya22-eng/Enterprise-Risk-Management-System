@@ -15,7 +15,7 @@ ERM_ACRONYMS = {
     r'\brm\b': 'Risk Manager',
     r'\bcro\b': 'Chief Risk Officer (Risk Head)',
     r'\bmtg\b': 'mitigation',
-    r'\brsk\b': 'risk',
+    r'\brsk\b(?!\s*[-_0-9])': 'risk',
     r'\bhzd\b': 'hazard',
     r'\blkh\b': 'likelihood',
     r'\bimp\b': 'impact',
@@ -97,6 +97,50 @@ class QueryTransformer:
                 logger.debug(f"Context enriched: '{text}' with [{clause_str}]")
 
         return enriched
+
+    @classmethod
+    def extract_search_keyword(cls, text: str) -> Optional[str]:
+        """
+        Extract the core subject/title/keyword from natural conversational sentences.
+        e.g.:
+          - 'I have a maker on Risk. This Risk title is Test 1. So I want to hold out the information related to this Risk.' -> 'Test 1'
+          - 'What are the details of risk called Gas Leakage?' -> 'Gas Leakage'
+          - 'Show information about compressor seal' -> 'compressor seal'
+        """
+        if not text or not text.strip():
+            return None
+        
+        cleaned = text.strip()
+
+        # 1. Check for explicit Risk Code (e.g. RSK-GAS-034, RSK-001)
+        r_code_match = re.search(r'\b(RSK-[A-Z0-9]+-\d{1,4}|[A-Z]{2,5}-\d{1,5}|RSK-\d{1,4})\b', cleaned, re.IGNORECASE)
+        if r_code_match:
+            return r_code_match.group(1).upper()
+
+        # 2. Check for explicit "title is / named / called / for risk" patterns
+        title_patterns = [
+            r'(?:risk\s+)?title\s+(?:is|was|called|named|of)?\s*[:"\'`]?\s*([a-zA-Z0-9\s\-_]{2,50}?)(?:\.|\s+so\b|\s+and\b|\s+which\b|["\'`\n]|$)',
+            r'(?:named|called|titled)\s*[:"\'`]?\s*([a-zA-Z0-9\s\-_]{2,50}?)(?:\.|\s+so\b|\s+and\b|\s+which\b|["\'`\n]|$)',
+            r'(?:information|details|data|info|status)\s+(?:of|on|for|about|regarding)\s+(?:the\s+)?(?:risk\s+)?[:"\'`]?\s*([a-zA-Z0-9\s\-_]{2,50}?)(?:\.|\s+so\b|\s+and\b|["\'`\n]|$)',
+            r'(?:about|on|for|regarding)\s+(?:the\s+)?(?:risk\s+)?[:"\'`]?\s*([a-zA-Z0-9\s\-_]{2,50}?)(?:\.|\s+so\b|\s+and\b|["\'`\n]|$)',
+        ]
+        for pat in title_patterns:
+            m = re.search(pat, cleaned, re.IGNORECASE)
+            if m:
+                extracted = m.group(1).strip()
+                if extracted.lower() not in ["this", "that", "it", "risk", "the risk", "my risk", "a risk"]:
+                    return extracted
+
+        # 3. Clean leading command words (show/search/find/view/get/list)
+        clean_kw = re.sub(
+            r'^(?:show|search|find|view|list|get|look up|give me|check|what are the details of|tell me about)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?(?:risks?|hazards?|items?|information|details)?\s*(?:about|on|for|regarding|in|related to)?\s*',
+            '', cleaned, flags=re.IGNORECASE
+        ).strip()
+
+        # Remove trailing pleasantries / filler
+        clean_kw = re.sub(r'(?:\s+in\s+my\s+department|\s+please|\s+plz|\.)$', '', clean_kw, flags=re.IGNORECASE).strip()
+
+        return clean_kw if clean_kw and len(clean_kw) >= 2 else None
 
     @classmethod
     def transform(cls, text: str, user_role: Optional[str] = None, dept_name: Optional[str] = None) -> Tuple[str, Dict[str, Any]]:

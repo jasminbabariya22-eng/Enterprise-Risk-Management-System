@@ -450,10 +450,14 @@ function FillstatusListtreatment() {
             var data = response.data.data;
             console.log("data status", data);
             treatmentHTML = '<option value="">--Select--</option>';
+            var allowedStatuses = ["draft", "in progress", "completed"];
             for (var i = 0; i < data.length; i++) {
-                treatmentHTML += '<option value="' + data[i].id + '">'
-                            + data[i].status_name +
-                            '</option>';
+                var sName = (data[i].status_name || "").toLowerCase().trim();
+                if (allowedStatuses.includes(sName)) {
+                    treatmentHTML += '<option value="' + data[i].id + '">'
+                                + data[i].status_name +
+                                '</option>';
+                }
             }
 
             document.getElementById("Status_followup").innerHTML = treatmentHTML;

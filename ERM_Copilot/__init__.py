@@ -3,6 +3,7 @@ ERM Copilot AI Agent Module.
 Clean, decoupled enterprise AI assistant package for Enterprise Risk Management.
 """
 from ERM_Copilot.agents.agent import erm_copilot_agent, ERMCopilotAgent
+from ERM_Copilot.agents.risk_creation_agent import risk_creation_agent, RiskCreationAgent, RiskCreationSession
 from ERM_Copilot.agents.base import BaseAgent
 from ERM_Copilot.models.contracts import AgentRequest, AgentResponse, RequestContext
 from ERM_Copilot.models.schemas import RiskItem, RiskTreatmentPlan, RiskActionFollowup, ERMQueryResult
@@ -16,6 +17,9 @@ from ERM_Copilot.feedback.service import FeedbackService, erm_feedback_service
 __all__ = [
     "erm_copilot_agent",
     "ERMCopilotAgent",
+    "risk_creation_agent",
+    "RiskCreationAgent",
+    "RiskCreationSession",
     "BaseAgent",
     "AgentRequest",
     "AgentResponse",
@@ -34,4 +38,3 @@ __all__ = [
     "FeedbackService",
     "erm_feedback_service"
 ]
-

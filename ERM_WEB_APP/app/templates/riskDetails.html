@@ -870,19 +870,22 @@
     } else if (APP_DATA.userType === "Functional Head" || APP_DATA.userType === "Risk Manager" || APP_DATA.userType === "Risk Head") {
       $("#btn_save_draft").hide();
       $("#btn_save_draft_p").hide();
-      $("#btn_save").show();
-      $("#btn_save_p").show();
+      $("#btn_save").hide();
+      $("#btn_save_p").hide();
       $("#btn_close").hide();
       $("#btn_Approve").show();
       $("#btn_Reject").show();
       $("#btn_app_close").show();
       $("#ApprovalStatusTbl").show();
-      $("#btn_AddDesc").show();
-      $("#AddRowBtn").show();
+      $("#btn_AddDesc").hide();
+      $("#AddRowBtn").hide();
       $("#Department").prop("disabled", true);
       $("#Risk_Owner").prop("disabled", true);
-      $("#CoRisk_Owner").prop("disabled", false);
-      $("#Risk_Name").prop("readonly", false);
+      $("#CoRisk_Owner").prop("disabled", true);
+      $("#Financial_Year").prop("disabled", true);
+      $("#Approval_Status").prop("disabled", true);
+      $("#Risk_Name").prop("readonly", true);
+      $("#Remark").prop("readonly", false);
     } else if (APP_DATA.userType === "Admin") {
       $("#btn_save_draft").hide();
       $("#btn_save_draft_p").hide();
@@ -944,10 +947,14 @@
       if (response.data.Error.Error === false) {
         var data = response.data.data;
         optionHTML_Status_Action = '<option value="-1">--Select--</option>';
+        var allowedStatuses = ["draft", "in progress", "completed"];
         for (var i = 0; i < data.length; i++) {
-          optionHTML_Status_Action += '<option value="' + data[i].id + '">' 
-                                   + data[i].status_name + 
-                                   '</option>';
+          var sName = (data[i].status_name || "").toLowerCase().trim();
+          if (allowedStatuses.includes(sName)) {
+            optionHTML_Status_Action += '<option value="' + data[i].id + '">' 
+                                     + data[i].status_name + 
+                                     '</option>';
+          }
         }
       } else {
         showToast(response.data.Error.Error_message, "bg-danger");
@@ -1344,8 +1351,6 @@
                   return `<a href="#"><i class="bi bi-pencil-square edit-icon-color" style="color:black" title="Edit" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="getRiskDescriptiondetailsbyid(${data})"></i></a>`;
                 } else if (APP_DATA.userType === "Risk Owner" && (response.data.data[0].rd_risk_status_name === "Pending for Action" || response.data.data[0].rd_risk_status_name === "Drafted")) {
                   return `<a href="#"><i class="bi bi-pencil-square edit-icon-color" style="color:black" title="Edit" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="getRiskDescriptiondetailsbyid(${data})"></i></a>`;
-                } else if ((APP_DATA.userType === "Functional Head" || APP_DATA.userType === "Risk Head" || APP_DATA.userType === "Risk Manager") && response.data.data[0].rd_risk_status_name === "Opened") {
-                  return `<a href="#"><i class="bi bi-pencil-square edit-icon-color" style="color:black" title="Edit" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="getRiskDescriptiondetailsbyid(${data})"></i></a>`;
                 } else {
                   return '';
                 }
@@ -1390,9 +1395,6 @@
                   return `<a href="#"><i class="bi bi-clock-history text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Action"
                           onclick="goToActionPlan(${row.risk_treatment_id},${row.risk_description_id},${row.risk_register_id})"></i></a>`;
                 } else if (APP_DATA.userType === "Risk Owner" && (response.data.data[0].rd_risk_status_name === "Drafted" || response.data.data[0].rd_risk_status_name === "Pending for Action")) {
-                  return `<a href="#"><i class="bi bi-clock-history text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Action"
-                          onclick="goToActionPlan(${row.risk_treatment_id},${row.risk_description_id},${row.risk_register_id})"></i></a>`;
-                } else if ((APP_DATA.userType === "Functional Head" || APP_DATA.userType === "Risk Head" || APP_DATA.userType === "Risk Manager") && response.data.data[0].rd_risk_status_name === "Opened") {
                   return `<a href="#"><i class="bi bi-clock-history text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Action"
                           onclick="goToActionPlan(${row.risk_treatment_id},${row.risk_description_id},${row.risk_register_id})"></i></a>`;
                 } else {

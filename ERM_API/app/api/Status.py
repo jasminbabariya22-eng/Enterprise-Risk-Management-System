@@ -84,10 +84,22 @@ def update_status(
 @router.get("/type/{status_type}")
 def get_status_by_type(status_type: str, db: Session = Depends(get_db)):
     try:
-        statuses = db.query(Status).filter(
-            Status.type.ilike(f"%{status_type}%"),
-            Status.is_deleted == 0
-        ).order_by(Status.id.asc()).all()
+        type_lower = (status_type or "").strip().lower()
+        if type_lower in ["action", "action_plan", "treatment"]:
+            statuses = db.query(Status).filter(
+                Status.status_name.in_(["Draft", "In Progress", "Completed"]),
+                Status.is_deleted == 0
+            ).order_by(Status.id.asc()).all()
+        elif type_lower in ["risk", "approval"]:
+            statuses = db.query(Status).filter(
+                Status.type.in_(["RISK", "APPROVAL"]),
+                Status.is_deleted == 0
+            ).order_by(Status.id.asc()).all()
+        else:
+            statuses = db.query(Status).filter(
+                Status.type.ilike(f"%{status_type}%"),
+                Status.is_deleted == 0
+            ).order_by(Status.id.asc()).all()
 
         if not statuses:
             statuses = db.query(Status).filter(Status.is_deleted == 0).order_by(Status.id.asc()).all()

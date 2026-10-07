@@ -571,23 +571,25 @@
             dom: 't<"d-flex justify-content-between align-items-center p-3"ip>',
             order: [[14, 'desc'], [0, 'asc']],
             columns: [
-              // 0: Risk ID
+              // 0: Risk ID (Clickable Link to Open Risk)
               { 
                 data: "risk_id",
-                render: function(data) {
-                  return `<span class="fw-bold text-dark" style="white-space: nowrap; font-size: 12.5px;">${data || ''}</span>`;
+                render: function(data, type, row) {
+                  return `<a href="javascript:void(0)" onclick="getRiskRegisterbyid(${row.risk_register_id}, 1)" class="fw-bold text-primary text-decoration-none" style="white-space: nowrap; font-size: 12.8px; cursor: pointer;" title="Open ${data || 'Risk'}">
+                            <i class="bi bi-shield-check me-1 text-primary"></i>${data || ''}
+                          </a>`;
                 }
               },
-              // 1: Risk Title
+              // 1: Risk Title (Clickable with hover popover)
               { 
                 data: "risk_name",
-                render: function(data) {
+                render: function(data, type, row) {
                   if (!data) return '<span class="text-muted">-</span>';
                   return `
-                    <div class="risk-cell-box">
+                    <div class="risk-cell-box" onclick="getRiskRegisterbyid(${row.risk_register_id}, 1)" style="cursor: pointer;" title="Click to open risk">
                       <div class="risk-clamp-2 fw-semibold text-dark">${data}</div>
                       <div class="risk-hover-popover">
-                        <div class="risk-hover-popover-header"><i class="bi bi-card-heading"></i> Risk Title</div>
+                        <div class="risk-hover-popover-header"><i class="bi bi-card-heading"></i> Risk Title (Click to open)</div>
                         <div>${data}</div>
                       </div>
                     </div>

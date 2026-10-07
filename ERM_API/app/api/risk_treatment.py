@@ -128,6 +128,61 @@ def create_risk_treatment(
             is_deleted = 0)
 
         db.add(new_risk_treatment)
+
+        # Reset approval columns on Risk Register and advance risk_status to 2 (Submitted to FH)
+        risk_reg_obj = db.query(RiskRegister).filter(
+            RiskRegister.risk_register_id == risk_register,
+            RiskRegister.is_deleted == 0
+        ).first()
+        if risk_reg_obj:
+            risk_reg_obj.risk_status = 2
+            risk_reg_obj.risk_function_head_approval_status = None
+            risk_reg_obj.risk_function_head_approval_by = None
+            risk_reg_obj.risk_function_head_approval_on = None
+            risk_reg_obj.risk_function_head_approval_remark = None
+            risk_reg_obj.risk_manager_approval_status = None
+            risk_reg_obj.risk_manager_approval_by = None
+            risk_reg_obj.risk_manager_approved_on = None
+            risk_reg_obj.risk_manager_approval_remark = None
+            risk_reg_obj.risk_head_approval_status = None
+            risk_reg_obj.risk_head_approval_by = None
+            risk_reg_obj.risk_head_approved_on = None
+            risk_reg_obj.risk_head_approval_remark = None
+            risk_reg_obj.modified_by = current_user.get("id")
+            risk_reg_obj.modified_on = datetime.now(timezone.utc)
+
+            # Record history in RiskRegisterHist
+            reg_hist = RiskRegisterHist(
+                risk_register_id=risk_reg_obj.risk_register_id,
+                risk_id=risk_reg_obj.risk_id,
+                risk_name=risk_reg_obj.risk_name,
+                dept_id=risk_reg_obj.dept_id,
+                risk_owner_id=risk_reg_obj.risk_owner_id,
+                risk_co_owner_id=risk_reg_obj.risk_co_owner_id,
+                financial_year=risk_reg_obj.financial_year,
+                risk_status=2,
+                risk_progress=risk_reg_obj.risk_progress,
+                risk_function_head_approval_status=None,
+                risk_function_head_approval_remark="Action plan added. Previous approvals reset to None (resubmitted to FH).",
+                risk_function_head_approval_on=None,
+                risk_function_head_approval_by=None,
+                risk_manager_approval_status=None,
+                risk_manager_approval_remark=None,
+                risk_manager_approved_on=None,
+                risk_manager_approval_by=None,
+                risk_head_approval_status=None,
+                risk_head_approval_remark=None,
+                risk_head_approved_on=None,
+                risk_head_approval_by=None,
+                created_by=risk_reg_obj.created_by or current_user.get("id"),
+                created_on=risk_reg_obj.created_on or datetime.now(timezone.utc),
+                modified_by=current_user.get("id"),
+                modified_on=datetime.now(timezone.utc),
+                is_active=risk_reg_obj.is_active if hasattr(risk_reg_obj, 'is_active') else 1,
+                is_deleted=0
+            )
+            db.add(reg_hist)
+
         db.commit()
         db.refresh(new_risk_treatment)
 

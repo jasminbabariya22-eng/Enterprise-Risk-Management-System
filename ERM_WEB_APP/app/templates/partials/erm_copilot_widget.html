@@ -515,6 +515,57 @@
     box-shadow: 0 3px 8px rgba(37, 99, 235, 0.12);
   }
 
+  /* Chat Dropdown Select */
+  .copilot-dropdown-container {
+    display: inline-block;
+    margin: 6px 6px 6px 0;
+    vertical-align: middle;
+    max-width: 100%;
+  }
+
+  .copilot-select-dropdown {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 30px 7px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    max-width: 340px;
+    text-overflow: ellipsis;
+  }
+
+  .copilot-select-dropdown:hover {
+    border-color: #2563eb;
+    box-shadow: 0 2px 4px rgba(37,99,235,0.1);
+  }
+
+  .copilot-select-dropdown:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  }
+
+  /* Dual Assessment Box */
+  .copilot-assessment-box {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 8px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+
   /* Feedback Strip */
   .copilot-feedback-strip {
     display: flex;
@@ -574,11 +625,11 @@
   /* Markdown formatting helpers */
   .copilot-table-wrapper {
     overflow-x: auto;
-    margin: 10px 0;
-    border-radius: 10px;
+    margin: 12px 0;
+    border-radius: 12px;
     border: 1px solid #e2e8f0;
     background: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   }
 
   .copilot-table {
@@ -591,15 +642,61 @@
   .copilot-table th {
     background: #f8fafc;
     color: #0f172a;
-    font-weight: 600;
-    padding: 8px 12px;
-    border-bottom: 1px solid #e2e8f0;
+    font-weight: 700;
+    padding: 9px 12px;
+    border-bottom: 1.5px solid #e2e8f0;
+    white-space: nowrap;
+    letter-spacing: -0.1px;
   }
 
   .copilot-table td {
     padding: 8px 12px;
     border-bottom: 1px solid #f1f5f9;
     color: #334155;
+    line-height: 1.45;
+  }
+
+  .copilot-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .copilot-table tr:hover td {
+    background: #f8fafc;
+  }
+
+  .copilot-inline-code {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .copilot-divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 12px 0;
+  }
+
+  .copilot-section-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+    margin: 10px 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .copilot-subsection-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 8px 0 4px 0;
   }
 
   /* ======================================================= */
@@ -664,6 +761,96 @@
     transform: scale(1.05);
   }
 
+  .copilot-voice-btn {
+    background: transparent !important;
+    color: #64748b !important;
+    border: none !important;
+    border-radius: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 15px !important;
+    transition: all 0.18s !important;
+    box-shadow: none !important;
+    margin-right: 2px;
+  }
+
+  .copilot-voice-btn:hover {
+    background: #f1f5f9 !important;
+    color: #2563eb !important;
+    transform: scale(1.08) !important;
+  }
+
+  .copilot-voice-btn.recording {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+    animation: copilot-mic-pulse 1.2s infinite ease-in-out !important;
+  }
+
+  @keyframes copilot-mic-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  }
+
+  /* Live Voice Wave Visualizer */
+  .copilot-live-voice-wave {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    animation: fadeIn 0.2s ease-in;
+  }
+
+  .voice-wave-bar {
+    width: 3px;
+    height: 14px;
+    background: #2563eb;
+    border-radius: 2px;
+    animation: wave-bounce 0.8s infinite ease-in-out;
+  }
+  .voice-wave-bar:nth-child(2) { animation-delay: 0.15s; height: 18px; }
+  .voice-wave-bar:nth-child(3) { animation-delay: 0.3s; height: 12px; }
+  .voice-wave-bar:nth-child(4) { animation-delay: 0.45s; height: 20px; }
+  .voice-wave-bar:nth-child(5) { animation-delay: 0.6s; height: 14px; }
+
+  @keyframes wave-bounce {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.6; }
+    50% { transform: scaleY(1.3); opacity: 1; }
+  }
+
+  .voice-wave-text {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d4ed8;
+    margin-left: 8px;
+  }
+
+  .voice-done-btn {
+    background: #2563eb !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    width: auto !important;
+    height: 24px !important;
+    box-shadow: none !important;
+  }
+  .voice-done-btn:hover {
+    background: #1d4ed8 !important;
+  }
+
   .copilot-disclaimer {
     font-size: 11px;
     color: #94a3b8;
@@ -710,28 +897,28 @@
 
       <!-- Role-tailored dynamic prompt cards -->
       <div class="copilot-prompt-cards" id="copilot-prompt-cards-container">
-        <!-- Default Prompt Cards matching mockup -->
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show pending Functional Head approvals')">
+        <!-- Default Prompt Cards rendered dynamically by initRoleSpecificCards -->
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Create a new risk')">
+          <div class="copilot-prompt-card-icon">➕</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Create a new risk</div>
+            <div class="copilot-prompt-card-desc">Formulate and score a new risk record</div>
+          </div>
+        </div>
+
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show my open risks')">
           <div class="copilot-prompt-card-icon">📋</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Pending FH approvals</div>
-            <div class="copilot-prompt-card-desc">Risks waiting on Functional Heads</div>
+            <div class="copilot-prompt-card-title">Show my open risks</div>
+            <div class="copilot-prompt-card-desc">View registered and active risks</div>
           </div>
         </div>
 
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Provide department summary and risk profile by function')">
-          <div class="copilot-prompt-card-icon">📊</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Department summary</div>
-            <div class="copilot-prompt-card-desc">Risk profile by function</div>
-          </div>
-        </div>
-
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show overdue actions and mitigation plans past due date')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks that need my action')">
           <div class="copilot-prompt-card-icon">⚠️</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Overdue actions</div>
-            <div class="copilot-prompt-card-desc">Action plans past their due date</div>
+            <div class="copilot-prompt-card-title">Show risks that need my action</div>
+            <div class="copilot-prompt-card-desc">Risks requiring your follow-up or attention</div>
           </div>
         </div>
       </div>
@@ -740,8 +927,20 @@
 
   <!-- Footer Input Area -->
   <div class="copilot-footer">
+    <!-- Live Voice Wave Visualizer Banner -->
+    <div id="copilot-live-voice-wave" class="copilot-live-voice-wave" style="display:none;">
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <div class="voice-wave-bar"></div>
+      <span class="voice-wave-text" id="copilot-voice-status-text">Listening live... speak your prompt</span>
+      <button type="button" class="voice-done-btn" onclick="stopVoiceRecording()">Done ✓</button>
+    </div>
+
     <div class="copilot-input-container">
       <input type="text" id="copilot-user-input" placeholder="Ask about risks or actions" onkeydown="handleCopilotKeyDown(event)" autocomplete="off" />
+      <button type="button" onclick="toggleCopilotVoiceInput()" id="copilot-voice-btn" class="copilot-voice-btn" title="Live Voice Input (Speech-to-Text)">🎙️</button>
       <button type="button" onclick="submitCopilotMessage()" id="copilot-send-btn" title="Send message">↑</button>
     </div>
     <div class="copilot-disclaimer">AI can make mistakes. Verify critical risk data.</div>
@@ -753,203 +952,228 @@
 <!-- ======================================================= -->
 <script>
   // User & Role context from session
-  const CURRENT_USER_ROLE = "{{ session.get('role_name', 'Risk Owner') }}";
-  const CURRENT_ROLE_ID = {{ session.get('role_id', 2) }};
-  const CURRENT_USER_ID = {{ session.get('user_id', 5) }};
-  const CURRENT_DEPT_ID = {{ session.get('department_id', 1) }};
-  const CURRENT_DEPT_NAME = "{{ session.get('department_name', 'Operations') }}";
+  const CURRENT_USER_ROLE = "{{ session.get('role_name') or session.get('usertype') or (session.get('login_data') and session['login_data'].get('userType')) or 'Risk Owner' }}";
+  const CURRENT_ROLE_ID = {{ session.get('role_id') or (session.get('login_data') and session['login_data'].get('roleid')) or (session.get('login_data') and session['login_data'].get('userTypeId')) or 2 }};
+  const CURRENT_USER_ID = {{ session.get('user_id') or (session.get('login_data') and session['login_data'].get('userId')) or (session.get('login_data') and session['login_data'].get('id')) or 5 }};
+  const CURRENT_DEPT_ID = {{ session.get('department_id') or session.get('dept_id') or (session.get('login_data') and session['login_data'].get('userDept')) or 1 }};
+  const CURRENT_DEPT_NAME = "{{ session.get('department_name') or session.get('dept_name') or (session.get('login_data') and session['login_data'].get('dept_name')) or (session.get('login_data') and session['login_data'].get('deptName')) or 'Gas Processing Facilities' }}";
 
   let isCopilotOpen = false;
   let isCopilotExpanded = false;
   let isFirstMessageSent = false;
   let currentRequestId = null;
 
+  // Helper to reliably obtain the user's active authenticated role
+  function getEffectiveUserRole() {
+    if (typeof APP_DATA !== 'undefined' && APP_DATA) {
+      if (APP_DATA.userType && typeof APP_DATA.userType === 'string' && APP_DATA.userType.trim()) return APP_DATA.userType.trim();
+      if (APP_DATA.role_name && typeof APP_DATA.role_name === 'string' && APP_DATA.role_name.trim()) return APP_DATA.role_name.trim();
+    }
+    const headerRole = document.getElementById('card_role');
+    if (headerRole && headerRole.innerText && headerRole.innerText.trim()) {
+      return headerRole.innerText.trim();
+    }
+    return CURRENT_USER_ROLE || 'Risk Owner';
+  }
+
   // Render exactly 3 role-specific suggestion cards
   function initRoleSpecificCards() {
     const container = document.getElementById('copilot-prompt-cards-container');
     if (!container) return;
 
-    const roleLower = (CURRENT_USER_ROLE || '').toLowerCase();
+    const rawRole = getEffectiveUserRole();
+    const roleLower = rawRole.toLowerCase().trim().replace(/_/g, ' ').replace(/-/g, ' ');
     let cardsHtml = '';
 
-    // 1. FUNCTIONAL HEAD
-    if (CURRENT_ROLE_ID === 4 || roleLower.includes('function head') || roleLower.includes('fh') || roleLower.includes('functional head')) {
+    // 1. RISK OWNER
+    if (
+      roleLower === 'ro' || roleLower === 'risk owner' || roleLower.includes('risk owner') ||
+      (roleLower.includes('owner') && !roleLower.includes('action'))
+    ) {
       cardsHtml = `
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show pending Functional Head approvals')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Create a new risk')">
+          <div class="copilot-prompt-card-icon">➕</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Create a new risk</div>
+            <div class="copilot-prompt-card-desc">Formulate and score a new risk record</div>
+          </div>
+        </div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show my open risks')">
           <div class="copilot-prompt-card-icon">📋</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Pending FH Approvals</div>
-            <div class="copilot-prompt-card-desc">Risks waiting on Functional Head sign-off</div>
+            <div class="copilot-prompt-card-title">Show my open risks</div>
+            <div class="copilot-prompt-card-desc">View registered and active risks</div>
           </div>
         </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Provide department summary and risk profile for ${CURRENT_DEPT_NAME}')">
-          <div class="copilot-prompt-card-icon">📊</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Department Summary</div>
-            <div class="copilot-prompt-card-desc">Risk profile & matrix for ${CURRENT_DEPT_NAME}</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show overdue actions in ${CURRENT_DEPT_NAME}')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks that need my action')">
           <div class="copilot-prompt-card-icon">⚠️</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Overdue Action Items</div>
-            <div class="copilot-prompt-card-desc">Action plans past target completion date</div>
+            <div class="copilot-prompt-card-title">Show risks that need my action</div>
+            <div class="copilot-prompt-card-desc">Risks requiring your follow-up or attention</div>
           </div>
         </div>
       `;
     }
-    // 2. RISK MANAGER
-    else if (CURRENT_ROLE_ID === 3 || roleLower.includes('risk manager') || roleLower === 'rm' || (roleLower.includes('manager') && !roleLower.includes('functional'))) {
+    // 2. APPROVER ROLES: FUNCTIONAL HEAD, RISK MANAGER, RISK HEAD (CRO)
+    // Functional Head, Risk Manager, and Risk Head share the SAME unified suggestion set
+    else if (
+      roleLower === 'fh' || roleLower === 'rm' || roleLower === 'rh' || roleLower === 'cro' ||
+      roleLower.includes('functional head') || roleLower.includes('function head') ||
+      roleLower.includes('risk manager') ||
+      roleLower.includes('risk head') || roleLower.includes('chief risk') ||
+      (roleLower.includes('manager') && !roleLower.includes('admin')) ||
+      (roleLower.includes('head') && !roleLower.includes('admin'))
+    ) {
       cardsHtml = `
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show pending Stage 3 approvals')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks pending my approval')">
           <div class="copilot-prompt-card-icon">📥</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Stage 3 Audit Queue</div>
-            <div class="copilot-prompt-card-desc">Cross-department assessment validation</div>
+            <div class="copilot-prompt-card-title">Show risks pending my approval</div>
+            <div class="copilot-prompt-card-desc">Risks waiting in your governance review queue</div>
           </div>
         </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show 5x5 heatmap matrix')">
-          <div class="copilot-prompt-card-icon">🗺️</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">5×5 Enterprise Heatmap</div>
-            <div class="copilot-prompt-card-desc">High & Critical risk exposure distribution</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Identify overdue mitigation actions and treatment bottlenecks')">
-          <div class="copilot-prompt-card-icon">⏱️</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Treatment Bottlenecks</div>
-            <div class="copilot-prompt-card-desc">Overdue mitigation tracking across functions</div>
-          </div>
-        </div>
-      `;
-    }
-    // 3. RISK HEAD (CRO)
-    else if (CURRENT_ROLE_ID === 5 || roleLower.includes('risk head') || roleLower.includes('cro') || roleLower.includes('chief risk')) {
-      cardsHtml = `
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show pending Stage 4 approvals')">
-          <div class="copilot-prompt-card-icon">🏛️</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Stage 4 Final Approvals</div>
-            <div class="copilot-prompt-card-desc">Executive sign-off queue for enterprise risks</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show executive risk profile')">
-          <div class="copilot-prompt-card-icon">📊</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Executive Board Summary</div>
-            <div class="copilot-prompt-card-desc">C-suite enterprise risk exposure & KPIs</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show top open high-severity risks in the plant')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show high and critical risks')">
           <div class="copilot-prompt-card-icon">🔴</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Critical Plant Hazards</div>
-            <div class="copilot-prompt-card-desc">Highest severity hazards & escalation oversight</div>
+            <div class="copilot-prompt-card-title">Show high and critical risks</div>
+            <div class="copilot-prompt-card-desc">High-severity hazards requiring intervention</div>
+          </div>
+        </div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks that need my action')">
+          <div class="copilot-prompt-card-icon">⚠️</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show risks that need my action</div>
+            <div class="copilot-prompt-card-desc">Risks requiring decision or governance input</div>
           </div>
         </div>
       `;
     }
-    // 4. AUDITOR
-    else if (roleLower.includes('audit') || roleLower.includes('auditor') || roleLower.includes('compliance')) {
+    // 3. ACTION OWNER
+    else if (roleLower === 'ao' || roleLower.includes('action owner') || roleLower.includes('actionee') || roleLower.includes('action')) {
+      cardsHtml = `
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show my pending actions')">
+          <div class="copilot-prompt-card-icon">⏱️</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show my pending actions</div>
+            <div class="copilot-prompt-card-desc">Assigned mitigation plans currently in progress</div>
+          </div>
+        </div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show my overdue actions')">
+          <div class="copilot-prompt-card-icon">⚠️</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show my overdue actions</div>
+            <div class="copilot-prompt-card-desc">Action items past target completion date</div>
+          </div>
+        </div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show my assigned risks')">
+          <div class="copilot-prompt-card-icon">📋</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show my assigned risks</div>
+            <div class="copilot-prompt-card-desc">Risks where you are designated as action owner</div>
+          </div>
+        </div>
+      `;
+    }
+    // 4. ADMIN / SUPER ADMIN
+    else if (roleLower.includes('admin') || roleLower.includes('super admin')) {
+      cardsHtml = `
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show overall risk status')">
+          <div class="copilot-prompt-card-icon">⚙️</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show overall risk status</div>
+            <div class="copilot-prompt-card-desc">Health across all approval stages and register</div>
+          </div>
+        </div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show high and critical risks')">
+          <div class="copilot-prompt-card-icon">🔴</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show high and critical risks</div>
+            <div class="copilot-prompt-card-desc">Enterprise-wide high and critical risk exposure</div>
+          </div>
+        </div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks by department')">
+          <div class="copilot-prompt-card-icon">📊</div>
+          <div class="copilot-prompt-card-text">
+            <div class="copilot-prompt-card-title">Show risks by department</div>
+            <div class="copilot-prompt-card-desc">Risk profiles and distribution across departments</div>
+          </div>
+        </div>
+      `;
+    }
+    // 5. AUDITOR
+    else if (roleLower.includes('audit') || roleLower.includes('compliance')) {
       cardsHtml = `
         <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show audit trail for risk')">
           <div class="copilot-prompt-card-icon">📜</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Reconstruct Audit Trail</div>
+            <div class="copilot-prompt-card-title">Show audit trail for risk</div>
             <div class="copilot-prompt-card-desc">Immutable history, timestamps & evidence</div>
           </div>
         </div>
         <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show pending approvals')">
           <div class="copilot-prompt-card-icon">✅</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Approval Verification Logs</div>
+            <div class="copilot-prompt-card-title">Show pending approvals</div>
             <div class="copilot-prompt-card-desc">Multi-stage sign-off governance trail</div>
           </div>
         </div>
         <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show all risks in the register')">
           <div class="copilot-prompt-card-icon">📋</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Compliance Register Overview</div>
+            <div class="copilot-prompt-card-title">Show all risks in the register</div>
             <div class="copilot-prompt-card-desc">Enterprise risk fleet & closure metrics</div>
           </div>
         </div>
       `;
     }
-    // 5. MANAGEMENT / EXECUTIVE
+    // 6. EXECUTIVE / MANAGEMENT
     else if (roleLower.includes('management') || roleLower.includes('executive') || roleLower.includes('c-suite') || roleLower.includes('board')) {
       cardsHtml = `
         <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show executive risk profile')">
           <div class="copilot-prompt-card-icon">📊</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Executive Risk Overview</div>
-            <div class="copilot-prompt-card-desc">Strategic risk posture & compliance metrics</div>
+            <div class="copilot-prompt-card-title">Show executive risk profile</div>
+            <div class="copilot-prompt-card-desc">Strategic C-suite risk exposure & KPIs</div>
           </div>
         </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show 5x5 heatmap matrix')">
-          <div class="copilot-prompt-card-icon">🗺️</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Plant Risk Heatmap</div>
-            <div class="copilot-prompt-card-desc">5×5 distribution across business units</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show top open high-severity risks in the plant')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show high and critical risks')">
           <div class="copilot-prompt-card-icon">🔴</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Top Critical Exposures</div>
-            <div class="copilot-prompt-card-desc">Highest severity hazards requiring intervention</div>
+            <div class="copilot-prompt-card-title">Show high and critical risks</div>
+            <div class="copilot-prompt-card-desc">Plant-wide high and critical risk distribution</div>
           </div>
         </div>
-      `;
-    }
-    // 6. ERM ADMIN / SUPER ADMIN
-    else if (CURRENT_ROLE_ID === 1 || roleLower.includes('admin') || roleLower.includes('super admin')) {
-      cardsHtml = `
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show approval queues and workflow status')">
-          <div class="copilot-prompt-card-icon">⚙️</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Workflow Governance Status</div>
-            <div class="copilot-prompt-card-desc">Health across all 4 approval stages</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show all risks in the register')">
-          <div class="copilot-prompt-card-icon">📋</div>
-          <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Complete Risk Register</div>
-            <div class="copilot-prompt-card-desc">Enterprise risk repository across units</div>
-          </div>
-        </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show 5x5 heatmap matrix')">
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks by department')">
           <div class="copilot-prompt-card-icon">🗺️</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">5×5 Risk Heatmap</div>
-            <div class="copilot-prompt-card-desc">Likelihood × Impact matrix distribution</div>
+            <div class="copilot-prompt-card-title">Show risks by department</div>
+            <div class="copilot-prompt-card-desc">Risk profile across business units</div>
           </div>
         </div>
       `;
     }
-    // 7. DEFAULT: RISK OWNER
+    // 7. DEFAULT / SAFE FALLBACK: RISK OWNER
     else {
       cardsHtml = `
         <div class="copilot-prompt-card" onclick="sendQuickPrompt('Create a new risk')">
           <div class="copilot-prompt-card-icon">➕</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Create New Risk</div>
-            <div class="copilot-prompt-card-desc">Log an operational hazard & 5×5 rating</div>
+            <div class="copilot-prompt-card-title">Create a new risk</div>
+            <div class="copilot-prompt-card-desc">Formulate and score a new risk record</div>
           </div>
         </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Help draft a mitigation treatment plan for my risk')">
-          <div class="copilot-prompt-card-icon">📝</div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show my open risks')">
+          <div class="copilot-prompt-card-icon">📋</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">Draft Mitigation Plan</div>
-            <div class="copilot-prompt-card-desc">AI-generated preventive & corrective controls</div>
+            <div class="copilot-prompt-card-title">Show my open risks</div>
+            <div class="copilot-prompt-card-desc">View registered and active risks</div>
           </div>
         </div>
-        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Which risk action plans are overdue?')">
-          <div class="copilot-prompt-card-icon">⏰</div>
+        <div class="copilot-prompt-card" onclick="sendQuickPrompt('Show risks that need my action')">
+          <div class="copilot-prompt-card-icon">⚠️</div>
           <div class="copilot-prompt-card-text">
-            <div class="copilot-prompt-card-title">My Overdue Actions</div>
-            <div class="copilot-prompt-card-desc">Action plans past target completion date</div>
+            <div class="copilot-prompt-card-title">Show risks that need my action</div>
+            <div class="copilot-prompt-card-desc">Risks requiring your follow-up or attention</div>
           </div>
         </div>
       `;
@@ -972,6 +1196,9 @@
       win.style.display = 'flex';
       launcher.style.display = 'none';
       isCopilotOpen = true;
+      if (!isFirstMessageSent) {
+        initRoleSpecificCards();
+      }
       setTimeout(() => {
         const inp = document.getElementById('copilot-user-input');
         if (inp) inp.focus();
@@ -1003,6 +1230,135 @@
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       submitCopilotMessage();
+    }
+  }
+
+  // Qwen3-ASR Live Speech-to-Text Controller
+  let copilotMediaRecorder = null;
+  let copilotAudioChunks = [];
+  let copilotAudioStream = null;
+  let isVoiceRecording = false;
+
+  async function toggleCopilotVoiceInput() {
+    const voiceBtn = document.getElementById('copilot-voice-btn');
+    const input = document.getElementById('copilot-user-input');
+    const waveBanner = document.getElementById('copilot-live-voice-wave');
+    const statusText = document.getElementById('copilot-voice-status-text');
+
+    if (isVoiceRecording) {
+      stopVoiceRecording();
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('Microphone recording is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    try {
+      copilotAudioChunks = [];
+      copilotAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4');
+      copilotMediaRecorder = new MediaRecorder(copilotAudioStream, { mimeType: mimeType });
+
+      copilotMediaRecorder.ondataavailable = function(e) {
+        if (e.data && e.data.size > 0) {
+          copilotAudioChunks.push(e.data);
+        }
+      };
+
+      copilotMediaRecorder.onstart = function() {
+        isVoiceRecording = true;
+        if (voiceBtn) {
+          voiceBtn.classList.add('recording');
+          voiceBtn.title = 'Recording voice... Click to finish';
+        }
+        if (waveBanner) {
+          waveBanner.style.display = 'flex';
+        }
+        if (statusText) {
+          statusText.innerText = '🎙️ Listening live... speak your prompt';
+        }
+        if (input) {
+          input.placeholder = '🎙️ Recording voice for Qwen3-ASR...';
+        }
+      };
+
+      copilotMediaRecorder.onstop = async function() {
+        if (copilotAudioChunks.length === 0) return;
+        
+        const audioBlob = new Blob(copilotAudioChunks, { type: copilotMediaRecorder.mimeType || 'audio/webm' });
+        
+        // Show transcribing indicator in status banner
+        if (statusText) {
+          statusText.innerText = '🤖 Transcribing audio with Qwen3-ASR...';
+        }
+        if (input) {
+          input.placeholder = '⏳ Transcribing with Qwen3-ASR...';
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'prompt_audio.webm');
+
+          const resp = await fetch('/api/erm/speech-to-text', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await resp.json();
+          if (result.status === 'success' && result.text) {
+            if (input) {
+              input.value = (input.value ? input.value.trim() + ' ' : '') + result.text.trim();
+              input.focus();
+            }
+          } else {
+            console.warn('Qwen3-ASR notice:', result.message || 'No speech detected');
+          }
+        } catch (err) {
+          console.error('Qwen3-ASR transcription error:', err);
+        } finally {
+          cleanupVoiceUI();
+        }
+      };
+
+      copilotMediaRecorder.start(250); // Slice chunks every 250ms
+    } catch (err) {
+      console.error('Microphone access failed:', err);
+      alert('Microphone permission was denied. Please allow microphone access in your browser settings.');
+      cleanupVoiceUI();
+    }
+  }
+
+  function stopVoiceRecording() {
+    isVoiceRecording = false;
+    if (copilotMediaRecorder && copilotMediaRecorder.state !== 'inactive') {
+      try {
+        copilotMediaRecorder.stop();
+      } catch (e) {}
+    }
+    if (copilotAudioStream) {
+      copilotAudioStream.getTracks().forEach(t => t.stop());
+    }
+  }
+
+  function cleanupVoiceUI() {
+    isVoiceRecording = false;
+    const voiceBtn = document.getElementById('copilot-voice-btn');
+    const input = document.getElementById('copilot-user-input');
+    const waveBanner = document.getElementById('copilot-live-voice-wave');
+    
+    if (voiceBtn) {
+      voiceBtn.classList.remove('recording');
+      voiceBtn.title = 'Live Voice Input (Qwen3-ASR)';
+    }
+    if (waveBanner) {
+      waveBanner.style.display = 'none';
+    }
+    if (input) {
+      input.placeholder = isFirstMessageSent ? 'Ask a follow-up' : 'Ask about risks or actions';
+      input.focus();
     }
   }
 
@@ -1040,12 +1396,13 @@
     const typingId = showTypingIndicator();
 
     try {
+      const activeRole = getEffectiveUserRole();
       const response = await fetch('/api/erm/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: message,
-          role: CURRENT_USER_ROLE,
+          role: activeRole,
           user_id: CURRENT_USER_ID,
           dept_id: CURRENT_DEPT_ID,
           dept_name: CURRENT_DEPT_NAME
@@ -1104,39 +1461,6 @@
     if (el) el.remove();
   }
 
-  // Get exactly 3 role-specific action suggestion chips
-  function getRoleActionChips(msgId) {
-    const roleLower = (CURRENT_USER_ROLE || '').toLowerCase();
-    let chip1 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Help draft a mitigation treatment plan for my risk')">📄 Draft treatment</button>`;
-    let chip2 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show 5x5 heatmap matrix')">🗺️ 5×5 Heatmap</button>`;
-    const chipExport = `<button class="copilot-action-btn" onclick="exportCopilotResponse('${msgId}')">📄 Export</button>`;
-
-    if (CURRENT_ROLE_ID === 4 || roleLower.includes('function head') || roleLower.includes('fh')) {
-      chip1 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show pending Functional Head approvals')">📥 Pending Approvals</button>`;
-      chip2 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Provide department summary and risk profile for ${CURRENT_DEPT_NAME}')">📊 Dept Summary</button>`;
-    } else if (CURRENT_ROLE_ID === 3 || roleLower.includes('manager')) {
-      chip1 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show pending Stage 3 approvals')">📥 Stage 3 Queue</button>`;
-      chip2 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show 5x5 heatmap matrix')">🗺️ Enterprise Matrix</button>`;
-    } else if (CURRENT_ROLE_ID === 5 || roleLower.includes('cro') || roleLower.includes('head')) {
-      chip1 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show pending Stage 4 approvals')">🏛️ Stage 4 Approvals</button>`;
-      chip2 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show top open high-severity risks in the plant')">🔴 Critical Hazards</button>`;
-    } else if (roleLower.includes('audit')) {
-      chip1 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show audit trail for risk')">📜 Reconstruct Audit</button>`;
-      chip2 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show pending approvals')">✅ Verify Logs</button>`;
-    } else if (roleLower.includes('executive') || roleLower.includes('management')) {
-      chip1 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show executive risk profile')">📊 Executive Summary</button>`;
-      chip2 = `<button class="copilot-action-btn" onclick="sendQuickPrompt('Show 5x5 heatmap matrix')">🗺️ Plant Heatmap</button>`;
-    }
-
-    return `
-      <div class="copilot-action-chips">
-        ${chip1}
-        ${chip2}
-        ${chipExport}
-      </div>
-    `;
-  }
-
   // Format and Append Bot Response
   function appendBotMessage(rawText, metadata, isError = false) {
     const body = document.getElementById('erm-copilot-body');
@@ -1152,8 +1476,6 @@
         <div class="bot-content-area">
           ${formattedContent}
           ${!isError ? `
-            <!-- Exactly 3 role-specific action suggestion chips -->
-            ${getRoleActionChips(msgId)}
             <!-- Feedback strip -->
             <div class="copilot-feedback-strip">
               <button class="copilot-feedback-btn" onclick="submitFeedback(1, '${msgId}')" title="Helpful">👍</button>
@@ -1230,27 +1552,168 @@
       return `<div class="copilot-risk-card-item"><span><strong>${riskCode}</strong> ${desc.replace(/critical|high|medium|low/gi, '').trim()}</span>${badge}</div>`;
     });
 
-    // Convert [btn:...|...] into styled action buttons
-    safe = safe.replace(/\[btn-confirm:([^\|\]]+)\|([^\]]+)\]/g, '<button class="copilot-action-btn" style="background:#16a34a; color:#fff; border-color:#15803d;" onclick="sendQuickPrompt(\'$2\')">$1</button>');
-    safe = safe.replace(/\[btn-cancel:([^\|\]]+)\|([^\]]+)\]/g, '<button class="copilot-action-btn" style="background:#dc2626; color:#fff; border-color:#b91c1c;" onclick="sendQuickPrompt(\'$2\')">$1</button>');
-    safe = safe.replace(/\[btn:([^\|\]]+)\|([^\]]+)\]/g, '<button class="copilot-action-btn" onclick="sendQuickPrompt(\'$2\')">$1</button>');
+    // Convert [assessment-matrix:type] into interactive dual dropdown selector with live score calculation
+    safe = safe.replace(/\[assessment-matrix:(inherent|current)\]/g, function(match, type) {
+      const uid = 'matrix_' + Math.random().toString(36).substr(2, 6);
+      return `
+      <div class="copilot-assessment-box" id="${uid}">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 6px 0;">
+          <div style="flex:1; min-width:140px;">
+            <label style="font-size:11.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">
+              📊 Likelihood (Probability) <span style="color:#ef4444;">*</span>
+            </label>
+            <select class="copilot-select-dropdown copilot-l-select" style="width:100%; max-width:100%; box-sizing:border-box;" onchange="copilotUpdateAssessment('${uid}')">
+              <option value="" disabled selected>Select Likelihood...</option>
+              <option value="1">1 - Remote (Rare)</option>
+              <option value="2">2 - Unlikely (Low)</option>
+              <option value="3">3 - Possible (Moderate)</option>
+              <option value="4">4 - Probable (Likely)</option>
+              <option value="5">5 - Expected (Certain)</option>
+            </select>
+          </div>
+          <div style="flex:1; min-width:140px;">
+            <label style="font-size:11.5px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">
+              💥 Impact (Severity) <span style="color:#ef4444;">*</span>
+            </label>
+            <select class="copilot-select-dropdown copilot-i-select" style="width:100%; max-width:100%; box-sizing:border-box;" onchange="copilotUpdateAssessment('${uid}')">
+              <option value="" disabled selected>Select Impact...</option>
+              <option value="1">1 - Negligible (Insignificant)</option>
+              <option value="2">2 - Minor (Low)</option>
+              <option value="3">3 - Moderate (Medium)</option>
+              <option value="4">4 - Major (High)</option>
+              <option value="5">5 - Extreme (Catastrophic)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:6px; border-top:1px dashed #cbd5e1;">
+          <div class="copilot-calc-score-display" style="font-size:12px; font-weight:600; color:#64748b;">
+            Calculated Score: <span class="badge-placeholder" style="color:#94a3b8; font-style:italic;">Select both</span>
+          </div>
+          <button type="button" class="copilot-action-btn copilot-calc-apply-btn" style="background:#2563eb; color:#ffffff; border-color:#1d4ed8; font-weight:600; font-size:12px; padding:6px 14px; display:none;" onclick="copilotSubmitAssessment('${uid}')">
+            Apply Rating ➔
+          </button>
+        </div>
+      </div>`;
+    });
 
-    // Basic markdown tags
-    safe = safe.replace(/###\s+(.*)/g, '<div style="font-weight:700; color:#0f172a; font-size:13.5px; margin:8px 0 4px 0;">$1</div>');
-    safe = safe.replace(/##\s+(.*)/g, '<div style="font-weight:700; color:#0f172a; font-size:14px; margin:10px 0 6px 0;">$1</div>');
+    // Convert [select:Placeholder|Options] into styled interactive dropdowns
+    safe = safe.replace(/\[select:([^\|\]]+)\|([^\]]+)\]/g, function(match, placeholder, optionsStr) {
+      const opts = optionsStr.split(';');
+      let html = '<div class="copilot-dropdown-container"><select class="copilot-select-dropdown" onchange="if(this.value){sendQuickPrompt(this.value);this.selectedIndex=0;}">';
+      html += `<option value="" disabled selected>${placeholder}</option>`;
+      opts.forEach(opt => {
+        const parts = opt.split('::');
+        const label = parts[0].trim();
+        const val = (parts[1] || parts[0]).trim();
+        if (label) {
+          html += `<option value="${val}">${label}</option>`;
+        }
+      });
+      html += '</select></div>';
+      return html;
+    });
+
+    // Convert [btn:...|...] into styled action buttons
+    safe = safe.replace(/\[btn-confirm:([^\|\t\]]+)[\|\t]([^\]]+)\]/g, '<button class="copilot-action-btn" style="background:#16a34a; color:#fff; border-color:#15803d; font-weight:600;" onclick="sendQuickPrompt(\'$2\')">$1</button>');
+    safe = safe.replace(/\[btn-cancel:([^\|\t\]]+)[\|\t]([^\]]+)\]/g, '<button class="copilot-action-btn" style="background:#dc2626; color:#fff; border-color:#b91c1c; font-weight:600;" onclick="sendQuickPrompt(\'$2\')">$1</button>');
+    safe = safe.replace(/\[btn:([^\|\t\]]+)[\|\t]([^\]]+)\]/g, '<button class="copilot-action-btn" onclick="sendQuickPrompt(\'$2\')">$1</button>');
+
+    // Convert horizontal dividers
+    safe = safe.replace(/^---$/gm, '<hr class="copilot-divider"/>');
+
+    // Convert inline code chips
+    safe = safe.replace(/`([^`]+)`/g, '<code class="copilot-inline-code">$1</code>');
+
+    // Convert headers
+    safe = safe.replace(/####\s+(.*)/g, '<div class="copilot-subsection-header">$1</div>');
+    safe = safe.replace(/###\s+(.*)/g, '<div class="copilot-section-header">$1</div>');
+    safe = safe.replace(/##\s+(.*)/g, '<div class="copilot-section-header" style="font-size:15px;">$1</div>');
+
+    // Convert markdown formatting
     safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
     safe = safe.replace(/\n\n/g, '<br/><br/>');
     safe = safe.replace(/\n/g, '<br/>');
 
     return `<div class="bot-intro-text">${safe}</div>`;
   }
 
+  function copilotUpdateAssessment(uid) {
+    const box = document.getElementById(uid);
+    if (!box) return;
+    const lSelect = box.querySelector('.copilot-l-select');
+    const iSelect = box.querySelector('.copilot-i-select');
+    const scoreDisplay = box.querySelector('.copilot-calc-score-display');
+    const applyBtn = box.querySelector('.copilot-calc-apply-btn');
+
+    const lVal = parseInt(lSelect.value, 10);
+    const iVal = parseInt(iSelect.value, 10);
+
+    if (lVal >= 1 && lVal <= 5 && iVal >= 1 && iVal <= 5) {
+      const score = lVal * iVal;
+      let badgeHtml = '';
+      if (score >= 15) {
+        badgeHtml = `<strong style="color:#dc2626;">${score} / 25 [CRITICAL]</strong>`;
+      } else if (score >= 10) {
+        badgeHtml = `<strong style="color:#ea580c;">${score} / 25 [HIGH]</strong>`;
+      } else if (score >= 5) {
+        badgeHtml = `<strong style="color:#d97706;">${score} / 25 [MEDIUM]</strong>`;
+      } else {
+        badgeHtml = `<strong style="color:#16a34a;">${score} / 25 [LOW]</strong>`;
+      }
+      scoreDisplay.innerHTML = `Calculated Score: ${badgeHtml}`;
+      applyBtn.style.display = 'inline-block';
+      applyBtn.innerHTML = `Apply Rating (${score}) ➔`;
+    } else if (lVal >= 1 && lVal <= 5) {
+      scoreDisplay.innerHTML = `Likelihood: <strong>${lVal}</strong> &bull; <span style="color:#e11d48; font-style:italic;">Please select Impact</span>`;
+      applyBtn.style.display = 'none';
+    } else if (iVal >= 1 && iVal <= 5) {
+      scoreDisplay.innerHTML = `Impact: <strong>${iVal}</strong> &bull; <span style="color:#e11d48; font-style:italic;">Please select Likelihood</span>`;
+      applyBtn.style.display = 'none';
+    } else {
+      scoreDisplay.innerHTML = `Calculated Score: <span style="color:#94a3b8; font-style:italic;">Select both</span>`;
+      applyBtn.style.display = 'none';
+    }
+  }
+
+  function copilotSubmitAssessment(uid) {
+    const box = document.getElementById(uid);
+    if (!box) return;
+    const lSelect = box.querySelector('.copilot-l-select');
+    const iSelect = box.querySelector('.copilot-i-select');
+    const lVal = lSelect.value;
+    const iVal = iSelect.value;
+    if (lVal && iVal) {
+      sendQuickPrompt(`Likelihood ${lVal} Impact ${iVal}`);
+    }
+  }
+
   function formatBadges(text) {
-    if (/^critical$/i.test(text.trim())) return '<span class="copilot-badge badge-critical">Critical</span>';
-    if (/^high$/i.test(text.trim())) return '<span class="copilot-badge badge-high">High</span>';
-    if (/^medium$/i.test(text.trim())) return '<span class="copilot-badge badge-medium">Medium</span>';
-    if (/^low$/i.test(text.trim())) return '<span class="copilot-badge badge-low">Low</span>';
-    return text;
+    if (!text) return text;
+    let t = text.trim();
+    
+    // Strip bolding asterisks if present inside table cells
+    t = t.replace(/\*\*/g, '');
+
+    if (/critical/i.test(t) || /🔴/.test(t)) {
+      return `<span class="copilot-badge badge-critical">${t}</span>`;
+    }
+    if (/high/i.test(t) || /🟠/.test(t)) {
+      return `<span class="copilot-badge badge-high">${t}</span>`;
+    }
+    if (/medium/i.test(t) || /🟡/.test(t)) {
+      return `<span class="copilot-badge badge-medium">${t}</span>`;
+    }
+    if (/low/i.test(t) || /🟢/.test(t)) {
+      return `<span class="copilot-badge badge-low">${t}</span>`;
+    }
+    if (/approved/i.test(t) || /completed/i.test(t)) {
+      return `<span class="copilot-badge badge-low">${t}</span>`;
+    }
+    if (/submitted/i.test(t) || /pending/i.test(t) || /draft/i.test(t)) {
+      return `<span class="copilot-badge badge-info">${t}</span>`;
+    }
+    return t;
   }
 
   // Copy bot text

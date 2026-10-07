@@ -13,11 +13,13 @@ auth_bp = Blueprint("auth", __name__)
 def proxy_erm_chat():
     try:
         payload = request.get_json() or {}
-        msg = payload.get("message", "")
-        role = payload.get("role", "")
-        user_id = payload.get("user_id", "5")
-        dept_id = payload.get("dept_id")
-        dept_name = payload.get("dept_name")
+        msg = payload.get("message") or payload.get("query") or ""
+        session_id = payload.get("session_id") or session.get("session_id") or ""
+        login_data = session.get("login_data") or {}
+        user_id = payload.get("user_id") or login_data.get("userId") or login_data.get("id") or session.get("user_id") or "5"
+        role = payload.get("role") or login_data.get("userType") or session.get("usertype") or session.get("role_name") or "Risk Owner"
+        dept_id = payload.get("dept_id") or login_data.get("userDept") or session.get("dept_id") or session.get("department_id") or 1
+        dept_name = payload.get("dept_name") or login_data.get("dept_name") or session.get("department_name") or session.get("dept_name")
 
         # 1. Direct in-process execution via standalone ERM_Copilot module
         try:
@@ -30,6 +32,7 @@ def proxy_erm_chat():
             from ERM_Copilot import erm_copilot_agent, AgentRequest
             req = AgentRequest(
                 message=msg,
+                session_id=str(session_id),
                 user_id=str(user_id),
                 user_role=role,
                 metadata={
@@ -58,6 +61,41 @@ def proxy_erm_chat():
     except Exception as e:
         current_app.logger.error(f"ERM Copilot error: {str(e)}")
         return jsonify({"status": "error", "answer": "AI Copilot backend is initializing or unreachable. Please try again in a few seconds."}), 502
+
+
+@auth_bp.route("/api/erm/speech-to-text", methods=["POST"])
+def proxy_erm_speech_to_text():
+    """Process voice audio upload and transcribe with Qwen3-ASR / Whisper."""
+    try:
+        audio_file = request.files.get("audio") or request.files.get("file")
+        if not audio_file:
+            return jsonify({"status": "error", "message": "No audio file uploaded."}), 400
+
+        audio_bytes = audio_file.read()
+        filename = audio_file.filename or "audio.webm"
+        content_type = audio_file.content_type or "audio/webm"
+
+        # Direct in-process execution via ERM_Copilot speech service
+        try:
+            import sys
+            from pathlib import Path
+            erm_root = str(Path(__file__).resolve().parents[4])
+            if erm_root not in sys.path:
+                sys.path.insert(0, erm_root)
+            
+            from ERM_Copilot.services.speech_service import qwen_speech_service
+            res = qwen_speech_service.transcribe_audio(
+                audio_bytes=audio_bytes,
+                filename=filename,
+                content_type=content_type
+            )
+            return jsonify(res), 200
+        except Exception as local_err:
+            current_app.logger.info(f"Direct Speech-to-Text execution failed: {local_err}")
+            return jsonify({"status": "error", "message": str(local_err)}), 500
+    except Exception as e:
+        current_app.logger.error(f"Speech-to-text endpoint error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @auth_bp.route("/api/erm/feedback", methods=["POST"])
@@ -1148,13 +1186,10 @@ def getApprovalHistorybyRiskId():
         )
         data = response.json()
         current_app.logger.info(f"API responsee->{data}")
-        # current_app.logger.infcurrent_app.logger.info(f"API Dept Save{data}")o(f"User Info get logged in: {data.get("user_fname")}")
-        # current_app.logger.info(f"Use api hittt ")
         return jsonify(data), 200
     except Exception as e:
         current_app.logger.error(f"getApprovalHistorybyRiskId Error -> {str(e)}")
-        flash("user failed")
-    return render_template("RiskRegister.html")
+        return jsonify({"data": [], "Error": {"Error": False, "Error_message": "No history records", "Error_Code": 200}}), 200
 
 @auth_bp.route("/getRiskRegisterbyid", methods=["GET", "POST"])
 def getRiskRegisterbyid():
