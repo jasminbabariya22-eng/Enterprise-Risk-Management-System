@@ -16,12 +16,35 @@ def proxy_erm_chat():
         msg = payload.get("message") or payload.get("query") or ""
         session_id = payload.get("session_id") or session.get("session_id") or ""
         login_data = session.get("login_data") or {}
-        user_id = payload.get("user_id") or login_data.get("userId") or login_data.get("id") or session.get("user_id") or "5"
-        role = payload.get("role") or login_data.get("userType") or session.get("usertype") or session.get("role_name") or "Risk Owner"
-        dept_id = payload.get("dept_id") or login_data.get("userDept") or session.get("dept_id") or session.get("department_id") or 1
-        dept_name = payload.get("dept_name") or login_data.get("dept_name") or session.get("department_name") or session.get("dept_name")
+        
+        # Extract trusted identity strictly from session auth
+        auth_user_id = login_data.get("userId") or login_data.get("id") or session.get("user_id")
+        auth_role = login_data.get("userType") or session.get("usertype") or session.get("role_name")
+        auth_dept_id = login_data.get("userDept") or session.get("dept_id") or session.get("department_id")
+        auth_dept_name = login_data.get("dept_name") or session.get("department_name") or session.get("dept_name")
 
-        # 1. Direct in-process execution via standalone ERM_Copilot module
+        # In production web portal, session authentication is mandatory to prevent identity spoofing
+        user_id = auth_user_id
+        role = auth_role
+        dept_id = auth_dept_id
+        dept_name = auth_dept_name
+
+        # If not in session, allow internal API client only if authorized token/key is provided or test mode
+        if not user_id or not role:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer ") or request.headers.get("X-API-Key"):
+                user_id = payload.get("user_id")
+                role = payload.get("role")
+                dept_id = payload.get("dept_id")
+                dept_name = payload.get("dept_name")
+
+        if not user_id or not role:
+            return jsonify({
+                "status": "error",
+                "answer": "🛡️ **Authentication Required**: Please sign in to access the Enterprise Risk Management AI Copilot."
+            }), 401
+
+        # 1. Governed AI Execution via ERMAIHarness
         try:
             import sys
             from pathlib import Path
@@ -29,28 +52,27 @@ def proxy_erm_chat():
             if erm_root not in sys.path:
                 sys.path.insert(0, erm_root)
             
-            from ERM_Copilot import erm_copilot_agent, AgentRequest
-            req = AgentRequest(
-                message=msg,
-                session_id=str(session_id),
-                user_id=str(user_id),
+            from ERM_Copilot.ai_harness import ERMAIHarness, HarnessContext
+
+            context = HarnessContext.build_from_auth(
+                user_id=user_id,
                 user_role=role,
-                metadata={
-                    "role": role,
-                    "dept_id": dept_id,
-                    "dept_name": dept_name,
-                    "user_id": str(user_id)
-                }
+                dept_id=dept_id,
+                dept_name=dept_name,
+                session_id=str(session_id),
+                confirmation_state=payload.get("confirmation_state"),
             )
-            resp = erm_copilot_agent.process(req)
+
+            resp = ERMAIHarness.run(context=context, message=msg)
             answer_text = getattr(resp, "response", None) or getattr(resp, "answer", None) or "Analysis complete."
             return jsonify({
-                "status": "success",
+                "status": getattr(resp, "status", "success"),
                 "answer": answer_text,
                 "data": getattr(resp, "metadata", {})
             }), 200
         except Exception as local_err:
-            current_app.logger.info(f"Direct ERM_Copilot execution fallback to HTTP gateway: {local_err}")
+            current_app.logger.info(f"Direct ERM AI Harness execution fallback to HTTP gateway: {local_err}")
+
 
         # 2. Fallback to external HTTP gateway on port 8000
         res = requests.post("http://127.0.0.1:8000/api/erm/chat", json=payload, timeout=60)
@@ -61,6 +83,7 @@ def proxy_erm_chat():
     except Exception as e:
         current_app.logger.error(f"ERM Copilot error: {str(e)}")
         return jsonify({"status": "error", "answer": "AI Copilot backend is initializing or unreachable. Please try again in a few seconds."}), 502
+
 
 
 @auth_bp.route("/api/erm/speech-to-text", methods=["POST"])

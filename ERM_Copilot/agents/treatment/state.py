@@ -54,6 +54,52 @@ class TreatmentSession:
     available_risks: List[Dict[str, Any]] = field(default_factory=list)
     available_treatments: List[Dict[str, Any]] = field(default_factory=list)
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize treatment session to dictionary."""
+        return {
+            "session_id": self.session_id,
+            "user_id": self.user_id,
+            "user_role": self.user_role,
+            "dept_id": self.dept_id,
+            "dept_name": self.dept_name,
+            "state": self.state,
+            "mode": self.mode,
+            "target_risk_register_id": self.target_risk_register_id,
+            "target_risk_id": self.target_risk_id,
+            "target_risk_name": self.target_risk_name,
+            "treatment_id": self.treatment_id,
+            "action_plan": self.action_plan,
+            "action_owner_id": self.action_owner_id,
+            "action_owner_name": self.action_owner_name,
+            "target_date": self.target_date,
+            "progress": self.progress,
+            "action_status_id": self.action_status_id,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> TreatmentSession:
+        """Instantiate TreatmentSession from dictionary."""
+        return cls(
+            session_id=str(data.get("session_id", "")),
+            user_id=data.get("user_id", "5"),
+            user_role=str(data.get("user_role", "Risk Owner")),
+            dept_id=data.get("dept_id"),
+            dept_name=data.get("dept_name"),
+            state=data.get("state", TreatmentState.IDLE),
+            mode=data.get("mode", "ADD"),
+            target_risk_register_id=data.get("target_risk_register_id"),
+            target_risk_id=data.get("target_risk_id"),
+            target_risk_name=data.get("target_risk_name"),
+            treatment_id=data.get("treatment_id"),
+            action_plan=data.get("action_plan"),
+            action_owner_id=data.get("action_owner_id"),
+            action_owner_name=data.get("action_owner_name"),
+            target_date=data.get("target_date"),
+            progress=data.get("progress", 0),
+            action_status_id=data.get("action_status_id", 1),
+        )
+
+
 
 def parse_date_string(text: str) -> Optional[str]:
     """Parse explicit date or relative day offset."""

@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from app.core.security import jwt, JWTError
 from app.core.config import settings
 
 security = HTTPBearer()           # Create an instance of HTTPBearer for token authentication

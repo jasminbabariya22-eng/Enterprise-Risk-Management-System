@@ -13,6 +13,7 @@ from ERM_Copilot.config.settings import settings
 
 from ERM_Copilot.feedback.models import FeedbackEntry, FeedbackSummary
 from ERM_Copilot.feedback.service import FeedbackService, erm_feedback_service
+from ERM_Copilot.ai_harness import ERMAIHarness, erm_ai_harness, HarnessContext, tool_registry, ToolDefinition
 
 __all__ = [
     "erm_copilot_agent",
@@ -36,5 +37,11 @@ __all__ = [
     "FeedbackEntry",
     "FeedbackSummary",
     "FeedbackService",
-    "erm_feedback_service"
+    "erm_feedback_service",
+    "ERMAIHarness",
+    "erm_ai_harness",
+    "HarnessContext",
+    "tool_registry",
+    "ToolDefinition",
 ]
+

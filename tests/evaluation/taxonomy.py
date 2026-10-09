@@ -1,0 +1,68 @@
+"""
+ERM Copilot Test Taxonomy.
+Derived directly from the actual ERM application architecture, agents, tools, and RBAC policies.
+"""
+from enum import Enum
+from typing import List, Dict, Set
+
+
+class ERMRole(str, Enum):
+    RISK_OWNER = "Risk Owner"
+    FUNCTIONAL_HEAD = "Functional Head"
+    RISK_MANAGER = "Risk Manager"
+    RISK_HEAD = "Risk Head"
+    RISK_CHAMPION = "Risk Champion"
+    AUDITOR = "Auditor"
+    EXECUTIVE_CEO = "Executive / CEO"
+    BOARD_AUDIT = "Board & Audit Committee"
+    ADMIN = "Admin"
+    SUPER_ADMIN = "Super Admin"
+
+
+class ERMIntent(str, Enum):
+    GET_MY_RISKS = "GET_MY_RISKS"
+    SEARCH_RISKS = "SEARCH_RISKS"
+    GET_RISK_DETAILS = "GET_RISK_DETAILS"
+    GET_PENDING_APPROVALS = "GET_PENDING_APPROVALS"
+    APPROVE_RISK = "APPROVE_RISK"
+    REJECT_RISK = "REJECT_RISK"
+    CREATE_RISK = "CREATE_RISK"
+    CREATE_TREATMENT = "CREATE_TREATMENT"
+    VIEW_AUDIT_TRAIL = "VIEW_AUDIT_TRAIL"
+    VIEW_HEATMAP = "VIEW_HEATMAP"
+    DAILY_BRIEFING = "DAILY_BRIEFING"
+    OVERDUE_ACTIONS = "OVERDUE_ACTIONS"
+    OUT_OF_SCOPE = "OUT_OF_SCOPE"
+    PROMPT_INJECTION = "PROMPT_INJECTION"
+    HALLUCINATION_PROBE = "HALLUCINATION_PROBE"
+
+
+class VariationCategory(str, Enum):
+    DIRECT = "DIRECT"
+    PARAPHRASED = "PARAPHRASED"
+    FORMAL = "FORMAL"
+    INFORMAL = "INFORMAL"
+    SHORT = "SHORT"
+    LONG = "LONG"
+    CONVERSATIONAL = "CONVERSATIONAL"
+    TYPOGRAPHICAL = "TYPOGRAPHICAL"
+    ABBREVIATION = "ABBREVIATION"
+    PARTIAL = "PARTIAL"
+    AMBIGUOUS = "AMBIGUOUS"
+    CONTEXT_DEPENDENT = "CONTEXT_DEPENDENT"
+    FOLLOW_UP = "FOLLOW_UP"
+    MULTI_TURN = "MULTI_TURN"
+    NEGATIVE = "NEGATIVE"
+    UNAUTHORIZED = "UNAUTHORIZED"
+    PROMPT_INJECTION = "PROMPT_INJECTION"
+    OUT_OF_SCOPE = "OUT_OF_SCOPE"
+
+
+class OperationType(str, Enum):
+    READ = "READ"
+    SEARCH = "SEARCH"
+    APPROVAL = "APPROVAL"
+    REJECTION = "REJECTION"
+    STATE_CHANGE = "STATE_CHANGE"
+    ANALYTICS = "ANALYTICS"
+    SECURITY_CHECK = "SECURITY_CHECK"

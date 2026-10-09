@@ -109,8 +109,10 @@ class ApprovalWorkflowAgent:
 
     def get_session_key(self, request: AgentRequest) -> str:
         """Resolve consistent session key for user/conversation session."""
-        raw_uid = getattr(request, "session_id", None) or getattr(request, "user_id", None) or (request.metadata or {}).get("session_id") or (request.metadata or {}).get("user_id") or ""
-        return str(raw_uid).strip()
+        user_id = str(getattr(request, "user_id", None) or (request.metadata or {}).get("user_id") or "5").strip()
+        sess_id = str(getattr(request, "session_id", None) or (request.metadata or {}).get("session_id") or "").strip()
+        return f"{user_id}::{sess_id}" if sess_id else user_id
+
 
     def is_approval_trigger(self, msg: str) -> bool:
         """Detect if message intends to start or confirm an approval or rejection decision."""
@@ -171,15 +173,43 @@ class ApprovalWorkflowAgent:
         if key in self._sessions:
             sess = self._sessions[key]
             return not sess.get("is_completed", False) and not sess.get("cancelled", False)
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowType
+            active_wf = workflow_checkpointer.load_active_for_session(key)
+            if active_wf and active_wf.workflow_type == WorkflowType.APPROVAL_GOVERNANCE.value:
+                return not active_wf.is_terminal
+        except Exception:
+            pass
         return False
 
     def get_session(self, session_key: str) -> Optional[ApprovalState]:
-        return self._sessions.get(str(session_key).strip())
+        key = str(session_key).strip()
+        if key in self._sessions:
+            return self._sessions[key]
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowType
+            active_wf = workflow_checkpointer.load_active_for_session(key)
+            if active_wf and active_wf.workflow_type == WorkflowType.APPROVAL_GOVERNANCE.value and active_wf.collected_fields:
+                state: ApprovalState = dict(active_wf.collected_fields)
+                self._sessions[key] = state
+                return state
+        except Exception as e:
+            logger.debug(f"[CHECKPOINTER_LOAD] Fallback in approval agent: {e}")
+        return None
 
     def clear_session(self, session_key: str) -> None:
         key = str(session_key).strip()
         if key in self._sessions:
             del self._sessions[key]
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowStatus
+            active_wf = workflow_checkpointer.load_active_for_session(key)
+            if active_wf:
+                active_wf.transition_to(WorkflowStatus.CANCELLED, reason="Session cleared")
+                workflow_checkpointer.save(active_wf)
+        except Exception:
+            pass
+
 
     def process(self, request: AgentRequest) -> AgentResponse:
         """
@@ -206,8 +236,9 @@ class ApprovalWorkflowAgent:
         has_new_risk_id = bool(RISK_ID_PATTERN.search(msg))
 
         # Load or initialize session state
-        state = self._sessions.get(session_key)
-        if not state or state.get("is_completed") or state.get("cancelled") or has_new_risk_id:
+        state = self.get_session(session_key)
+        if not state or state.get("is_completed") or state.get("cancelled") or (has_new_risk_id and not state.get("awaiting_remark")):
+
             state = ApprovalState(
                 session_id=session_key,
                 user_id=str(auth_uid),
@@ -241,12 +272,45 @@ class ApprovalWorkflowAgent:
         updated_state = self.workflow.run_turn(state)
         self._sessions[session_key] = updated_state
 
+        # Persist checkpoint to PostgreSQL / workflow checkpointer
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, AgentWorkflowState, WorkflowStatus, WorkflowType
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if not active_wf:
+                active_wf = AgentWorkflowState(
+                    session_id=session_key,
+                    workflow_type=WorkflowType.APPROVAL_GOVERNANCE,
+                    owner_user_id=str(auth_uid),
+                    owner_role=str(request.user_role or "Functional Head"),
+                    dept_id=request.metadata.get("dept_id") if request.metadata else None,
+                    dept_name=request.metadata.get("dept_name") if request.metadata else None,
+                    current_agent=self.agent_id,
+                    current_step=updated_state.get("step_code", "APPROVAL_PROCESSING"),
+                    risk_id=updated_state.get("risk_id"),
+                    collected_fields=dict(updated_state),
+                )
+            else:
+                active_wf.current_step = updated_state.get("step_code", "APPROVAL_PROCESSING")
+                active_wf.risk_id = updated_state.get("risk_id") or active_wf.risk_id
+                active_wf.collected_fields = dict(updated_state)
+                active_wf.step_count += 1
+                if updated_state.get("is_completed"):
+                    active_wf.transition_to(WorkflowStatus.COMPLETED, step="APPROVAL_COMPLETED")
+                elif updated_state.get("cancelled"):
+                    active_wf.transition_to(WorkflowStatus.CANCELLED, step="APPROVAL_CANCELLED")
+                elif updated_state.get("awaiting_confirmation"):
+                    active_wf.transition_to(WorkflowStatus.WAITING_FOR_CONFIRMATION, step="AWAITING_CONFIRMATION")
+            workflow_checkpointer.save(active_wf)
+        except Exception as e:
+            logger.debug(f"[CHECKPOINT_SAVE_ERROR] in ApprovalWorkflowAgent: {e}")
+
         resp_text = updated_state.get("response_message") or "Decision processing update."
         step_code = updated_state.get("step_code") or "APPROVAL_PROCESSING"
         
         # If completed or cancelled, cleanup session
         if updated_state.get("is_completed") or updated_state.get("cancelled"):
             self.clear_session(session_key)
+
 
         return AgentResponse(
             request_id=req_id,

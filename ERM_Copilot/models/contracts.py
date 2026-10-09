@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 
 class AgentRequest(BaseModel):
     message: str
-    user_id: Optional[str] = "5"
-    user_role: Optional[str] = "Risk Owner"
+    user_id: Optional[str] = None
+    user_role: Optional[str] = None
     session_id: Optional[str] = None
     created_at: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -27,6 +27,7 @@ class AgentResponse(BaseModel):
 
 class RequestContext(BaseModel):
     request_id: str
-    user_id: Optional[str] = "5"
+    user_id: Optional[str] = None
     session_id: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+

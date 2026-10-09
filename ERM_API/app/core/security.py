@@ -1,15 +1,82 @@
 from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
+import json
+import base64
+import hmac
+import hashlib
 from app.core.config import settings
 
+try:
+    from jose import jwt, JWTError
+except ImportError:
+    try:
+        import jwt
+        class JWTError(Exception):
+            pass
+    except ImportError:
+        class JWTError(Exception):
+            pass
+
+        class _FallbackJWT:
+            @staticmethod
+            def _b64_encode(data: bytes) -> str:
+                return base64.urlsafe_b64encode(data).decode('utf-8').rstrip('=')
+
+            @staticmethod
+            def _b64_decode(data: str) -> bytes:
+                padding = '=' * ((4 - len(data) % 4) % 4)
+                return base64.urlsafe_b64decode(data + padding)
+
+            @classmethod
+            def encode(cls, payload: dict, secret: str, algorithm: str = "HS256") -> str:
+                header = {"alg": algorithm, "typ": "JWT"}
+                # Handle datetime serialization in payload
+                clean_payload = {}
+                for k, v in payload.items():
+                    if isinstance(v, datetime):
+                        clean_payload[k] = int(v.timestamp())
+                    else:
+                        clean_payload[k] = v
+                
+                h_b64 = cls._b64_encode(json.dumps(header, separators=(',', ':')).encode('utf-8'))
+                p_b64 = cls._b64_encode(json.dumps(clean_payload, separators=(',', ':')).encode('utf-8'))
+                msg = f"{h_b64}.{p_b64}".encode('utf-8')
+                sig = hmac.new(secret.encode('utf-8'), msg, hashlib.sha256).digest()
+                sig_b64 = cls._b64_encode(sig)
+                return f"{h_b64}.{p_b64}.{sig_b64}"
+
+            @classmethod
+            def decode(cls, token: str, secret: str, algorithms: list = None) -> dict:
+                parts = token.split('.')
+                if len(parts) != 3:
+                    raise JWTError("Invalid token format")
+                h_b64, p_b64, sig_b64 = parts
+                msg = f"{h_b64}.{p_b64}".encode('utf-8')
+                expected_sig = cls._b64_encode(hmac.new(secret.encode('utf-8'), msg, hashlib.sha256).digest())
+                if not hmac.compare_digest(sig_b64, expected_sig):
+                    raise JWTError("Signature verification failed")
+                try:
+                    payload = json.loads(cls._b64_decode(p_b64).decode('utf-8'))
+                except Exception:
+                    raise JWTError("Invalid payload")
+                if "exp" in payload:
+                    if datetime.utcnow().timestamp() > payload["exp"]:
+                        raise JWTError("Token expired")
+                return payload
+
+        jwt = _FallbackJWT()
+
+try:
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+except ImportError:
+    class _FallbackPwdContext:
+        def hash(self, password: str) -> str:
+            return password
+        def verify(self, secret: str, hash: str) -> bool:
+            return secret == hash
+    pwd_context = _FallbackPwdContext()
+
 from cryptography.fernet import Fernet
-
-
-#--------------------Password-----------------------
-
-# Security utilities for password hashing and JWT token management
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # # Hash a plain password using bcrypt

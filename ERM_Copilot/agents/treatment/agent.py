@@ -87,14 +87,36 @@ class TreatmentManagementAgent(BaseAgent):
         return f"{user_id}::{sess_id}" if sess_id else user_id
 
     def get_session(self, session_key: str) -> Optional[TreatmentSession]:
-        return self.sessions.get(session_key)
+        if session_key in self.sessions:
+            return self.sessions[session_key]
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowType
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if active_wf and active_wf.workflow_type == WorkflowType.TREATMENT_MANAGEMENT.value and active_wf.collected_fields:
+                sess = TreatmentSession.from_dict(active_wf.collected_fields)
+                self.sessions[session_key] = sess
+                return sess
+        except Exception as e:
+            logger.debug(f"[CHECKPOINTER_LOAD] Fallback in treatment agent: {e}")
+        return None
 
     def is_session_active(self, session_key: str) -> bool:
-        return session_key in self.sessions
+        if session_key in self.sessions:
+            return True
+        return self.get_session(session_key) is not None
 
     def clear_session(self, session_key: str) -> None:
         if session_key in self.sessions:
             del self.sessions[session_key]
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowStatus
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if active_wf:
+                active_wf.transition_to(WorkflowStatus.CANCELLED, reason="Session cleared")
+                workflow_checkpointer.save(active_wf)
+        except Exception:
+            pass
+
 
     # -----------------------------------------------------------------
     # Intent Detection
@@ -439,6 +461,37 @@ class TreatmentManagementAgent(BaseAgent):
         created_dt = getattr(request, "created_at", None)
         timestamp_str = created_dt.isoformat() if created_dt else datetime.now(timezone.utc).isoformat()
 
+        # Persist checkpoint
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, AgentWorkflowState, WorkflowStatus, WorkflowType
+            session_key = self.get_session_key(request)
+            sess = self.get_session(session_key)
+            if sess:
+                active_wf = workflow_checkpointer.load_active_for_session(session_key)
+                if not active_wf:
+                    active_wf = AgentWorkflowState(
+                        session_id=session_key,
+                        workflow_type=WorkflowType.TREATMENT_MANAGEMENT,
+                        owner_user_id=str(sess.user_id),
+                        owner_role=str(sess.user_role),
+                        dept_id=sess.dept_id,
+                        dept_name=sess.dept_name,
+                        current_agent=self.agent_id,
+                        current_step=sess.state,
+                        collected_fields=sess.to_dict(),
+                    )
+                else:
+                    active_wf.current_step = sess.state
+                    active_wf.collected_fields = sess.to_dict()
+                    active_wf.step_count += 1
+                    if intent_code in ["TREATMENT_CREATED", "PROGRESS_UPDATED", "OWNER_REASSIGNED"]:
+                        active_wf.transition_to(WorkflowStatus.COMPLETED, step=intent_code)
+                    elif sess.state == "AWAITING_CONFIRMATION":
+                        active_wf.transition_to(WorkflowStatus.WAITING_FOR_CONFIRMATION, step=sess.state)
+                workflow_checkpointer.save(active_wf)
+        except Exception as e:
+            logger.debug(f"[CHECKPOINT_SAVE_ERROR] in TreatmentManagementAgent: {e}")
+
         return AgentResponse(
             request_id=req_id,
             agent_id=self.agent_id,
@@ -450,6 +503,7 @@ class TreatmentManagementAgent(BaseAgent):
                 "timestamp": timestamp_str
             }
         )
+
 
 
 treatment_management_agent = TreatmentManagementAgent()
