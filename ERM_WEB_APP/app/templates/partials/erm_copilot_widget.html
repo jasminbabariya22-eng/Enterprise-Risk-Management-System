@@ -1420,6 +1420,19 @@
       const answerText = data.answer || "I've reviewed your request. Here are the relevant findings from the Enterprise Risk database.";
       
       appendBotMessage(answerText, data.data || {});
+
+      // 🔄 If Copilot performed or confirmed a workflow/risk action, trigger instant UI refresh
+      if (window.ERM_EVENT_BUS) {
+        const metadata = data.data || {};
+        const lowerAnswer = (data.answer || '').toLowerCase();
+        if (metadata.workflow_id || metadata.risk_id || lowerAnswer.includes('created') || lowerAnswer.includes('submitted') || lowerAnswer.includes('approved') || lowerAnswer.includes('rejected') || lowerAnswer.includes('updated')) {
+          window.ERM_EVENT_BUS.notifyDataChanged({
+            source: 'copilot',
+            workflow_id: metadata.workflow_id,
+            risk_id: metadata.risk_id
+          });
+        }
+      }
     } catch (err) {
       removeTypingIndicator(typingId);
       appendBotMessage(`⚠️ Unable to reach ERM Copilot service. Please try again. (${err.message})`, {}, true);

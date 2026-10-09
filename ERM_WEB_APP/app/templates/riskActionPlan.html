@@ -851,11 +851,17 @@ function AddNewRiskDes() {
         $("#Progress").val("");
         $("#Status_followup").val("-1");
         $("#fileUpload").val("");
-        //alert("Action Plan Work History Update");
         $("#btnsubmit").hide();
         setDivDisabled('divDetail', true);
         showToast("Action Plan work history updated");
 
+        // 🔄 Notify open tables and dashboard about treatment/action plan updates
+        if (window.ERM_EVENT_BUS) {
+          window.ERM_EVENT_BUS.notifyDataChanged({
+            type: 'action_plan_updated',
+            risk_id: $("#RfId").val()
+          });
+        }
     })
     .catch(error => {
         console.log(error);

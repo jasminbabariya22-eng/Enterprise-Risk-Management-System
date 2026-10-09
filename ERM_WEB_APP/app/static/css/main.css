@@ -79,3 +79,332 @@ body{ font-family: "Montserrat-Regular"; font-size: 12px;;}
 .light_greenBg{ background-color: #a9d08f!important;}
 
 .green-txt{color: #00af50!important;}
+
+/* ==========================================================================
+   ✨ MODERN ERM DESIGN SYSTEM & UI/UX ENHANCEMENTS
+   ========================================================================== */
+
+/* Modern Typography & Smooth Antialiasing */
+:root {
+  --erm-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --erm-primary: #020264;
+  --erm-primary-light: #1e3a8a;
+  --erm-accent: #2563eb;
+  --erm-bg-soft: #f8fafc;
+  --erm-border: #e2e8f0;
+  
+  /* Soft Risk Colors (Pastel Badges) */
+  --risk-critical-bg: #fee2e2;
+  --risk-critical-text: #991b1b;
+  --risk-critical-border: #fca5a5;
+
+  --risk-high-bg: #ffedd5;
+  --risk-high-text: #9a3412;
+  --risk-high-border: #fdba74;
+
+  --risk-medium-bg: #fef9c3;
+  --risk-medium-text: #854d0e;
+  --risk-medium-border: #fde047;
+
+  --risk-low-bg: #dcfce7;
+  --risk-low-text: #166534;
+  --risk-low-border: #86efac;
+}
+
+body {
+  font-family: var(--erm-font);
+  background-color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   💀 SKELETON SHIMMER LOADERS
+   ========================================================================== */
+@keyframes erm-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.erm-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: erm-shimmer 1.5s infinite;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.skeleton-table-row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.skeleton-cell {
+  height: 18px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: erm-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   🏷️ MODERN SOFT RISK BADGES
+   ========================================================================== */
+.badge-risk-critical {
+  background-color: var(--risk-critical-bg) !important;
+  color: var(--risk-critical-text) !important;
+  border: 1px solid var(--risk-critical-border);
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 11.5px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-risk-high {
+  background-color: var(--risk-high-bg) !important;
+  color: var(--risk-high-text) !important;
+  border: 1px solid var(--risk-high-border);
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 11.5px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-risk-medium {
+  background-color: var(--risk-medium-bg) !important;
+  color: var(--risk-medium-text) !important;
+  border: 1px solid var(--risk-medium-border);
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 11.5px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-risk-low {
+  background-color: var(--risk-low-bg) !important;
+  color: var(--risk-low-text) !important;
+  border: 1px solid var(--risk-low-border);
+  padding: 4px 10px;
+  font-weight: 700;
+  font-size: 11.5px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   ⚡ SLIDE-OVER QUICK PREVIEW DRAWER (RIGHT PANEL)
+   ========================================================================== */
+.erm-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 99990;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.erm-drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.erm-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: -560px;
+  width: 540px;
+  max-width: 95vw;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.15);
+  z-index: 99995;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.erm-drawer-panel.open {
+  right: 0;
+}
+
+.erm-drawer-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.erm-drawer-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.erm-drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   🌟 5x5 INTERACTIVE RISK HEATMAP MATRIX
+   ========================================================================== */
+.heatmap-matrix-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.heatmap-grid-5x5 {
+  display: grid;
+  grid-template-columns: 80px repeat(5, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.heatmap-header-cell {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  padding: 4px;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1.2;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 2px solid transparent;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 2;
+}
+
+.heatmap-cell.active-inherent {
+  border-color: #0f172a !important;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.4) !important;
+  transform: scale(1.08);
+}
+
+.heatmap-cell.active-residual {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4) !important;
+  transform: scale(1.08);
+}
+
+.hm-critical { background: #fee2e2; color: #991b1b; }
+.hm-high { background: #ffedd5; color: #9a3412; }
+.hm-medium { background: #fef9c3; color: #854d0e; }
+.hm-low { background: #dcfce7; color: #166534; }
+
+/* ==========================================================================
+   🪄 STEP-BY-STEP RISK WIZARD
+   ========================================================================== */
+.wizard-progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.wizard-progress-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #e2e8f0;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.wizard-progress-line-fill {
+  height: 100%;
+  background: #2563eb;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wizard-step-node {
+  position: relative;
+  z-index: 2;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #64748b;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.wizard-step-node.active {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+
+.wizard-step-node.completed {
+  border-color: #10b981;
+  background: #10b981;
+  color: #ffffff;
+}
+
+.wizard-pane {
+  display: none;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.wizard-pane.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+

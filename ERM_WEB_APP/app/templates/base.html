@@ -74,6 +74,34 @@
 
     <script src="{{ url_for('static', filename='cdn/bootstrap.min.js') }}"></script>
 
+    <!-- 🔄 Global ERM Real-Time UI State Sync Event Bus -->
+    <script>
+      window.ERM_EVENT_BUS = {
+        notifyDataChanged: function(detail = {}) {
+          try {
+            window.dispatchEvent(new CustomEvent('erm:data-changed', { detail: detail }));
+            localStorage.setItem('erm_last_data_change', JSON.stringify({ timestamp: Date.now(), ...detail }));
+          } catch (e) {
+            console.warn('ERM_EVENT_BUS notify error:', e);
+          }
+        },
+        onDataChanged: function(callback) {
+          window.addEventListener('erm:data-changed', function(e) {
+            callback(e.detail || {});
+          });
+          window.addEventListener('storage', function(e) {
+            if (e.key === 'erm_last_data_change' && e.newValue) {
+              try {
+                callback(JSON.parse(e.newValue));
+              } catch (err) {
+                callback({});
+              }
+            }
+          });
+        }
+      };
+    </script>
+
     <script src="{{ url_for('static', filename='js/adminlte.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>             
  <!--begin::OverlayScrollbars Configure-->

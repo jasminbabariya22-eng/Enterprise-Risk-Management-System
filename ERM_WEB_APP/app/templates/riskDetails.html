@@ -470,6 +470,61 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 🌟 5x5 Interactive Risk Matrix Grid -->
+              <div class="col-12 mt-2">
+                <div class="heatmap-matrix-container p-2 mb-2 bg-light border rounded shadow-sm">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="fw-bold text-dark" style="font-size: 11px;"><i class="bi bi-grid-3x3 text-primary me-1"></i> Interactive Heatmap (Click cell to set Probability &amp; Impact)</small>
+                    <span class="badge bg-secondary" id="hmScoreBadge" style="font-size: 10px;">Score: -</span>
+                  </div>
+                  <div id="interactive5x5Grid" class="heatmap-grid-5x5">
+                    <!-- Header -->
+                    <div class="heatmap-header-cell">L \ I</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Neg (1)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Minor (2)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Mod (3)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Major (4)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Ext (5)</div>
+                    <!-- Row 5: Expected -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Expected (5)</div>
+                    <div class="heatmap-cell hm-low" data-l="5" data-i="1" onclick="selectHeatmapCell(5, 1)">5</div>
+                    <div class="heatmap-cell hm-medium" data-l="5" data-i="2" onclick="selectHeatmapCell(5, 2)">10</div>
+                    <div class="heatmap-cell hm-high" data-l="5" data-i="3" onclick="selectHeatmapCell(5, 3)">15</div>
+                    <div class="heatmap-cell hm-critical" data-l="5" data-i="4" onclick="selectHeatmapCell(5, 4)">20</div>
+                    <div class="heatmap-cell hm-critical" data-l="5" data-i="5" onclick="selectHeatmapCell(5, 5)">25</div>
+                    <!-- Row 4: Probable -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Probable (4)</div>
+                    <div class="heatmap-cell hm-low" data-l="4" data-i="1" onclick="selectHeatmapCell(4, 1)">4</div>
+                    <div class="heatmap-cell hm-medium" data-l="4" data-i="2" onclick="selectHeatmapCell(4, 2)">8</div>
+                    <div class="heatmap-cell hm-medium" data-l="4" data-i="3" onclick="selectHeatmapCell(4, 3)">12</div>
+                    <div class="heatmap-cell hm-high" data-l="4" data-i="4" onclick="selectHeatmapCell(4, 4)">16</div>
+                    <div class="heatmap-cell hm-critical" data-l="4" data-i="5" onclick="selectHeatmapCell(4, 5)">20</div>
+                    <!-- Row 3: Possible -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Possible (3)</div>
+                    <div class="heatmap-cell hm-low" data-l="3" data-i="1" onclick="selectHeatmapCell(3, 1)">3</div>
+                    <div class="heatmap-cell hm-low" data-l="3" data-i="2" onclick="selectHeatmapCell(3, 2)">6</div>
+                    <div class="heatmap-cell hm-medium" data-l="3" data-i="3" onclick="selectHeatmapCell(3, 3)">9</div>
+                    <div class="heatmap-cell hm-medium" data-l="3" data-i="4" onclick="selectHeatmapCell(3, 4)">12</div>
+                    <div class="heatmap-cell hm-high" data-l="3" data-i="5" onclick="selectHeatmapCell(3, 5)">15</div>
+                    <!-- Row 2: Unlikely -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Unlikely (2)</div>
+                    <div class="heatmap-cell hm-low" data-l="2" data-i="1" onclick="selectHeatmapCell(2, 1)">2</div>
+                    <div class="heatmap-cell hm-low" data-l="2" data-i="2" onclick="selectHeatmapCell(2, 2)">4</div>
+                    <div class="heatmap-cell hm-low" data-l="2" data-i="3" onclick="selectHeatmapCell(2, 3)">6</div>
+                    <div class="heatmap-cell hm-medium" data-l="2" data-i="4" onclick="selectHeatmapCell(2, 4)">8</div>
+                    <div class="heatmap-cell hm-medium" data-l="2" data-i="5" onclick="selectHeatmapCell(2, 5)">10</div>
+                    <!-- Row 1: Remote -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Remote (1)</div>
+                    <div class="heatmap-cell hm-low" data-l="1" data-i="1" onclick="selectHeatmapCell(1, 1)">1</div>
+                    <div class="heatmap-cell hm-low" data-l="1" data-i="2" onclick="selectHeatmapCell(1, 2)">2</div>
+                    <div class="heatmap-cell hm-low" data-l="1" data-i="3" onclick="selectHeatmapCell(1, 3)">3</div>
+                    <div class="heatmap-cell hm-low" data-l="1" data-i="4" onclick="selectHeatmapCell(1, 4)">4</div>
+                    <div class="heatmap-cell hm-low" data-l="1" data-i="5" onclick="selectHeatmapCell(1, 5)">5</div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div> 
 
@@ -515,6 +570,61 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 🌟 5x5 Interactive Current/Residual Risk Matrix Grid -->
+              <div class="col-12 mt-2">
+                <div class="heatmap-matrix-container p-2 mb-2 bg-light border rounded shadow-sm">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="fw-bold text-dark" style="font-size: 11px;"><i class="bi bi-grid-3x3 text-primary me-1"></i> Current / Residual Heatmap (Post-Mitigation)</small>
+                    <span class="badge bg-secondary" id="hmCurrentScoreBadge" style="font-size: 10px;">Score: -</span>
+                  </div>
+                  <div id="interactive5x5GridCurrent" class="heatmap-grid-5x5">
+                    <!-- Header -->
+                    <div class="heatmap-header-cell">L \ I</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Neg (1)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Minor (2)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Mod (3)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Major (4)</div>
+                    <div class="heatmap-header-cell text-center" style="font-size: 10px;">Ext (5)</div>
+                    <!-- Row 5: Expected -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Expected (5)</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="5" data-i="1" onclick="selectCurrentHeatmapCell(5, 1)">5</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="5" data-i="2" onclick="selectCurrentHeatmapCell(5, 2)">10</div>
+                    <div class="heatmap-cell hm-high hm-cell-current" data-l="5" data-i="3" onclick="selectCurrentHeatmapCell(5, 3)">15</div>
+                    <div class="heatmap-cell hm-critical hm-cell-current" data-l="5" data-i="4" onclick="selectCurrentHeatmapCell(5, 4)">20</div>
+                    <div class="heatmap-cell hm-critical hm-cell-current" data-l="5" data-i="5" onclick="selectCurrentHeatmapCell(5, 5)">25</div>
+                    <!-- Row 4: Probable -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Probable (4)</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="4" data-i="1" onclick="selectCurrentHeatmapCell(4, 1)">4</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="4" data-i="2" onclick="selectCurrentHeatmapCell(4, 2)">8</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="4" data-i="3" onclick="selectCurrentHeatmapCell(4, 3)">12</div>
+                    <div class="heatmap-cell hm-high hm-cell-current" data-l="4" data-i="4" onclick="selectCurrentHeatmapCell(4, 4)">16</div>
+                    <div class="heatmap-cell hm-critical hm-cell-current" data-l="4" data-i="5" onclick="selectCurrentHeatmapCell(4, 5)">20</div>
+                    <!-- Row 3: Possible -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Possible (3)</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="3" data-i="1" onclick="selectCurrentHeatmapCell(3, 1)">3</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="3" data-i="2" onclick="selectCurrentHeatmapCell(3, 2)">6</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="3" data-i="3" onclick="selectCurrentHeatmapCell(3, 3)">9</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="3" data-i="4" onclick="selectCurrentHeatmapCell(3, 4)">12</div>
+                    <div class="heatmap-cell hm-high hm-cell-current" data-l="3" data-i="5" onclick="selectCurrentHeatmapCell(3, 5)">15</div>
+                    <!-- Row 2: Unlikely -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Unlikely (2)</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="2" data-i="1" onclick="selectCurrentHeatmapCell(2, 1)">2</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="2" data-i="2" onclick="selectCurrentHeatmapCell(2, 2)">4</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="2" data-i="3" onclick="selectCurrentHeatmapCell(2, 3)">6</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="2" data-i="4" onclick="selectCurrentHeatmapCell(2, 4)">8</div>
+                    <div class="heatmap-cell hm-medium hm-cell-current" data-l="2" data-i="5" onclick="selectCurrentHeatmapCell(2, 5)">10</div>
+                    <!-- Row 1: Remote -->
+                    <div class="heatmap-header-cell text-start" style="font-size: 10px;">Remote (1)</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="1" data-i="1" onclick="selectCurrentHeatmapCell(1, 1)">1</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="1" data-i="2" onclick="selectCurrentHeatmapCell(1, 2)">2</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="1" data-i="3" onclick="selectCurrentHeatmapCell(1, 3)">3</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="1" data-i="4" onclick="selectCurrentHeatmapCell(1, 4)">4</div>
+                    <div class="heatmap-cell hm-low hm-cell-current" data-l="1" data-i="5" onclick="selectCurrentHeatmapCell(1, 5)">5</div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -728,6 +838,85 @@
         showToast("Failed to load departments", "bg-danger");
       });
   }
+
+  /* ======================================================= */
+  /* 🌟 INTERACTIVE 5x5 HEATMAP MATRIX ENGINE                */
+  /* ======================================================= */
+  function initInteractiveHeatmap() {
+    const container = document.getElementById('interactive5x5Grid');
+    if (!container) return;
+
+    const likelihoodLabels = ["Expected", "Probable", "Possible", "Unlikely", "Remote"];
+    const likelihoodValues = [5, 4, 3, 2, 1];
+    const impactLabels = ["Neg", "Minor", "Mod", "Major", "Ext"];
+    const impactValues = [1, 2, 3, 4, 5];
+
+    let html = '<div class="heatmap-header-cell">L \\ I</div>';
+    impactLabels.forEach(lbl => {
+      html += `<div class="heatmap-header-cell text-center" style="font-size: 10px;">${lbl}</div>`;
+    });
+
+    likelihoodValues.forEach((lVal, lIdx) => {
+      html += `<div class="heatmap-header-cell text-start" style="font-size: 10px;">${likelihoodLabels[lIdx]}</div>`;
+      impactValues.forEach(iVal => {
+        const score = lVal * iVal;
+        let colorClass = 'hm-low';
+        if (score >= 20) colorClass = 'hm-critical';
+        else if (score >= 14) colorClass = 'hm-high';
+        else if (score >= 8) colorClass = 'hm-medium';
+
+        html += `<div class="heatmap-cell ${colorClass}" data-l="${lVal}" data-i="${iVal}" data-score="${score}" onclick="selectHeatmapCell(${lVal}, ${iVal})">
+                  ${score}
+                 </div>`;
+      });
+    });
+
+    container.innerHTML = html;
+  }
+
+  function selectHeatmapCell(l, i) {
+    $('#InherentLikelihoodBtn').val(l).trigger('change');
+    $('#InherentImpactBtn').val(i).trigger('change');
+
+    $('.heatmap-cell').removeClass('active-inherent');
+    $(`.heatmap-cell[data-l="${l}"][data-i="${i}"]`).addClass('active-inherent');
+
+    const score = l * i;
+    let label = score >= 20 ? 'Critical' : (score >= 14 ? 'High' : (score >= 8 ? 'Medium' : 'Low'));
+    let badgeClass = score >= 20 ? 'bg-danger' : (score >= 14 ? 'bg-warning text-dark' : (score >= 8 ? 'bg-info text-dark' : 'bg-success'));
+
+    $('#hmScoreBadge').attr('class', `badge ${badgeClass}`).text(`Score: ${score} (${label})`);
+  }
+
+  function selectCurrentHeatmapCell(l, i) {
+    $('#CurrentLikelihoodBtn').val(l).trigger('change');
+    $('#CurrentImpactBtn').val(i).trigger('change');
+
+    $('.hm-cell-current').removeClass('active-residual');
+    $(`.hm-cell-current[data-l="${l}"][data-i="${i}"]`).addClass('active-residual');
+
+    const score = l * i;
+    let label = score >= 20 ? 'Critical' : (score >= 14 ? 'High' : (score >= 8 ? 'Medium' : 'Low'));
+    let badgeClass = score >= 20 ? 'bg-danger' : (score >= 14 ? 'bg-warning text-dark' : (score >= 8 ? 'bg-info text-dark' : 'bg-success'));
+
+    $('#hmCurrentScoreBadge').attr('class', `badge ${badgeClass}`).text(`Score: ${score} (${label})`);
+  }
+
+  function ResetDescValue() {
+    $('#Risk_Desc').val('');
+    $('#Risk_Mitigation').val('');
+    $('#InherentLikelihoodBtn').val('-1').trigger('change');
+    $('#InherentImpactBtn').val('-1').trigger('change');
+    $('#CurrentLikelihoodBtn').val('-1').trigger('change');
+    $('#CurrentImpactBtn').val('-1').trigger('change');
+    $('.heatmap-cell').removeClass('active-inherent').removeClass('active-residual');
+    $('#hmScoreBadge').attr('class', 'badge bg-secondary').text('Score: -');
+    $('#hmCurrentScoreBadge').attr('class', 'badge bg-secondary').text('Score: -');
+  }
+
+  $('#staticBackdrop').on('shown.bs.modal', function () {
+    // Modal opened
+  });
 
   function FillCoOwnerUserList() {
     axios.get("/getdeptwiseuser", {
@@ -1162,6 +1351,7 @@
           if (risk_id_res == null && response.data.data && response.data.data.length > 0) {
             document.getElementById("Risk_Id").value = response.data.data[0].risk_id;
             sessionStorage.setItem("rrid", response.data.data[0].risk_register_id);
+            risk_id_res = response.data.data[0].risk_register_id;
           }
           if (risk_id_res !== null && risk_id_res !== "") {
             getRiskRegisterbyid_all(risk_id_res);
@@ -1175,10 +1365,19 @@
             showbtn();
           }
 
+          // 🔄 Instantly notify entire application about new/updated risk
+          if (window.ERM_EVENT_BUS) {
+            window.ERM_EVENT_BUS.notifyDataChanged({
+              type: 'risk_saved',
+              risk_register_id: risk_id_res,
+              risk_id: response.data?.data?.[0]?.risk_id
+            });
+          }
+
           showToast("Risk detail saved successfully!!");
           setTimeout(function () {
-            window.location.href = "/riskDetails";
-          }, 1500);
+            window.location.href = "/riskRegister";
+          }, 1200);
         })
         .catch(error => {
           showToast("Failed to save risk detail", "bg-danger");

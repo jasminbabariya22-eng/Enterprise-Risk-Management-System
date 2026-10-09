@@ -1,4 +1,4 @@
-from flask import Blueprint, send_file, render_template, jsonify, request, redirect, session, abort, url_for, flash, current_app
+from flask import Blueprint, send_file, render_template, jsonify, request, redirect, session, abort, url_for, flash, current_app, make_response
 from app.services.api_client import APIClient
 from io import BytesIO
 from functools import wraps
@@ -945,7 +945,10 @@ def getallriskregister():
 	#row_count = len(data.get("data", []))
 	#current_app.logger.info(f"API returned {row_count} rows")
 
-        return jsonify(data), 200
+        resp = make_response(jsonify(data), 200)
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        return resp
 
     except Exception as e:
         current_app.logger.error(f"Error -> {str(e)}")

@@ -56,6 +56,43 @@
         <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none; font-size: 15px;"></i>
       </a>
 
+      <!-- 🔔 Notification Center Dropdown -->
+      <div class="dropdown">
+        <a href="#" class="nav-link text-white p-1 position-relative d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" title="Notifications & Action Alerts">
+          <i class="bi bi-bell-fill" style="font-size: 16px;"></i>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px; padding: 3px 5px;" id="headerNotifBadge">
+            2
+          </span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-0" style="min-width: 320px; border-radius: 12px; margin-top: 8px; overflow: hidden;">
+          <li class="px-3 py-2 bg-light border-bottom d-flex justify-content-between align-items-center">
+            <strong class="text-dark" style="font-size: 12.5px;"><i class="bi bi-bell text-primary me-1"></i> Notifications & Tasks</strong>
+            <span class="badge bg-primary rounded-pill" style="font-size: 10px;">2 Pending</span>
+          </li>
+          <li class="p-2 border-bottom hover-bg">
+            <a href="/riskRegister" class="d-flex align-items-start text-decoration-none text-dark p-2 rounded" style="gap: 10px; font-size: 12.5px;">
+              <span class="badge bg-warning text-dark p-2 rounded-circle"><i class="bi bi-shield-exclamation"></i></span>
+              <div>
+                <div class="fw-bold">Pending Risk Approvals</div>
+                <small class="text-muted">Risks waiting for your governance review</small>
+              </div>
+            </a>
+          </li>
+          <li class="p-2 border-bottom hover-bg">
+            <a href="/riskTreatment" class="d-flex align-items-start text-decoration-none text-dark p-2 rounded" style="gap: 10px; font-size: 12.5px;">
+              <span class="badge bg-info text-dark p-2 rounded-circle"><i class="bi bi-tools"></i></span>
+              <div>
+                <div class="fw-bold">Action Plan Follow-ups</div>
+                <small class="text-muted">Upcoming mitigation target dates this month</small>
+              </div>
+            </a>
+          </li>
+          <li class="p-2 text-center bg-light">
+            <a href="/riskRegister" class="text-primary text-decoration-none fw-semibold" style="font-size: 11.5px;">View all risk registers &rarr;</a>
+          </li>
+        </ul>
+      </div>
+
       <!-- User Profile Dropdown Pill -->
       <div class="dropdown user-menu">
         <a href="#" class="nav-link dropdown-toggle text-white d-flex align-items-center p-1 text-decoration-none" data-bs-toggle="dropdown" style="gap: 8px;">
