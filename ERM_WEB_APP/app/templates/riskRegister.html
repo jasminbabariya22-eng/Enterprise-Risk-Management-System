@@ -822,10 +822,44 @@
     let pendingCount = 0;
     let approvedCount = 0;
 
+    const riskCodeSeverity = {
+      '1A': 'Low', '2A': 'Low', '3A': 'Low', '4A': 'Low', '5A': 'Low',
+      '1B': 'Low', '2B': 'Low', '3B': 'Low',
+      '1C': 'Low', '2C': 'Low',
+      '4B': 'Medium', '5B': 'Medium', '3C': 'Medium', '1D': 'Medium', '2D': 'Medium',
+      '4C': 'High', '5C': 'High', '3D': 'High', '1E': 'High', '2E': 'High',
+      '4D': 'Critical', '5D': 'Critical', '3E': 'Critical', '4E': 'Critical', '5E': 'Critical'
+    };
+
+    function isHighOrCritical(val, code, color) {
+      const v = String(val || '').trim();
+      const c = String(code || '').trim().toUpperCase();
+      const col = String(color || '').toLowerCase();
+
+      // Normalize check for codes beginning with 4 or 5, even when a code is present alongside a rating
+      if (c.startsWith('4') || c.startsWith('5') || v.startsWith('4') || v.startsWith('5') || /\b[45][A-E]?\b/i.test(v)) {
+        return true;
+      }
+      if (v.toUpperCase().includes('MEDIUM') || c === '1D' || c === '2D' || riskCodeSeverity[c] === 'Medium') {
+        return false;
+      }
+      if (riskCodeSeverity[c] === 'High' || riskCodeSeverity[c] === 'Critical' || /\b(3D|[1-3]E)\b/i.test(c)) {
+        return true;
+      }
+      if (v.includes('High') || v.includes('Critical') || v.toUpperCase().includes('HIGH') || v.toUpperCase().includes('CRITICAL')) {
+        return true;
+      }
+      if (col.includes('red') || col.includes('#ff') || col.includes('#dc') || col.includes('orange') || col.includes('#ffa500')) {
+        return true;
+      }
+      return false;
+    }
+
     data.forEach(item => {
-      const inVal = String(item.inherent_color_code || item.inherent_risk_rating || '');
-      const curVal = String(item.current_color_code || item.current_risk_rating || '');
-      if (inVal.includes('High') || inVal.includes('Critical') || curVal.includes('High') || curVal.includes('Critical')) {
+      const inVal = [item.inherent_color_code, item.inherent_risk_rating].filter(Boolean).join(' ');
+      const curVal = [item.current_color_code, item.current_risk_rating].filter(Boolean).join(' ');
+      if (isHighOrCritical(inVal, item.inherent_color_code, item.inherent_color_str) ||
+          isHighOrCritical(curVal, item.current_color_code, item.current_color_str)) {
         highCount++;
       }
 

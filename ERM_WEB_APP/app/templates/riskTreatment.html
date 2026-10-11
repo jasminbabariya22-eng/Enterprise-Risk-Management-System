@@ -427,12 +427,42 @@
     const uniqueRisks = new Set(data.map(d => d.risk_id).filter(Boolean)).size;
     const uniqueOwners = new Set(data.map(d => d.risk_owner_name).filter(Boolean)).size;
 
+    const riskCodeSeverity = {
+      '1A': 'Low', '2A': 'Low', '3A': 'Low', '4A': 'Low', '5A': 'Low',
+      '1B': 'Low', '2B': 'Low', '3B': 'Low',
+      '1C': 'Low', '2C': 'Low',
+      '4B': 'Medium', '5B': 'Medium', '3C': 'Medium', '1D': 'Medium', '2D': 'Medium',
+      '4C': 'High', '5C': 'High', '3D': 'High', '1E': 'High', '2E': 'High',
+      '4D': 'Critical', '5D': 'Critical', '3E': 'Critical', '4E': 'Critical', '5E': 'Critical'
+    };
+
     // High or Critical residual risk detection
     const highResidual = data.filter(d => {
       const cStr = (d.current_color_str || '').toLowerCase();
-      const cCode = (d.current_color_code || '').toUpperCase();
+      const cCode = (d.current_color_code || '').trim().toUpperCase();
+      const cRating = String(d.current_risk_rating || '').trim();
+      const curVal = [cCode, cRating].filter(Boolean).join(' ');
+
+      // Normalize codes beginning with 4 or 5 as high severity, even alongside a rating
+      if (cCode.startsWith('4') || cCode.startsWith('5') || curVal.startsWith('4') || curVal.startsWith('5') || /\b[45][A-E]?\b/i.test(curVal)) {
+        return true;
+      }
+
+      // Map supported risk codes to severity levels: ensure MEDIUM is classified as medium and does not inflate High/Critical
+      const mappedSeverity = riskCodeSeverity[cCode];
+      if (mappedSeverity === 'Medium' || cCode === '1D' || cCode === '2D' || curVal.toUpperCase().includes('MEDIUM')) {
+        return false;
+      }
+
+      if (mappedSeverity === 'High' || mappedSeverity === 'Critical') {
+        return true;
+      }
+
       return cStr.includes('red') || cStr.includes('#ff') || cStr.includes('#dc') || 
-             cCode.startsWith('4') || cCode.startsWith('5') || cCode.includes('D') || cCode.includes('E');
+             cStr.includes('orange') || cStr.includes('#ffa500') ||
+             curVal.includes('High') || curVal.includes('Critical') ||
+             curVal.toUpperCase().includes('HIGH') || curVal.toUpperCase().includes('CRITICAL') ||
+             /\b(3D|[1-3]E)\b/i.test(cCode);
     }).length;
 
     $('#kpiTotalTreatments').text(total);
