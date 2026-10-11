@@ -8,44 +8,45 @@
 
 <style>
   :root {
-    --erm-navy: #020264;
-    --erm-blue: #0d6efd;
-    --erm-slate-50: #f8fafc;
-    --erm-slate-100: #f1f5f9;
-    --erm-slate-200: #e2e8f0;
-    --erm-slate-300: #cbd5e1;
+    --erm-navy: #10233F;
+    --erm-blue: #2563EB;
+    --erm-teal: #14B8A6;
+    --erm-slate-50: #F8FAFC;
+    --erm-slate-100: #F1F5F9;
+    --erm-slate-200: #E2E8F0;
+    --erm-slate-300: #CBD5E1;
     --erm-slate-600: #475569;
     --erm-slate-700: #334155;
-    --erm-slate-800: #1e293b;
-    --erm-slate-900: #0f172a;
-    --erm-radius: 10px;
-    --erm-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+    --erm-slate-800: #1E293B;
+    --erm-slate-900: #0F172A;
+    --erm-radius: 12px;
+    --erm-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
   }
 
   .app-content {
-    padding: 16px 24px 48px;
-    background: #f8fafc;
+    padding: 20px 28px 48px;
+    background: #F5F7FB;
     min-height: calc(100vh - 56px);
   }
 
   .app-content-header {
-    padding: 16px 24px 8px;
+    padding: 20px 28px 8px;
     background: transparent;
   }
 
   .erm-page-card {
-    background: #ffffff;
+    background: #FFFFFF;
     border-radius: var(--erm-radius);
     border: 1px solid var(--erm-slate-200);
     box-shadow: var(--erm-shadow);
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 22px;
+    margin-bottom: 22px;
   }
 
   .erm-section-heading {
-    font-size: 15.5px;
+    font-size: 15px;
     font-weight: 700;
-    color: var(--erm-slate-900);
+    color: var(--erm-navy);
     margin-bottom: 16px;
     display: flex;
     align-items: center;
@@ -53,16 +54,17 @@
   }
 
   .form-control-sm, .form-select-sm {
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1.5px solid var(--erm-slate-300);
-    padding: 6px 10px;
+    padding: 7px 12px;
     font-size: 13.5px;
     color: var(--erm-slate-800);
+    transition: all 0.2s ease;
   }
 
   .form-control-sm:focus, .form-select-sm:focus {
     border-color: var(--erm-blue);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   }
 
   .form-control-sm:disabled, .form-select-sm:disabled, .form-control-sm[readonly] {
@@ -78,15 +80,15 @@
   }
 
   .star {
-    color: #ef4444;
+    color: #EF4444;
     font-weight: bold;
     margin-left: 2px;
   }
 
   .table-responsive {
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid var(--erm-slate-200);
-    background: #ffffff;
+    background: #FFFFFF;
     overflow: hidden;
   }
 
@@ -95,27 +97,27 @@
   }
 
   .table thead tr.tb-head th {
-    background: #f8fafc !important;
-    color: #475569 !important;
-    font-size: 12.5px !important;
+    background: #F1F5F9 !important;
+    color: var(--erm-navy) !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    padding: 11px 14px !important;
-    border-bottom: 1.5px solid #cbd5e1 !important;
+    padding: 12px 14px !important;
+    border-bottom: 2px solid var(--erm-slate-200) !important;
     vertical-align: middle;
   }
 
   .table tbody td {
-    padding: 11px 14px !important;
-    font-size: 13.5px !important;
+    padding: 12px 14px !important;
+    font-size: 13px !important;
     color: var(--erm-slate-700) !important;
     vertical-align: middle;
     border-bottom: 1px solid var(--erm-slate-100) !important;
   }
 
   #DescTable tr.selected {
-    background-color: #d9edf7 !important;
+    background-color: #EFF6FF !important;
   }
 
   #PopUpTable--1 .progress {
@@ -136,7 +138,7 @@
   }
 
   #dtApprovalStatus tbody tr.sky-blue td {
-    background-color: #0D6EFD !important;
+    background-color: #2563EB !important;
     color: white;
   }
 
@@ -145,13 +147,13 @@
   }
 
   .dataTables_wrapper .dataTables_filter input {
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    padding: 5px 12px;
   }
 
   .green-txt {
-    color: #16a34a;
+    color: #16A34A;
     font-weight: 700;
   }
 </style>
@@ -161,12 +163,13 @@
   <div class="container-fluid">
     <div class="row align-items-center">
       <div class="col-sm-6">
-        <h5 class="fw-bold mb-0" style="color: var(--erm-navy);">
-          <i class="bi bi-shield-check me-2"></i>Risk Register &amp; Assessment
-        </h5>
+        <h4 class="fw-bold mb-1" style="color: var(--erm-navy); letter-spacing: -0.3px;">
+          <i class="bi bi-shield-check text-primary me-2"></i>Risk Assessment &amp; Governance
+        </h4>
+        <p class="text-muted small mb-0">Review inherent and residual risk evaluations, treatment plans, and multi-stage approvals.</p>
       </div>
       <div class="col-sm-6 text-end">
-        <button class="btn btn-outline-secondary btn-sm" onclick="LoadRegister()">
+        <button class="btn btn-outline-secondary btn-sm px-3" onclick="LoadRegister()">
           <i class="bi bi-arrow-left me-1"></i> Back to Register
         </button>
       </div>

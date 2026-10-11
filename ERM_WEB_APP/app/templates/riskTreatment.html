@@ -4,87 +4,328 @@
 
 <script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
-        <!--begin::App Content Header-->
-        <div class="app-content-header">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <div class="col-sm-6">
-                <!-- <h3 class="mb-0">Risk Register</h3> -->
-                  <span style="float:left; margin-right:20px">Risk Register</span>
-        <!-- Title Icon Start -->
-        <span>
-            <a class="pl-5 navigate plus-icon-color" href="#" onclick="sessionStorage.removeItem('rrid')"><i class="bi bi-plus-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Add Risk"></i></a>
-            <a class="pl-5 edit-icon-color" href="#"><i class="bi bi-pencil-square" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"></i></a>
-            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"></i></a>
-            <a class="pl-5 export-icon-color" href="#" onclick="downloadExcel()"><i class="bi bi-file-earmark-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Export"></i></a>
-
-        </span>
-
-              </div>
-              <div class="col-sm-6">
-                
-              </div>
-            </div>
-            <!--end::Row-->
-          </div>
-          <!--end::Container-->
-        </div>
-        <!--end::App Content Header-->
-        <!--begin::App Content-->
-        <div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
-
-          
-
-          <!--Start HR Risk-->
-<div class="bd-example m-0 border-0 tab-content active" id="div1"> 
-<table id="HrTable" class="table table-hover table-bordered" style="width: 100%;">
-  <thead>
-    <tr class="tb-head">
-      <th scope="col">Risk ID</th>
-      <th scope="col">Risk Name</th>
-      <th width="25%" scope="col">Risk Description</th>
-      <th width="1%" scope="col">Inherent Risk Level</th>
-      <th width="25%" scope="col">Current Mitigation</th>
-      <th width="1%" scope="col">Current Risk Level</th>
-      <th scope="col">Risk Owner</th>
-      
-      <th width="25%" scope="col">Action Plan</th>
-      
-      <th width="1%" scope="col">Action</th>
-      <th scope="col" style="visibility: hidden;">Id</th>
-    </tr>
-    </tr>
-  </thead>
-  <tbody></tbody>
-
-</table> 
-</div>  
 
 <style>
-  
-    .tab-content {
-      display: none;
-      /* padding: 20px;
-      border: 1px solid #ccc;
-      margin-top: 10px; */
-    }
-    .tab-content.active {
-      display: block;
-    }
-   
-    .tab-btn { color:#000;}
+  :root {
+    --erm-navy: #10233F;
+    --erm-navy-dark: #0A1628;
+    --erm-blue: #2563EB;
+    --erm-blue-light: #EFF6FF;
+    --erm-teal: #14B8A6;
+    --erm-bg: #F5F7FB;
+    --erm-card-bg: #FFFFFF;
+    --erm-border: #E2E8F0;
+    --erm-text-main: #0F172A;
+    --erm-text-muted: #64748B;
+  }
 
-    .tab-btn.active {
-      background: #007bff!important;
-      color: #fff!important;
-    }
+  .treatment-container {
+    padding: 24px 32px;
+    background: var(--erm-bg);
+    min-height: calc(100vh - 56px);
+  }
 
-  </style>
-  
+  .treatment-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .treatment-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .treatment-page-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--erm-navy);
+    letter-spacing: -0.4px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .treatment-page-subtitle {
+    font-size: 13.5px;
+    color: var(--erm-text-muted);
+    margin: 0;
+  }
+
+  .treatment-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* KPI Summary Grid */
+  .treatment-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .treatment-kpi-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .treatment-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .treatment-kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .kpi-blue { background: #EFF6FF; color: #2563EB; }
+  .kpi-teal { background: #F0FDFA; color: #0D9488; }
+  .kpi-red { background: #FEF2F2; color: #DC2626; }
+  .kpi-amber { background: #FFFBEB; color: #D97706; }
+
+  .treatment-kpi-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--erm-text-main);
+    line-height: 1.2;
+  }
+
+  .treatment-kpi-lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--erm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Main Card */
+  .treatment-main-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .treatment-toolbar {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--erm-border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: #FAFBFD;
+  }
+
+  .treatment-table-wrap {
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  /* Table styling */
+  #HrTable {
+    width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  #HrTable thead tr.tb-head th {
+    background: #F1F5F9 !important;
+    color: var(--erm-navy) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 14px !important;
+    border-bottom: 2px solid var(--erm-border) !important;
+    vertical-align: middle;
+  }
+
+  #HrTable tbody td {
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+    color: var(--erm-text-main) !important;
+    vertical-align: middle;
+    border-bottom: 1px solid #F1F5F9 !important;
+    background-color: #FFFFFF;
+  }
+
+  #HrTable tbody tr:hover td {
+    background-color: #F8FAFC !important;
+  }
+
+  .severity-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    text-align: center;
+    min-width: 48px;
+    color: #111827;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .action-plan-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 7px;
+    color: var(--erm-blue);
+    background: var(--erm-blue-light);
+    border: 1px solid #DBEAFE;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .action-plan-btn:hover {
+    background: var(--erm-blue);
+    color: #FFFFFF;
+    border-color: var(--erm-blue);
+  }
+
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  .tab-btn { color:#000; }
+  .tab-btn.active {
+    background: #007bff!important;
+    color: #fff!important;
+  }
+</style>
+
+<div class="treatment-container">
+  <!-- Header -->
+  <div class="treatment-page-header">
+    <div class="treatment-header-left">
+      <h1 class="treatment-page-title">
+        <i class="bi bi-shield-check text-primary"></i> Risk Treatment &amp; Mitigation
+      </h1>
+      <p class="treatment-page-subtitle">
+        Review assigned mitigation actions, control implementations, and residual risk severity.
+      </p>
+    </div>
+    <div class="treatment-header-actions">
+      <a href="/riskRegister" class="btn btn-outline-secondary btn-sm px-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Register
+      </a>
+      <button class="btn btn-outline-primary btn-sm px-3" onclick="downloadExcel()">
+        <i class="bi bi-file-earmark-arrow-down me-1"></i> Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="treatment-kpi-grid">
+    <div class="treatment-kpi-card">
+      <div class="treatment-kpi-icon kpi-blue">
+        <i class="bi bi-journal-text"></i>
+      </div>
+      <div class="treatment-kpi-meta">
+        <div class="treatment-kpi-val" id="kpiTotalTreatments">0</div>
+        <div class="treatment-kpi-lbl">Total Treatments</div>
+      </div>
+    </div>
+
+    <div class="treatment-kpi-card">
+      <div class="treatment-kpi-icon kpi-teal">
+        <i class="bi bi-shield-lock"></i>
+      </div>
+      <div class="treatment-kpi-meta">
+        <div class="treatment-kpi-val" id="kpiUniqueRisks">0</div>
+        <div class="treatment-kpi-lbl">Covered Risks</div>
+      </div>
+    </div>
+
+    <div class="treatment-kpi-card">
+      <div class="treatment-kpi-icon kpi-red">
+        <i class="bi bi-exclamation-triangle"></i>
+      </div>
+      <div class="treatment-kpi-meta">
+        <div class="treatment-kpi-val" id="kpiHighResidual">0</div>
+        <div class="treatment-kpi-lbl">High/Critical Residual</div>
+      </div>
+    </div>
+
+    <div class="treatment-kpi-card">
+      <div class="treatment-kpi-icon kpi-amber">
+        <i class="bi bi-clock-history"></i>
+      </div>
+      <div class="treatment-kpi-meta">
+        <div class="treatment-kpi-val" id="kpiActionOwners">0</div>
+        <div class="treatment-kpi-lbl">Assigned Owners</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Table Card -->
+  <div class="treatment-main-card">
+    <div class="treatment-toolbar">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary-subtle text-primary fw-semibold px-2 py-1">
+          <i class="bi bi-table me-1"></i> Mitigation Portfolio
+        </span>
+        <span class="text-muted small" id="treatmentCountSummary">Loading treatments...</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width: 260px;">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <input type="text" id="customSearchInput" class="form-control form-control-sm border-start-0" placeholder="Filter treatments...">
+        </div>
+      </div>
+    </div>
+
+    <div class="treatment-table-wrap">
+      <div class="bd-example m-0 border-0 tab-content active" id="div1"> 
+        <table id="HrTable" class="table table-hover table-bordered" style="width: 100%;">
+          <thead>
+            <tr class="tb-head">
+              <th scope="col">Risk ID</th>
+              <th scope="col">Risk Name</th>
+              <th width="25%" scope="col">Risk Description</th>
+              <th width="1%" scope="col">Inherent Risk Level</th>
+              <th width="25%" scope="col">Current Mitigation</th>
+              <th width="1%" scope="col">Current Risk Level</th>
+              <th scope="col">Risk Owner</th>
+              <th width="25%" scope="col">Action Plan</th>
+              <th width="1%" scope="col">Action</th>
+              <th scope="col" style="visibility: hidden;">Id</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table> 
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
   const APP_DATA = {{ session_data | tojson }};
@@ -92,205 +333,213 @@
 
 <script>
   function downloadExcel() {
-    return;
+    const deptCode = (APP_DATA && (APP_DATA.userDept || APP_DATA.dept_id)) ? String(APP_DATA.userDept || APP_DATA.dept_id) : "";
+    if (!deptCode) {
+      if (typeof showToast === 'function') {
+        showToast("Department code is required for export", "bg-warning");
+      } else {
+        alert("Department code is required for export");
+      }
+      return;
+    }
+
     axios.get('/exportExcel', {
-        responseType: 'blob' ,  
+        responseType: 'blob',  
         params: {
-                    treatment_id:treatment_id
-                }
+            dept_code: deptCode
+        }
     })
     .then(response => {
         const url = window.URL.createObjectURL(response.data);
-
         const a = document.createElement('a');
         a.href = url;
-        a.download = "risk_register.xlsx";
+        a.download = "risk_treatment_register.xlsx";
         document.body.appendChild(a);
         a.click();
         a.remove();
-
-        alert("File downloaded successfully!");
+        if (typeof showToast === 'function') {
+          showToast("Treatment register downloaded successfully!");
+        } else {
+          alert("Treatment register downloaded successfully!");
+        }
     })
     .catch(error => {
-        console.error(error);
-        alert("Download failed!");
+        console.error("Export failed:", error);
+        if (typeof showToast === 'function') {
+          showToast("Download failed!", "bg-danger");
+        } else {
+          alert("Download failed!");
+        }
     });
+  }
 
-}
+  function openTab(evt, tabId) {
+    document.querySelectorAll(".tab-content")
+      .forEach(div => div.classList.remove("active"));
+    document.querySelectorAll(".tab-btn")
+      .forEach(btn => btn.classList.remove("active"));
+    document.getElementById(tabId).classList.add("active");
+    if (evt && evt.currentTarget) {
+      evt.currentTarget.classList.add("active");
+    }
+  }
 
-function openTab(evt, tabId) {
+  $(document).ready(function () {
+    GetAllRiskRegister(APP_DATA.userId);
 
-  document.querySelectorAll(".tab-content")
-    .forEach(div => div.classList.remove("active"));
+    // Custom instant search connected to DataTable
+    $('#customSearchInput').on('keyup', function () {
+      if ($.fn.DataTable.isDataTable('#HrTable')) {
+        $('#HrTable').DataTable().search(this.value).draw();
+      }
+    });
+  });
 
-  document.querySelectorAll(".tab-btn")
-    .forEach(btn => btn.classList.remove("active"));
-
-  document.getElementById(tabId).classList.add("active");
-
-  evt.currentTarget.classList.add("active");
-}
-
-$(document).ready(function () {
- 
-  GetAllRiskRegister(APP_DATA.userId);
-});
-
-
-function mergeRows(table, columns) {
-
+  function mergeRows(table, columns) {
     var api = table.api();
     var rows = api.rows({ page: 'current' }).nodes();
 
     columns.forEach(function (colIndex) {
+      var lastValue = null;
+      var lastGroupValue = null;
+      var span = 1;
 
-        var lastValue = null;
-        var lastGroupValue = null;
-        var span = 1;
+      api.column(colIndex, { page: 'current' }).data().each(function (value, i) {
+        var currentRow = $(rows).eq(i);
+        var currentGroupValue = currentRow.find('td').eq(0).text();
 
-        api.column(colIndex, { page: 'current' }).data().each(function (value, i) {
-
-            var currentRow = $(rows).eq(i);
-            var currentGroupValue = currentRow.find('td').eq(0).text(); // FIRST COLUMN
-
-            if (lastValue === value && lastGroupValue === currentGroupValue) {
-
-                span++;
-
-                currentRow.find('td').eq(colIndex).hide();
-
-                $(rows).eq(i - span + 1).find('td').eq(colIndex)
-                    .attr('rowspan', span);
-
-            } else {
-
-                span = 1;
-                lastValue = value;
-                lastGroupValue = currentGroupValue;
-
-            }
-
-        });
-
-    });
-
-}
-
-function GetAllRiskRegister(treatment_id) {
-  
-  try {
-
-    var api_url = "/GetUserTreatment"
-    
-    axios.get(api_url,{
-        params: { treatment_id:treatment_id }
-    })
-    .then(response => {
-        if (response.data.Error.Error === false) {
-            var data = response.data.data;
-            $('#HrTable').DataTable({
-                destroy: true,
-                data: data,
-                order: [
-                          [9, 'desc'],
-                          [0, 'asc'],
-                          [1, 'asc'],
-                          [2, 'asc']
-                      ],
-                columns: [
-
-                    { data: "risk_id" },
-                    { data: "risk_name" },
-                                       {
-                      data: "risk_description",
-                      render: function (data) {
-                        if (!data) return "";
-                        return data.replace(/\n/g, "<br>");
-                      }
-                    },
-                    { data: "inherent_color_code" },
-                   
-                    {
-                      data: "mitigation",
-                      render: function (data) {
-                        if (!data) return "";
-                        return data.replace(/\n/g, "<br>");
-                      }
-                    },                                                  
-                    { data: "current_color_code" },
-
-                    { data: "risk_owner_name" },
-                    { data: "action_plan"},
-                    
-                    {
-                        data: "risk_treatment_id",
-                        render: function (data, type, row) {
-                            return `
-                           
-                            <a href="#"><i class="bi bi-pencil-square edit-icon-color" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit" onclick="getTreatmentbyid(${data}, ${row.risk_description_id}, ${row.risk_register_id})"></i></a>
-                            
-                            `;
-                        }
-                    },
-                    
-                    {
-                      data: "risk_treatment_id",
-                      visible: false
-                    }
-                ],
-                 drawCallback: function () {
-                    var table = $('#HrTable').DataTable();
-                    
-                    $('#HrTable tbody td').show().removeAttr('rowspan');
-                    mergeRows(this, [0,1,6,7,8,9]);
-              },
-              
-
-    createdRow: function (row, data) {
-
-        $('td:eq(3)', row).css({
-            'background-color': data.inherent_color_str,
-            'color': 'black',
-            'font-weight': 'bold',
-            'text-align': 'center'
-        });
-
-        $('td:eq(5)', row).css({
-            'background-color': data.current_color_str,
-            'color': 'black',
-            'font-weight': 'bold',
-            'text-align': 'center'
-        });
-
-    }
-
-            });
+        if (lastValue === value && lastGroupValue === currentGroupValue) {
+          span++;
+          currentRow.find('td').eq(colIndex).hide();
+          $(rows).eq(i - span + 1).find('td').eq(colIndex).attr('rowspan', span);
         } else {
-            showToast(response.data.Error.Error_message);
+          span = 1;
+          lastValue = value;
+          lastGroupValue = currentGroupValue;
+        }
+      });
+    });
+  }
+
+  function updateTreatmentKPIs(data) {
+    if (!Array.isArray(data)) return;
+    const total = data.length;
+    const uniqueRisks = new Set(data.map(d => d.risk_id).filter(Boolean)).size;
+    const uniqueOwners = new Set(data.map(d => d.risk_owner_name).filter(Boolean)).size;
+
+    // High or Critical residual risk detection
+    const highResidual = data.filter(d => {
+      const cStr = (d.current_color_str || '').toLowerCase();
+      const cCode = (d.current_color_code || '').toUpperCase();
+      return cStr.includes('red') || cStr.includes('#ff') || cStr.includes('#dc') || 
+             cCode.startsWith('4') || cCode.startsWith('5') || cCode.includes('D') || cCode.includes('E');
+    }).length;
+
+    $('#kpiTotalTreatments').text(total);
+    $('#kpiUniqueRisks').text(uniqueRisks);
+    $('#kpiHighResidual').text(highResidual);
+    $('#kpiActionOwners').text(uniqueOwners);
+    $('#treatmentCountSummary').text(`${total} treatment records loaded`);
+  }
+
+  function GetAllRiskRegister(treatment_id) {
+    try {
+      var api_url = "/GetUserTreatment";
+      axios.get(api_url, {
+        params: { treatment_id: treatment_id }
+      })
+      .then(response => {
+        if (response.data && response.data.Error && response.data.Error.Error === false) {
+          var data = response.data.data || [];
+          updateTreatmentKPIs(data);
+
+          $('#HrTable').DataTable({
+            destroy: true,
+            data: data,
+            order: [
+              [9, 'desc'],
+              [0, 'asc'],
+              [1, 'asc'],
+              [2, 'asc']
+            ],
+            columns: [
+              { data: "risk_id" },
+              { data: "risk_name" },
+              {
+                data: "risk_description",
+                render: function (data) {
+                  if (!data) return "";
+                  return data.replace(/\n/g, "<br>");
+                }
+              },
+              { 
+                data: "inherent_color_code",
+                render: function (data, type, row) {
+                  if (!data) return "";
+                  const bg = row.inherent_color_str || '#E2E8F0';
+                  return `<span class="severity-chip" style="background-color: ${bg};">${data}</span>`;
+                }
+              },
+              {
+                data: "mitigation",
+                render: function (data) {
+                  if (!data) return "";
+                  return data.replace(/\n/g, "<br>");
+                }
+              },
+              { 
+                data: "current_color_code",
+                render: function (data, type, row) {
+                  if (!data) return "";
+                  const bg = row.current_color_str || '#E2E8F0';
+                  return `<span class="severity-chip" style="background-color: ${bg};">${data}</span>`;
+                }
+              },
+              { data: "risk_owner_name" },
+              { data: "action_plan" },
+              {
+                data: "risk_treatment_id",
+                render: function (data, type, row) {
+                  return `
+                    <a href="#" class="action-plan-btn" onclick="getTreatmentbyid(${data}, ${row.risk_description_id}, ${row.risk_register_id}); return false;" title="Manage Action Plan">
+                      <i class="bi bi-pencil-square"></i> Action Plan
+                    </a>
+                  `;
+                }
+              },
+              {
+                data: "risk_treatment_id",
+                visible: false
+              }
+            ],
+            drawCallback: function () {
+              $('#HrTable tbody td').show().removeAttr('rowspan');
+              mergeRows(this, [0, 1, 6, 7, 8, 9]);
+            }
+          });
+        } else {
+          if (typeof showToast === 'function') {
+            showToast(response.data?.Error?.Error_message || "Failed to load treatments", "bg-danger");
+          }
         }
       })
       .catch(error => {
-          showToast("Failed to load departments");
+        console.error("Error loading treatments:", error);
+        if (typeof showToast === 'function') {
+          showToast("Failed to load treatments", "bg-danger");
+        }
       });
     } catch (error) {
-    console.log("An error occurred:", error.message);
+      console.log("An error occurred:", error.message);
+    }
   }
-}
 
-function getTreatmentbyid(rtid, rdid, rrid) {
-    
+  function getTreatmentbyid(rtid, rdid, rrid) {
     sessionStorage.setItem("risk_treatment_id", rtid);
     sessionStorage.setItem("risk_description_id", rdid);
     sessionStorage.setItem("risk_register_id", rrid);
     window.location.href = "/riskActionPlan";
-}
-
+  }
 </script>
 
-          </div>
-          <!--end::Container-->
-        </div>
-        <!--end::App Content-->
-      
-    
 {% endblock %}

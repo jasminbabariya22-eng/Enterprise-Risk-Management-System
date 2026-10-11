@@ -6,59 +6,122 @@
 <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
 
 <style>
+  :root {
+    --erm-navy: #10233F;
+    --erm-navy-dark: #0A1628;
+    --erm-blue: #2563EB;
+    --erm-blue-light: #EFF6FF;
+    --erm-teal: #14B8A6;
+    --erm-bg: #F5F7FB;
+    --erm-card-bg: #FFFFFF;
+    --erm-border: #E2E8F0;
+    --erm-text-main: #0F172A;
+    --erm-text-muted: #64748B;
+  }
+
   /* Main Container & Modern Layout */
   .risk-register-container {
-    padding: 22px 28px;
-    background: #f8fafc;
+    padding: 24px 32px;
+    background: var(--erm-bg);
     min-height: calc(100vh - 56px);
   }
 
   .risk-page-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .risk-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .risk-page-title {
     font-size: 26px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--erm-navy);
     letter-spacing: -0.5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .risk-page-subtitle {
+    font-size: 13.5px;
+    color: var(--erm-text-muted);
     margin: 0;
   }
 
-  .btn-export-excel {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    color: #334155;
-    font-size: 13.5px;
-    font-weight: 600;
-    padding: 7px 16px;
-    border-radius: 8px;
-    display: inline-flex;
+  .risk-header-actions {
+    display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
+  }
+
+  /* KPI Summary Cards */
+  .risk-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .risk-kpi-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
-    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
-  .btn-export-excel:hover {
-    background: #f1f5f9;
-    color: #020264;
-    border-color: #94a3b8;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  .risk-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 
-  /* Filter & Control Bar */
+  .kpi-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .kpi-icon-blue { background: #EFF6FF; color: #2563EB; }
+  .kpi-icon-red { background: #FEF2F2; color: #DC2626; }
+  .kpi-icon-amber { background: #FFFBEB; color: #D97706; }
+  .kpi-icon-green { background: #F0FDF4; color: #16A34A; }
+
+  .kpi-meta { display: flex; flex-direction: column; }
+  .kpi-value { font-size: 22px; font-weight: 800; color: var(--erm-text-main); line-height: 1.2; }
+  .kpi-label { font-size: 12px; font-weight: 600; color: var(--erm-text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Toolbar & Filter Bar */
   .risk-toolbar {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 14px 18px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
     margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   }
 
   .risk-toolbar-left {
@@ -70,94 +133,110 @@
 
   .risk-search-box {
     position: relative;
-    width: 280px;
+    width: 300px;
   }
 
   .risk-search-box i {
     position: absolute;
-    left: 15px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8;
+    color: #94A3B8;
     font-size: 15px;
   }
 
   .risk-search-input {
     width: 100%;
-    height: 42px;
-    padding: 0 16px 0 42px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 22px;
-    font-size: 14px;
+    height: 40px;
+    padding: 0 14px 0 38px;
+    border: 1.5px solid var(--erm-border);
+    border-radius: 8px;
+    font-size: 13.5px;
     font-weight: 500;
-    background: #ffffff;
-    color: #1e293b;
+    background: #FFFFFF;
+    color: var(--erm-text-main);
     outline: none;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s ease;
   }
 
   .risk-search-input:focus {
-    border-color: #020264;
-    box-shadow: 0 0 0 3.5px rgba(2, 2, 100, 0.12);
+    border-color: var(--erm-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   }
 
-  /* Custom Filter Dropdowns */
   .filter-select-btn {
-    height: 42px;
-    padding: 0 18px;
-    background: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 22px;
-    font-size: 13.5px;
-    font-weight: 500;
-    color: #334155;
+    height: 40px;
+    padding: 0 16px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--erm-border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--erm-text-main);
     display: inline-flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s ease;
   }
 
   .filter-select-btn:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
+    background: #F8FAFC;
+    border-color: #94A3B8;
   }
 
-  /* Add Risk Button */
+  .btn-export-excel {
+    background: #FFFFFF;
+    border: 1.5px solid var(--erm-border);
+    color: var(--erm-text-main);
+    font-size: 13px;
+    font-weight: 600;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .btn-export-excel:hover {
+    background: #F8FAFC;
+    color: var(--erm-navy);
+    border-color: #94A3B8;
+  }
+
   .btn-add-risk {
-    height: 42px;
-    padding: 0 24px;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    color: #ffffff;
+    height: 40px;
+    padding: 0 18px;
+    background: var(--erm-blue);
+    color: #FFFFFF;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
+    font-size: 13.5px;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 7px;
     cursor: pointer;
-    box-shadow: 0 3px 8px rgba(234, 88, 12, 0.35);
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s ease;
     text-decoration: none;
   }
 
   .btn-add-risk:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(234, 88, 12, 0.45);
-    color: #ffffff;
-  }
-
-  .btn-add-risk:active {
-    transform: translateY(0);
+    background: #1D4ED8;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.28);
   }
 
   /* Table Card Wrapper */
   .risk-table-card {
-    background: #ffffff;
+    background: var(--erm-card-bg);
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--erm-border);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
     overflow: hidden;
   }
@@ -171,99 +250,124 @@
   }
 
   #HrTable thead tr {
-    background: #dbe7f6 !important;
+    background: #F1F5F9 !important;
   }
 
   #HrTable thead th {
-    background: #dbe7f6 !important;
-    color: #0f2942 !important;
+    background: #F1F5F9 !important;
+    color: var(--erm-navy) !important;
     font-weight: 700 !important;
-    padding: 12px 10px !important;
-    border-bottom: 2px solid #cbd5e1 !important;
-    border-right: 1px solid #cbd5e1 !important;
+    font-size: 12px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 12px 12px !important;
+    border-bottom: 2px solid var(--erm-border) !important;
+    border-right: 1px solid #EDF2F7 !important;
     white-space: nowrap;
     vertical-align: middle;
   }
 
   #HrTable tbody td {
-    padding: 10px 10px !important;
-    border-bottom: 1px solid #edf2f7 !important;
-    border-right: 1px solid #f1f5f9 !important;
-    vertical-align: top;
-    color: #334155;
+    padding: 12px 12px !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+    border-right: 1px solid #F8FAFC !important;
+    vertical-align: middle;
+    color: var(--erm-text-main);
     line-height: 1.45;
   }
 
   #HrTable tbody tr:hover {
-    background-color: #f8fafc !important;
+    background-color: #F8FAFC !important;
   }
 
   /* Status Badges */
   .badge-status-approved {
-    background: #dcfce7 !important;
-    color: #15803d !important;
-    padding: 3px 9px;
-    border-radius: 12px;
+    background: #DCFCE7 !important;
+    color: #15803D !important;
+    padding: 4px 10px;
+    border-radius: 20px;
     font-weight: 700;
     font-size: 11px;
     display: inline-block;
   }
 
   .badge-status-rejected {
-    background: #fee2e2 !important;
-    color: #b91c1c !important;
-    padding: 3px 9px;
-    border-radius: 12px;
+    background: #FEE2E2 !important;
+    color: #B91C1C !important;
+    padding: 4px 10px;
+    border-radius: 20px;
     font-weight: 700;
     font-size: 11px;
     display: inline-block;
   }
 
   .badge-status-pending {
-    background: #fef9c3 !important;
-    color: #854d0e !important;
-    padding: 3px 9px;
-    border-radius: 12px;
+    background: #FEF9C3 !important;
+    color: #854D0E !important;
+    padding: 4px 10px;
+    border-radius: 20px;
     font-weight: 700;
     font-size: 11px;
     display: inline-block;
   }
 
   .badge-risk-pill {
-    padding: 3px 9px;
-    border-radius: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
     font-weight: 700;
     font-size: 11px;
     display: inline-block;
     text-align: center;
   }
 
-  .badge-risk-critical {
-    background: #fee2e2;
-    color: #b91c1c;
+  .badge-risk-critical { background: #FEE2E2; color: #B91C1C; }
+  .badge-risk-high { background: #FFEDD5; color: #C2410C; }
+  .badge-risk-medium { background: #FEF3C7; color: #92400E; }
+  .badge-risk-low { background: #DCFCE7; color: #166534; }
+
+  .action-menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--erm-text-muted);
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
   }
 
-  .badge-risk-high {
-    background: #ffedd5;
-    color: #c2410c;
+  .action-menu-btn:hover {
+    background: #F1F5F9;
+    color: var(--erm-navy);
   }
 
-  .badge-risk-medium {
-    background: #dcfce7;
-    color: #15803d;
+  .action-dropdown-card {
+    border-radius: 10px;
+    border: 1px solid var(--erm-border);
+    padding: 6px;
+    min-width: 140px;
   }
 
-  .badge-risk-low {
-    background: #e0f2fe;
-    color: #0369a1;
+  .action-dropdown-item {
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    color: var(--erm-text-main);
+    text-decoration: none;
+    transition: all 0.15s ease;
   }
 
-  /* Uniform Cell Box with Hover Popover */
+  .action-dropdown-item:hover {
+    background: #F8FAFC;
+    color: var(--erm-navy);
+  }
+
+  /* Cell Clamping & Popover */
   .risk-cell-box {
     position: relative;
-    max-width: 190px;
-    min-width: 130px;
-    cursor: pointer;
+    max-width: 260px;
   }
 
   .risk-clamp-2 {
@@ -272,144 +376,190 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.45;
-    font-size: 12px;
-    color: #334155;
-    word-break: break-word;
-  }
-
-  .risk-hover-popover {
-    visibility: hidden;
-    opacity: 0;
-    position: absolute;
-    left: 0;
-    top: 100%;
-    margin-top: 6px;
-    z-index: 1050;
-    width: 320px;
-    max-width: 90vw;
-    background: #ffffff;
-    border-radius: 10px;
-    padding: 12px 14px;
-    box-shadow: 0 12px 30px rgba(2, 18, 40, 0.2), 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid #cbd5e1;
-    font-size: 12px;
-    line-height: 1.55;
-    color: #0f172a;
-    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-    transform: translateY(4px);
-    pointer-events: none;
-    text-align: left;
-  }
-
-  .risk-hover-popover-header {
-    color: #020264;
-    font-weight: 700;
     font-size: 12.5px;
-    margin-bottom: 6px;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .risk-cell-box:hover .risk-hover-popover {
-    visibility: visible;
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
   }
 
   .read-more-hint {
-    color: #0d6efd;
+    font-size: 10.5px;
+    color: var(--erm-blue);
     font-weight: 600;
-    font-size: 11px;
-    margin-top: 2px;
+    cursor: pointer;
     display: inline-block;
+    margin-top: 2px;
   }
 
-  /* Action Context Menu */
-  .action-menu-btn {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    width: 30px;
-    height: 30px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #475569;
-    transition: all 0.2s;
-  }
-
-  .action-menu-btn:hover {
-    background: #020264;
-    color: #ffffff;
-    border-color: #020264;
-  }
-
-  .action-dropdown-card {
-    min-width: 130px;
+  .risk-hover-popover {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 4px);
+    z-index: 1050;
+    background: #FFFFFF;
+    border: 1px solid var(--erm-border);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12);
     border-radius: 8px;
-    padding: 4px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-    border: 1px solid #e2e8f0;
+    padding: 12px;
+    width: 320px;
+    font-size: 12px;
+    color: var(--erm-text-main);
   }
 
-  .action-dropdown-item {
+  .risk-cell-box:hover .risk-hover-popover {
+    display: block;
+  }
+
+  .risk-hover-popover-header {
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin-bottom: 6px;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 4px;
+  }
+
+  /* Slide-Over Quick Preview Drawer */
+  .erm-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+  }
+
+  .erm-drawer-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .erm-drawer-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 440px;
+    max-width: 100vw;
+    height: 100vh;
+    background: #FFFFFF;
+    z-index: 1050;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
+    flex-direction: column;
+  }
+
+  .erm-drawer-panel.open {
+    transform: translateX(0);
+  }
+
+  .erm-drawer-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--erm-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #F8FAFC;
+  }
+
+  .erm-drawer-body {
+    padding: 22px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .erm-drawer-footer {
+    padding: 16px 22px;
+    border-top: 1px solid var(--erm-border);
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: #334155;
-    border-radius: 6px;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  .action-dropdown-item:hover {
-    background: #f1f5f9;
-    color: #020264;
-  }
-
-  .action-dropdown-item.text-danger:hover {
-    background: #fef2f2;
-    color: #dc2626 !important;
+    background: #F8FAFC;
   }
 </style>
 
 <div class="risk-register-container">
-  <!-- Page Header & Controls -->
+  <!-- Page Header -->
   <div class="risk-page-header">
-    <h1 class="risk-page-title">Risk Register</h1>
-    <div class="d-flex align-items-center gap-2">
-      <button class="btn-export-excel" onclick="downloadExcel()" title="Export Excel">
-        <i class="bi bi-file-earmark-excel"></i> Export
+    <div class="risk-header-left">
+      <h1 class="risk-page-title">
+        <i class="bi bi-shield-shaded text-primary"></i> Risk Register
+      </h1>
+      <p class="risk-page-subtitle">
+        Enterprise risk portfolio overview, active assessments, mitigation tracking, and governance status.
+      </p>
+    </div>
+    <div class="risk-header-actions">
+      <button type="button" class="btn-export-excel" onclick="downloadExcel()" title="Export current register to Excel">
+        <i class="bi bi-file-earmark-excel text-success"></i> Export Excel
       </button>
+      {% if session_data.userType in ["Risk Owner", "Admin", "Super Admin"] or session.get("usertype") in ["Risk Owner", "Admin", "Super Admin"] or session_data.roleid in [1, 5] %}
+        <a class="btn-add-risk" href="/riskDetailsAdd" onclick="sessionStorage.removeItem('rrid')" title="Register a new risk">
+          <i class="bi bi-plus-lg"></i> Add New Risk
+        </a>
+      {% endif %}
     </div>
   </div>
 
-  <!-- Filter & Action Toolbar -->
+  <!-- KPI Live Metric Cards -->
+  <div class="risk-kpi-grid">
+    <div class="risk-kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-blue">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <div class="kpi-meta">
+        <div class="kpi-value" id="kpiTotalRisks">0</div>
+        <div class="kpi-label">Total Portfolio Risks</div>
+      </div>
+    </div>
+    <div class="risk-kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-red">
+        <i class="bi bi-exclamation-octagon"></i>
+      </div>
+      <div class="kpi-meta">
+        <div class="kpi-value" id="kpiHighRisks">0</div>
+        <div class="kpi-label">High &amp; Critical Risks</div>
+      </div>
+    </div>
+    <div class="risk-kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-amber">
+        <i class="bi bi-hourglass-split"></i>
+      </div>
+      <div class="kpi-meta">
+        <div class="kpi-value" id="kpiPendingRisks">0</div>
+        <div class="kpi-label">Pending Governance Review</div>
+      </div>
+    </div>
+    <div class="risk-kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-green">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="kpi-meta">
+        <div class="kpi-value" id="kpiApprovedRisks">0</div>
+        <div class="kpi-label">Approved &amp; Active</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
   <div class="risk-toolbar">
     <div class="risk-toolbar-left">
-      <!-- Search Box -->
       <div class="risk-search-box">
         <i class="bi bi-search"></i>
-        <input type="text" id="customSearchInput" class="risk-search-input" placeholder="Search" />
+        <input type="text" id="customSearchInput" class="risk-search-input" placeholder="Search by ID, title, owner, or status..." />
       </div>
 
-      <!-- Status Filter with Dynamic Project Workflow Logic -->
+      <!-- Status Filter Dropdown -->
       <div class="dropdown">
         <button id="statusFilterBtn" class="filter-select-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="bi bi-funnel-fill text-primary" style="font-size: 12px;"></i>
           <span id="statusFilterLabel">Status: All</span>
         </button>
         <ul class="dropdown-menu shadow border-0" id="statusDropdownMenu" style="border-radius: 10px; font-size: 13px; min-width: 230px; padding: 6px;">
-          <li class="px-2 py-1 text-muted fw-semibold" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Workflow Status</li>
+          <li class="px-2 py-1 text-muted fw-semibold" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Workflow Filter</li>
           <li><a class="dropdown-item rounded d-flex justify-content-between align-items-center py-2" href="javascript:void(0)" onclick="filterByStatus('All', 'All')"><span>All Statuses</span> <span class="badge bg-light text-dark border">All</span></a></li>
           <li><a class="dropdown-item rounded d-flex justify-content-between align-items-center py-2" href="javascript:void(0)" onclick="filterByStatus('Approved', 'Approved (Final)')"><span><i class="bi bi-check-circle-fill text-success me-1"></i> Approved (Final)</span> <span class="badge-status-approved">Approved</span></a></li>
           <li><a class="dropdown-item rounded d-flex justify-content-between align-items-center py-2" href="javascript:void(0)" onclick="filterByStatus('Pending', 'Pending Review')"><span><i class="bi bi-clock-history text-warning me-1"></i> Pending Review</span> <span class="badge-status-pending">Pending</span></a></li>
@@ -420,13 +570,8 @@
       </div>
     </div>
 
-    <!-- Right: Add New Risk Button (Only Risk Owner and Admin can create risks) -->
-    <div>
-      {% if session_data.userType in ["Risk Owner", "Admin", "Super Admin"] or session.get("usertype") in ["Risk Owner", "Admin", "Super Admin"] or session_data.roleid in [1, 5] %}
-        <a class="btn-add-risk" href="/riskDetailsAdd" onclick="sessionStorage.removeItem('rrid')">
-          <i class="bi bi-plus-lg"></i> Add New Risk
-        </a>
-      {% endif %}
+    <div class="text-muted small">
+      <span id="registerRecordCount">Loading records...</span>
     </div>
   </div>
 
@@ -439,9 +584,9 @@
             <th style="white-space: nowrap;">Risk ID</th>
             <th>Risk Title</th>
             <th width="20%">Risk Description</th>
-            <th style="white-space: nowrap;">Inherent Risk Level</th>
+            <th style="white-space: nowrap;">Inherent Level</th>
             <th width="20%">Current Mitigation</th>
-            <th style="white-space: nowrap;">Current Risk Level</th>
+            <th style="white-space: nowrap;">Current Level</th>
             <th>Risk Owner</th>
             <th>Status</th>
             <th style="white-space: nowrap;">Financial Year</th>
@@ -449,7 +594,7 @@
             <th>RM Status</th>
             <th>RH Status</th>
             <th>Created On</th>
-            <th width="40">Action</th>
+            <th width="40" class="text-center">Action</th>
             <th style="display:none;">Id</th>
           </tr>
         </thead>
@@ -522,7 +667,7 @@
         <button class="nav-link active py-1" style="font-size: 12px;" id="drawer-desc-tab" data-bs-toggle="pill" data-bs-target="#drawer-desc" type="button">Risk Description</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link py-1" style="font-size: 12px;" id="drawer-mitigation-tab" data-bs-toggle="pill" data-bs-target="#drawer-mitigation" type="button">Mitigation & Actions</button>
+        <button class="nav-link py-1" style="font-size: 12px;" id="drawer-mitigation-tab" data-bs-toggle="pill" data-bs-target="#drawer-mitigation" type="button">Mitigation &amp; Actions</button>
       </li>
       <li class="nav-item">
         <button class="nav-link py-1" style="font-size: 12px;" id="drawer-governance-tab" data-bs-toggle="pill" data-bs-target="#drawer-governance" type="button">Governance Trail</button>
@@ -625,8 +770,8 @@
 
     if (btnEl) {
       if (status !== 'All') {
-        btnEl.style.backgroundColor = '#eef2f8';
-        btnEl.style.borderColor = '#020264';
+        btnEl.style.backgroundColor = '#EFF6FF';
+        btnEl.style.borderColor = '#2563EB';
         btnEl.style.fontWeight = '600';
       } else {
         btnEl.style.backgroundColor = '';
@@ -670,6 +815,35 @@
     container.innerHTML = html;
   }
 
+  function updateKpiSummary(data) {
+    if (!data || !Array.isArray(data)) return;
+    const total = data.length;
+    let highCount = 0;
+    let pendingCount = 0;
+    let approvedCount = 0;
+
+    data.forEach(item => {
+      const inVal = String(item.inherent_color_code || item.inherent_risk_rating || '');
+      const curVal = String(item.current_color_code || item.current_risk_rating || '');
+      if (inVal.includes('High') || inVal.includes('Critical') || curVal.includes('High') || curVal.includes('Critical')) {
+        highCount++;
+      }
+
+      const st = String(item.risk_status_name || '').toLowerCase();
+      if (st.includes('pending') || st.includes('review') || st.includes('submitted')) {
+        pendingCount++;
+      } else if (st.includes('approved')) {
+        approvedCount++;
+      }
+    });
+
+    $('#kpiTotalRisks').text(total);
+    $('#kpiHighRisks').text(highCount);
+    $('#kpiPendingRisks').text(pendingCount);
+    $('#kpiApprovedRisks').text(approvedCount);
+    $('#registerRecordCount').text(`${total} Total Risks in Scope`);
+  }
+
   function GetAllRiskRegister(dept_code) {
     try {
       axios.get("/GetAllRiskRegister", {
@@ -679,13 +853,16 @@
         if (response.data && response.data.Error && response.data.Error.Error === false) {
           const data = response.data.data || [];
           populateDynamicStatuses(data);
+          updateKpiSummary(data);
 
-          
           $('#HrTable').DataTable({
             destroy: true,
             data: data,
             dom: 't<"d-flex justify-content-between align-items-center p-3"ip>',
             order: [[14, 'desc'], [0, 'asc']],
+            language: {
+              emptyTable: `<div class="text-center py-4 text-muted"><i class="bi bi-folder-x fs-1 d-block mb-2 text-secondary"></i>No risk register records found in this scope.</div>`
+            },
             columns: [
               // 0: Risk ID (Clickable Link to Open Risk)
               { 
@@ -720,7 +897,7 @@
                   const formatted = data.replace(/\n/g, '<br>');
                   return `
                     <div class="risk-cell-box">
-                      <div class="risk-clamp-2">${data}</div>
+                      <div class="risk-clamp-2 text-muted">${data}</div>
                       <span class="read-more-hint">Hover to read full...</span>
                       <div class="risk-hover-popover">
                         <div class="risk-hover-popover-header"><i class="bi bi-file-text"></i> Full Risk Description</div>
@@ -750,7 +927,7 @@
                   const formatted = data.replace(/\n/g, '<br>');
                   return `
                     <div class="risk-cell-box">
-                      <div class="risk-clamp-2">${data}</div>
+                      <div class="risk-clamp-2 text-muted">${data}</div>
                       <span class="read-more-hint">Hover to read full...</span>
                       <div class="risk-hover-popover">
                         <div class="risk-hover-popover-header"><i class="bi bi-shield-check"></i> Current Mitigation Strategy</div>
@@ -776,21 +953,21 @@
               { 
                 data: "risk_owner_name",
                 render: function(data) {
-                  return `<span style="white-space: nowrap;">${data || 'Risk Owner'}</span>`;
+                  return `<span style="white-space: nowrap;" class="fw-medium">${data || 'Risk Owner'}</span>`;
                 }
               },
               // 7: Status
               { 
                 data: "risk_status_name",
                 render: function(data) {
-                  return `<span class="fw-medium">${data || 'Active'}</span>`;
+                  return `<span class="badge bg-light text-dark border px-2 py-1 font-monospace" style="font-size: 11px;">${data || 'Active'}</span>`;
                 }
               },
               // 8: Financial Year
               { 
                 data: "financial_year",
                 render: function(data) {
-                  return `<span style="white-space: nowrap;">${data || ''}</span>`;
+                  return `<span style="white-space: nowrap;" class="text-secondary small font-monospace">${data || ''}</span>`;
                 }
               },
               // 9: FH Status
@@ -825,7 +1002,7 @@
                 data: "created_on",
                 render: function(data) {
                   if (!data) return "";
-                  return `<span style="white-space: nowrap;">${data.split('T')[0]}</span>`;
+                  return `<span style="white-space: nowrap;" class="text-secondary small">${data.split('T')[0]}</span>`;
                 }
               },
               // 13: Action Dropdown Context Menu
@@ -833,7 +1010,7 @@
                 data: "risk_register_id",
                 render: function(data) {
                   return `
-                    <div class="dropdown">
+                    <div class="dropdown text-center">
                       <button class="action-menu-btn" data-bs-toggle="dropdown" title="Actions">
                         <i class="bi bi-three-dots-vertical"></i>
                       </button>

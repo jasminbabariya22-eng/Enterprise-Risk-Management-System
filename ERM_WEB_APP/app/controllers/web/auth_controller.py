@@ -332,8 +332,8 @@ def riskDetails():
 def exportExcel():
     dept_code = request.args.get("dept_code")
     response = None 
-    if (len(dept_code)> 0):
-        response = APIClient.getdata("risk/export-data?dept_id=" + dept_code)
+    if dept_code and len(str(dept_code).strip()) > 0 and str(dept_code).strip().lower() != "all":
+        response = APIClient.getdata("risk/export-data?dept_id=" + str(dept_code).strip())
     else:
         response = APIClient.getdata("risk/export-data")
     #return "excel downloaded"
