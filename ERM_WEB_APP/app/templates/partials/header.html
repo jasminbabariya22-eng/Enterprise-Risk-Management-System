@@ -1,9 +1,9 @@
 <!--begin::Header-->
-<nav class="app-header navbar navbar-expand-lg navbar-dark menustrip" style="background: #020264 !important; padding: 8px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); min-height: 56px;">
-  <div class="container-fluid d-flex align-items-center justify-content-between p-0">
+<nav class="app-header navbar navbar-expand-lg navbar-dark menustrip" style="background: #020264 !important; padding: 6px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); min-height: 52px; width: 100%;">
+  <div class="container-fluid d-flex align-items-center justify-content-between p-0 flex-nowrap" style="width: 100%;">
     <!-- Left: Hamburger + Menu Items -->
-    <div class="d-flex align-items-center">
-      <ul class="navbar-nav me-3" role="navigation" aria-label="Navigation 1">
+    <div class="d-flex align-items-center flex-nowrap" style="min-width: 0;">
+      <ul class="navbar-nav me-2 flex-shrink-0" role="navigation" aria-label="Navigation 1">
         <li class="nav-item">
           <a class="nav-link text-white p-1" data-lte-toggle="sidebar" href="#" role="button" title="Toggle Sidebar">
             <i class="bi bi-list fs-4"></i>
@@ -12,94 +12,113 @@
       </ul>
 
       <!-- Main Navigation Links -->
-      <ul class="navbar-nav d-none d-lg-flex flex-row align-items-center" style="gap: 6px;">
+      <ul class="navbar-nav d-none d-lg-flex flex-row align-items-center flex-nowrap" style="gap: 2px;">
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 header-nav-link" data-id="2" href="/riskRegister">Risk Register</a>
+          <a class="nav-link text-white fw-semibold header-nav-link" href="/home"><i class="bi bi-house-door-fill me-1"></i> Home</a>
+        </li>
+        {% if usertype in privileged_roles %}
+        <li class="nav-item">
+          <a class="nav-link text-white fw-semibold header-nav-link" data-id="1" href="/dashboard"><i class="bi bi-grid-1x2-fill me-1"></i> Dashboard</a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link text-white fw-semibold header-nav-link" data-id="2" href="/riskRegister">Risk Register</a>
         </li>
 
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-white fw-semibold px-3 header-nav-link" href="#" data-bs-toggle="dropdown">User Management</a>
-          <ul class="dropdown-menu shadow border-0" style="border-radius: 8px; font-size: 13.5px; margin-top: 6px;">
+          <a class="nav-link dropdown-toggle text-white fw-semibold header-nav-link" href="#" data-bs-toggle="dropdown">User Management</a>
+          <ul class="dropdown-menu shadow border-0" style="border-radius: 8px; font-size: 13px; margin-top: 6px;">
             <li><a class="dropdown-item py-2" data-id="3" href="/users"><i class="bi bi-people me-2 text-primary"></i>Users</a></li>
             <li><a class="dropdown-item py-2" data-id="4" href="/userRole"><i class="bi bi-shield-lock me-2 text-success"></i>User Role</a></li>
           </ul>
         </li>
 
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle text-white fw-semibold px-3 header-nav-link" href="#" data-bs-toggle="dropdown">System Settings</a>
-          <ul class="dropdown-menu shadow border-0" style="border-radius: 8px; font-size: 13.5px; margin-top: 6px;">
+          <a class="nav-link dropdown-toggle text-white fw-semibold header-nav-link" href="#" data-bs-toggle="dropdown">System Settings</a>
+          <ul class="dropdown-menu shadow border-0" style="border-radius: 8px; font-size: 13px; margin-top: 6px;">
             <li><a class="dropdown-item py-2" data-id="5" href="/department"><i class="bi bi-building me-2 text-info"></i>Department</a></li>
           </ul>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 header-nav-link" data-id="7" href="/importRisk">Import Risk</a>
+          <a class="nav-link text-white fw-semibold header-nav-link" data-id="7" href="/importRisk">Import Risk</a>
         </li>
 
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 header-nav-link" data-id="8" href="/uploadRisk">Upload Data</a>
+          <a class="nav-link text-white fw-semibold header-nav-link" data-id="8" href="/uploadRisk">Upload Data</a>
         </li>
       </ul>
     </div>
 
     <!-- Right: FY Box, Fullscreen, User, Settings -->
-    <div class="d-flex align-items-center ms-auto" style="gap: 12px;">
+    <div class="d-flex align-items-center ms-auto flex-shrink-0" style="gap: 8px;">
       <!-- Financial Year Pill Box -->
       <div class="d-inline-flex align-items-center bg-white text-dark rounded px-2 py-1 shadow-sm header-fy-pill" title="Current Financial Year">
-        <i class="bi bi-calendar3 me-1" style="color: #020264; font-size: 14px;"></i>
-        <span id="card_on2" class="fw-bold" style="font-size: 12.5px; color: #020264; letter-spacing: 0.2px;">2026-2027</span>
+        <i class="bi bi-calendar3 me-1" style="color: #020264; font-size: 13px;"></i>
+        <span id="card_on2" class="fw-bold" style="font-size: 12px; color: #020264; letter-spacing: 0.2px;">2026-2027</span>
       </div>
 
       <!-- Fullscreen Maximize -->
       <a class="nav-link text-white p-1 d-flex align-items-center justify-content-center" href="#" data-lte-toggle="fullscreen" title="Toggle Fullscreen">
-        <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen" style="font-size: 15px;"></i>
-        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none; font-size: 15px;"></i>
+        <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen" style="font-size: 14px;"></i>
+        <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none; font-size: 14px;"></i>
       </a>
 
       <!-- 🔔 Notification Center Dropdown -->
       <div class="dropdown">
-        <a href="#" class="nav-link text-white p-1 position-relative d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" title="Notifications & Action Alerts">
+        <a href="#" class="nav-link text-white p-1 position-relative d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" title="Notifications & Action Alerts" id="headerNotifDropdownToggle" style="width: 32px; height: 32px;">
           <i class="bi bi-bell-fill" style="font-size: 16px;"></i>
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 9px; padding: 3px 5px;" id="headerNotifBadge">
-            2
-          </span>
+          <span class="position-absolute badge rounded-pill bg-danger d-none" style="top: 1px; right: -2px; font-size: 9px; padding: 2px 4.5px; line-height: 1; border: 1.5px solid #020264;" id="headerNotifBadge">0</span>
         </a>
-        <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-0" style="min-width: 320px; border-radius: 12px; margin-top: 8px; overflow: hidden;">
-          <li class="px-3 py-2 bg-light border-bottom d-flex justify-content-between align-items-center">
-            <strong class="text-dark" style="font-size: 12.5px;"><i class="bi bi-bell text-primary me-1"></i> Notifications & Tasks</strong>
-            <span class="badge bg-primary rounded-pill" style="font-size: 10px;">2 Pending</span>
-          </li>
-          <li class="p-2 border-bottom hover-bg">
-            <a href="/riskRegister" class="d-flex align-items-start text-decoration-none text-dark p-2 rounded" style="gap: 10px; font-size: 12.5px;">
-              <span class="badge bg-warning text-dark p-2 rounded-circle"><i class="bi bi-shield-exclamation"></i></span>
-              <div>
-                <div class="fw-bold">Pending Risk Approvals</div>
-                <small class="text-muted">Risks waiting for your governance review</small>
-              </div>
+        <div class="dropdown-menu dropdown-menu-end shadow border-0 p-0" style="width: 380px; max-width: min(380px, calc(100vw - 20px)); border-radius: 12px; margin-top: 8px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15) !important;">
+          <!-- Dropdown Top Bar -->
+          <div class="px-3 py-2 bg-light border-bottom d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+              <strong class="text-dark" style="font-size: 13px;"><i class="bi bi-bell-fill text-primary me-1"></i> Action Center</strong>
+              <span class="badge bg-primary rounded-pill d-none" id="headerNotifDropdownCount" style="font-size: 10px;">0 pending</span>
+            </div>
+            <button type="button" class="btn btn-link btn-xs text-secondary text-decoration-none p-0 fw-semibold" style="font-size: 11px;" onclick="markAllNotificationsAsRead()" title="Mark all items as read">
+              <i class="bi bi-check2-all me-1"></i>Mark all read
+            </button>
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="px-2 pt-2 pb-1 bg-light border-bottom d-flex gap-1" id="notifFilterTabs">
+            <button type="button" class="btn btn-xs btn-primary rounded-pill px-2 py-1 notif-filter-btn active" data-filter="all" style="font-size: 11px; font-weight: 600;" onclick="filterNotifications('all', this)">
+              All (<span id="notifCountAll">0</span>)
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 notif-filter-btn" data-filter="approval" style="font-size: 11px; font-weight: 600;" onclick="filterNotifications('approval', this)">
+              Approvals (<span id="notifCountApprovals">0</span>)
+            </button>
+            <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 notif-filter-btn" data-filter="treatment" style="font-size: 11px; font-weight: 600;" onclick="filterNotifications('treatment', this)">
+              Action Plans (<span id="notifCountTreatments">0</span>)
+            </button>
+          </div>
+
+          <!-- Notification Items List -->
+          <div id="headerNotifList" style="max-height: 380px; overflow-y: auto;">
+            <div class="p-3 text-center text-muted" style="font-size: 12px;">
+              <span class="spinner-border spinner-border-sm me-1"></span> Loading tasks...
+            </div>
+          </div>
+
+          <!-- Dropdown Footer -->
+          <div class="p-2 text-center bg-light border-top d-flex justify-content-between align-items-center px-3">
+            <span class="text-muted small" style="font-size: 11px;">Real-time role-scoped queue</span>
+            <a href="/home" class="text-primary text-decoration-none fw-semibold" style="font-size: 11.5px;">
+              View Workload Dashboard &rarr;
             </a>
-          </li>
-          <li class="p-2 border-bottom hover-bg">
-            <a href="/riskTreatment" class="d-flex align-items-start text-decoration-none text-dark p-2 rounded" style="gap: 10px; font-size: 12.5px;">
-              <span class="badge bg-info text-dark p-2 rounded-circle"><i class="bi bi-tools"></i></span>
-              <div>
-                <div class="fw-bold">Action Plan Follow-ups</div>
-                <small class="text-muted">Upcoming mitigation target dates this month</small>
-              </div>
-            </a>
-          </li>
-          <li class="p-2 text-center bg-light">
-            <a href="/riskRegister" class="text-primary text-decoration-none fw-semibold" style="font-size: 11.5px;">View all risk registers &rarr;</a>
-          </li>
-        </ul>
+          </div>
+        </div>
       </div>
 
       <!-- User Profile Dropdown Pill -->
       <div class="dropdown user-menu">
-        <a href="#" class="nav-link dropdown-toggle text-white d-flex align-items-center p-1 text-decoration-none" data-bs-toggle="dropdown" style="gap: 8px;">
-          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);">
-            <i class="bi bi-person-fill" style="font-size: 17px;"></i>
+        <a href="#" class="nav-link dropdown-toggle text-white d-flex align-items-center p-1 text-decoration-none" data-bs-toggle="dropdown" style="gap: 6px;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);">
+            <i class="bi bi-person-fill" style="font-size: 15px;"></i>
           </div>
-          <span class="d-none d-md-inline fw-semibold text-nowrap" id="top_user_display_name" style="font-size: 13.5px;">ERM Admin</span>
+          <span class="d-none d-md-inline fw-semibold text-truncate" id="top_user_display_name" style="font-size: 13px; max-width: 125px; display: inline-block; vertical-align: middle;">ERM Admin</span>
         </a>
         <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 240px; border-radius: 10px; margin-top: 8px;">
           <li class="px-3 py-3" style="background: #020264; color: #fff; border-radius: 10px 10px 0 0;">
@@ -130,7 +149,8 @@
 
 <style>
   .header-nav-link {
-    font-size: 13.5px !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
     white-space: nowrap !important;
     border-radius: 6px;
     transition: background 0.15s ease;
@@ -143,9 +163,51 @@
 
   .header-fy-pill {
     white-space: nowrap !important;
-    height: 32px;
-    min-width: 105px;
+    height: 30px;
     user-select: none;
+  }
+
+  .hover-bg:hover {
+    background-color: #F8FAFC !important;
+  }
+
+  .notif-item {
+    position: relative;
+    border-left: 3px solid transparent;
+  }
+
+  .notif-item.unread {
+    background-color: #F0F9FF;
+    border-left-color: #2563EB;
+  }
+
+  .notif-item.read {
+    opacity: 0.82;
+  }
+
+  .notif-unread-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #2563EB;
+    display: inline-block;
+  }
+
+  .notif-item.urgent.unread {
+    background-color: #FEF2F2;
+    border-left-color: #EF4444;
+  }
+
+  .notif-item.urgent .notif-unread-dot {
+    background-color: #EF4444;
+  }
+
+  .notif-item a:focus,
+  .notif-filter-btn:focus,
+  .notif-toggle-btn:focus {
+    outline: 2px solid #2563EB !important;
+    outline-offset: 1px;
+    border-radius: 4px;
   }
 </style>
 
@@ -156,6 +218,9 @@
 </script>
 <script>
   let USER_MENU_IDS = [];
+  let currentNotifWorkload = [];
+  let currentNotifFilter = 'all';
+
   document.addEventListener("DOMContentLoaded", async function () {
     if (typeof APP_DATA !== "undefined" && APP_DATA) {
       const el = document.getElementById("card_user");
@@ -164,7 +229,10 @@
       const el_on2 = document.getElementById("card_on2");
 
       const fullName = (APP_DATA.fname ? (APP_DATA.fname + " " + (APP_DATA.lname || "")) : (APP_DATA.userType || "ERM Admin"));
-      if (topName) topName.innerText = fullName;
+      if (topName) {
+        topName.innerText = fullName;
+        topName.title = fullName;
+      }
       if (el) el.innerText = fullName;
       if (el_role) el_role.innerText = APP_DATA.userType || APP_DATA.role_name || "Enterprise User";
       if (el_on2 && APP_DATA.financial_year) el_on2.innerText = APP_DATA.financial_year;
@@ -172,7 +240,284 @@
     if (typeof APP_DATA !== "undefined" && APP_DATA.menuIds) {
       setSelectedMenus_Header(APP_DATA.menuIds);
     }
+
+    // Load initial role-based live notifications
+    loadHeaderNotifications();
+
+    // Auto-refresh notifications every 45 seconds
+    setInterval(loadHeaderNotifications, 45000);
+
+    // Sync on real-time app events
+    if (window.ERM_EVENT_BUS && typeof window.ERM_EVENT_BUS.onDataChanged === "function") {
+      window.ERM_EVENT_BUS.onDataChanged(function() {
+        loadHeaderNotifications();
+      });
+    }
+
+    // Refresh when dropdown is opened
+    const notifToggle = document.getElementById('headerNotifDropdownToggle');
+    if (notifToggle) {
+      notifToggle.addEventListener('show.bs.dropdown', function () {
+        loadHeaderNotifications();
+      });
+    }
   });
+
+  function getStorageUserId() {
+    if (typeof APP_DATA !== "undefined" && APP_DATA) {
+      const uid = APP_DATA.userId || APP_DATA.id || APP_DATA.logid || APP_DATA.log_id || APP_DATA.email;
+      if (uid) return String(uid);
+    }
+    return 'anon';
+  }
+
+  function getReadNotifSet() {
+    try {
+      const uid = getStorageUserId();
+      const raw = localStorage.getItem(`erm_read_notifs_${uid}`);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  function saveReadNotifSet(set) {
+    try {
+      const uid = getStorageUserId();
+      const arr = Array.from(set);
+      // Bound storage set to recent 250 items to prevent local storage growth
+      const bounded = arr.length > 250 ? arr.slice(-250) : arr;
+      localStorage.setItem(`erm_read_notifs_${uid}`, JSON.stringify(bounded));
+    } catch (e) {
+      console.warn("Storage write failed:", e);
+    }
+  }
+
+  // Cross-tab synchronization: re-render read state when updated in another tab
+  window.addEventListener('storage', function (e) {
+    if (e.key && e.key === `erm_read_notifs_${getStorageUserId()}`) {
+      updateUnreadBadge();
+      renderHeaderNotificationList();
+    }
+  });
+
+  function markNotificationAsRead(key) {
+    const readSet = getReadNotifSet();
+    if (!readSet.has(key)) {
+      readSet.add(key);
+      saveReadNotifSet(readSet);
+      renderHeaderNotificationList();
+      updateUnreadBadge();
+    }
+  }
+
+  function toggleNotificationRead(key, event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const readSet = getReadNotifSet();
+    if (readSet.has(key)) {
+      readSet.delete(key);
+    } else {
+      readSet.add(key);
+    }
+    saveReadNotifSet(readSet);
+    renderHeaderNotificationList();
+    updateUnreadBadge();
+  }
+
+  function markAllNotificationsAsRead() {
+    const readSet = getReadNotifSet();
+    currentNotifWorkload.forEach(item => {
+      const key = item.key || `${item.type}_${item.id}`;
+      readSet.add(key);
+    });
+    saveReadNotifSet(readSet);
+    renderHeaderNotificationList();
+    updateUnreadBadge();
+  }
+
+  function filterNotifications(filter, btn) {
+    currentNotifFilter = filter;
+    document.querySelectorAll('.notif-filter-btn').forEach(b => {
+      b.classList.remove('btn-primary', 'active');
+      b.classList.add('btn-outline-secondary');
+    });
+    if (btn) {
+      btn.classList.remove('btn-outline-secondary');
+      btn.classList.add('btn-primary', 'active');
+    }
+    renderHeaderNotificationList();
+  }
+
+  async function loadHeaderNotifications() {
+    try {
+      const res = await axios.get('/api/home/workload');
+      const data = res.data?.data || res.data || {};
+      currentNotifWorkload = data.workload || [];
+      
+      // Update category tab counts (active pending queue items)
+      const countAll = currentNotifWorkload.length;
+      const countApprovals = currentNotifWorkload.filter(i => i.type === 'risk' && (i.category === 'approval' || i.category === 'returned' || i.stage?.includes('Stage'))).length;
+      const countTreatments = currentNotifWorkload.filter(i => i.type === 'treatment' || i.category === 'treatment').length;
+
+      const elAll = document.getElementById('notifCountAll');
+      const elApp = document.getElementById('notifCountApprovals');
+      const elTrt = document.getElementById('notifCountTreatments');
+      if (elAll) elAll.innerText = countAll;
+      if (elApp) elApp.innerText = countApprovals;
+      if (elTrt) elTrt.innerText = countTreatments;
+
+      updateUnreadBadge();
+      renderHeaderNotificationList();
+    } catch (e) {
+      console.warn("Failed to load header notifications:", e);
+      const listEl = document.getElementById('headerNotifList');
+      if (listEl && (!currentNotifWorkload || currentNotifWorkload.length === 0)) {
+        listEl.innerHTML = `
+          <div class="text-center py-4 px-3 text-muted">
+            <i class="bi bi-wifi-off text-danger fs-3 d-block mb-2"></i>
+            <div class="fw-semibold text-dark" style="font-size: 13px;">Unable to load Action Center</div>
+            <small class="text-muted" style="font-size: 11px;">Please check network connection or session status.</small>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function updateUnreadBadge() {
+    const badge = document.getElementById('headerNotifBadge');
+    const countEl = document.getElementById('headerNotifDropdownCount');
+    const readSet = getReadNotifSet();
+    
+    const unreadCount = currentNotifWorkload.filter(item => {
+      const key = item.key || `${item.type}_${item.id}`;
+      return !readSet.has(key);
+    }).length;
+    const totalCount = currentNotifWorkload.length;
+
+    if (badge) {
+      if (unreadCount > 0) {
+        badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+        badge.classList.remove('d-none');
+      } else {
+        badge.classList.add('d-none');
+      }
+    }
+
+    if (countEl) {
+      if (unreadCount > 0) {
+        countEl.className = 'badge bg-primary rounded-pill';
+        countEl.innerText = `${unreadCount} unread`;
+        countEl.classList.remove('d-none');
+      } else if (totalCount > 0) {
+        countEl.className = 'badge bg-secondary-subtle text-secondary rounded-pill border';
+        countEl.innerText = `${totalCount} pending • All read`;
+        countEl.classList.remove('d-none');
+      } else {
+        countEl.classList.add('d-none');
+      }
+    }
+  }
+
+  function renderHeaderNotificationList() {
+    const listEl = document.getElementById('headerNotifList');
+    if (!listEl) return;
+
+    const readSet = getReadNotifSet();
+
+    let items = currentNotifWorkload;
+    if (currentNotifFilter === 'approval') {
+      items = items.filter(i => i.type === 'risk' && (i.category === 'approval' || i.category === 'returned' || i.stage?.includes('Stage')));
+    } else if (currentNotifFilter === 'treatment') {
+      items = items.filter(i => i.type === 'treatment' || i.category === 'treatment');
+    }
+
+    if (items.length > 0) {
+      let html = '';
+      items.forEach(item => {
+        const key = item.key || `${item.type}_${item.id}`;
+        const isRead = readSet.has(key);
+        const isRisk = item.type === 'risk';
+        const isRejected = item.category === 'returned' || item.stage_badge === 'danger';
+        const isUrgent = item.urgency === 'high' || isRejected;
+
+        let icon = isRisk ? (isRejected ? 'bi-arrow-return-left' : 'bi-shield-exclamation') : 'bi-wrench-adjustable-circle';
+        let bgBadge = isRejected ? 'bg-danger text-white' : (isRisk ? 'bg-warning text-dark' : 'bg-info text-dark');
+        
+        const title = item.risk_name || item.task_name || item.description || 'Action Item';
+        const riskCode = item.risk_id ? `<span class="badge bg-light text-secondary border me-1" style="font-size: 10px;">${escapeNotifHtml(item.risk_id)}</span>` : '';
+        const sub = item.stage || item.stage_text || item.dept_name || 'Action Required';
+        const link = item.action_url || (isRisk ? `/riskDetails?id=${item.id}` : '/riskTreatment');
+        const actionText = item.action_label || 'Review Item';
+        const dateStr = item.created_on || '';
+
+        const itemClass = `notif-item p-2 border-bottom hover-bg d-flex align-items-start ${isRead ? 'read' : 'unread'} ${isUrgent ? 'urgent' : ''}`;
+
+        html += `
+          <div class="${itemClass}" style="gap: 10px; font-size: 12px; transition: background 0.15s ease;" role="article">
+            <span class="badge ${bgBadge} p-2 rounded-circle flex-shrink-0 mt-1" aria-hidden="true"><i class="bi ${icon}"></i></span>
+            <div class="flex-grow-1" style="min-width: 0;">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <div>
+                  ${riskCode}
+                  ${!isRead ? '<span class="notif-unread-dot me-1" title="Unread action" aria-label="Unread action"><span class="visually-hidden">Unread</span></span>' : ''}
+                </div>
+                <span class="text-muted" style="font-size: 10px;">${escapeNotifHtml(dateStr)}</span>
+              </div>
+              <a href="${link}" class="text-decoration-none text-dark fw-bold d-block text-truncate notif-title-link" onclick="markNotificationAsRead('${key}')" title="${escapeNotifHtml(title)}" tabindex="0">
+                ${escapeNotifHtml(title)}
+              </a>
+              <div class="text-muted small text-truncate mt-1" style="font-size: 11px;">
+                <span class="badge bg-light text-dark border me-1">${escapeNotifHtml(item.dept_name || 'General')}</span>
+                ${escapeNotifHtml(sub)}
+              </div>
+              <div class="d-flex align-items-center justify-content-between mt-2 pt-1">
+                <a href="${link}" class="text-primary fw-semibold text-decoration-none" onclick="markNotificationAsRead('${key}')" style="font-size: 11px;" tabindex="0">
+                  ${escapeNotifHtml(actionText)} &rarr;
+                </a>
+                <button type="button" class="btn btn-xs btn-link text-muted p-0 text-decoration-none notif-toggle-btn" onclick="toggleNotificationRead('${key}', event)" title="${isRead ? 'Mark as unread' : 'Mark as read'}" aria-label="${isRead ? 'Mark item as unread' : 'Mark item as read'}" tabindex="0">
+                  <i class="bi ${isRead ? 'bi-check2' : 'bi-check-circle'}"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    } else {
+      let emptyTitle = "All Caught Up!";
+      let emptyDesc = "No pending governance or action items assigned to you.";
+      if (currentNotifFilter === 'approval') {
+        emptyTitle = "No Pending Approvals";
+        emptyDesc = "You have no governance reviews or sign-offs pending.";
+      } else if (currentNotifFilter === 'treatment') {
+        emptyTitle = "No Action Plans";
+        emptyDesc = "You have no active treatment plans assigned to you.";
+      }
+
+      listEl.innerHTML = `
+        <div class="text-center py-4 px-3 text-muted">
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: #ECFDF5; color: #10B981; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 8px;">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div class="fw-semibold text-dark" style="font-size: 13px;">${emptyTitle}</div>
+          <small style="font-size: 11.5px;">${emptyDesc}</small>
+        </div>
+      `;
+    }
+  }
+
+  function escapeNotifHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   function setSelectedMenus_Header(menuIds) {
     if (!menuIds || !Array.isArray(menuIds)) return;

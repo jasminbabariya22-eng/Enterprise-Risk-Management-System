@@ -204,9 +204,16 @@ def roles_required(*roles):
     def wrapper(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            usertype = session.get("login_data", {}).get("userType", "")
+            login_data = session.get("login_data", {})
+            usertype = (
+                login_data.get("userType") or 
+                session.get("usertype") or 
+                login_data.get("role_name") or 
+                ""
+            ).strip()
 
-            if usertype not in roles:
+            roles_lower = [r.strip().lower() for r in roles]
+            if not usertype or usertype.lower() not in roles_lower:
                 abort(403)
 
             return f(*args, **kwargs)
@@ -287,10 +294,9 @@ def inject_functions():
 
 
 @auth_bp.route("/dashboard")
-@roles_required("Admin", "Super Admin")
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
 def dashboard():
-    #return render_template("dashboard.html")
-    return render_template("dashboard.html",session_data=session["login_data"])
+    return render_template("dashboard.html", session_data=session.get("login_data", {}))
 
 @auth_bp.route("/riskRegister")
 def riskRegister():
@@ -452,20 +458,8 @@ def create_login_session(data_res):
 # Helper : Redirect after Login
 # ------------------------------------------------------------
 def redirect_after_login():
-
     current_app.logger.info(f"Logged In : {session.get('user')}")
-
-    usertype = session.get("usertype", "")
-    if usertype in ["Admin", "Super Admin", "Risk Head", "Risk Manager"]:
-        return redirect(url_for("auth.home"))
-
-    dept_id = session.get("dept_id") or "all"
-    return redirect(
-        url_for(
-            "auth.risk_register",
-            function_code=dept_id
-        )
-    )
+    return redirect(url_for("auth.home"))
 
 
 # ------------------------------------------------------------
@@ -756,22 +750,31 @@ def ERM():
 def home():
     if "token" not in session:
         return redirect(url_for("auth.ERM"))
-   # return render_template("home.html", user=session.get("user"))
-    user_dept = session.get("login_data", {}).get("userDept")
-    #return render_template("riskRegister.html", session_data=session["login_data"])
-    #if (session["usertype"] == "Admin"):
-    if session["usertype"] in ("Admin", "Risk Head", "Risk Manager"):
-        return render_template("riskRegister.html", session_data=session["login_data"])
-    elif (session["usertype"] == "Action Owner"):
-        return render_template("riskTreatment.html", session_data=session["login_data"])
-    # elif (session["usertype"] == "Action Owner"):
-    #     return render_template("riskTreatment.html", session_data=session["login_data"])
-    else:
-        return render_template(
-        "riskRegister.html",
-        dept_code=user_dept,
-        session_data=session["login_data"]
-        )
+    return render_template(
+        "home.html",
+        session_data=session.get("login_data", {}),
+        usertype=session.get("usertype", ""),
+        userdept=session.get("dept_id", "")
+    )
+
+
+@auth_bp.route("/api/home/workload", methods=["GET"])
+def home_workload():
+    if "token" not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    try:
+        response = APIClient.getdata("home/workload")
+        return jsonify(response.json()), response.status_code
+    except Exception as e:
+        current_app.logger.error(f"Home workload proxy error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/riskTreatment")
+def riskTreatment():
+    if "token" not in session:
+        return redirect(url_for("auth.ERM"))
+    return render_template("riskTreatment.html", session_data=session.get("login_data", {}))
          
 
 @auth_bp.route("/logout")
@@ -1226,17 +1229,19 @@ def getRiskRegisterbyid():
         response = APIClient.getbyid("risk-register/Risk_Register_id", 
             RiskRegister_id,
         )
-        current_app.logger.info(f"API executed dept_id")
         data = response.json()
-        current_app.logger.info(f"API executed dept_id")
-        current_app.logger.info(f"API responsee->{data}")
-        # current_app.logger.infcurrent_app.logger.info(f"API Dept Save{data}")o(f"User Info get logged in: {data.get("user_fname")}")
-        # current_app.logger.info(f"Use api hittt ")
         return jsonify(data), 200
     except Exception as e:
-        current_app.logger.error(f"getRiskRegisterbyid Error -> {str(e)}")
-        flash("user failed")
-    return render_template("RiskRegister.html")
+        current_app.logger.error(f"getRiskRegisterbyid Error -> {str(e)}, falling back to DB")
+        try:
+            from app.db_direct import fetch_risk_by_id_full
+            risk_item = fetch_risk_by_id_full(RiskRegister_id)
+            if risk_item:
+                return jsonify({"data": risk_item, "Error": {"Error": False, "Error_message": "Success"}}), 200
+        except Exception as db_err:
+            current_app.logger.error(f"DB fallback for getRiskRegisterbyid failed: {str(db_err)}")
+        return jsonify({"Error": {"Error": True, "Error_message": str(e)}}), 500
+
 
 
 
@@ -1589,156 +1594,232 @@ def forbidden(e):
     return render_template("403.html",session_data=session["login_data"])
 
 @auth_bp.errorhandler(401)
-def forbidden(e):
+def unauthorized(e):
     session.clear()
     return render_template("401.html")
 
+# =========================================================================
+# DASHBOARD API PROXY ENDPOINTS (Protected with RBAC for Admin, Risk Manager, Risk Head)
+# =========================================================================
+
+def _build_dashboard_query_params():
+    start_date = request.args.get("start_date", "").strip()
+    end_date = request.args.get("end_date", "").strip()
+    params = []
+    if start_date:
+        params.append(f"start_date={start_date}")
+    if end_date:
+        params.append(f"end_date={end_date}")
+    return ("?" + "&".join(params)) if params else ""
+
+
 @auth_bp.route("/api/dashboard/summary", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
 def dashboard_summary():
     try:
-        # data = {
-        #     "total": 50,
-        #     "completed": 52,
-        #     "opened": 10,
-        #     "in_progress": 14,
-        #     "approved": 72,
-        #     "rejected": 2
-        # }
-        # return jsonify({"success": True, "data": data})
-        response = APIClient.getdata("risk-dashboard/summary?start_date=2025-01-01&end_date=2026-03-27")
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/summary{q}")
         data = response.json()
-        current_app.logger.info(f"API responsee->{data}")
-        return jsonify({"success": True, "data": data})
+        return jsonify(data)
     except Exception as e:
-        current_app.logger.error(str(e))
-        return jsonify({"success": False}), 500
+        current_app.logger.error(f"Dashboard summary error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
-# =========================
-# 2. DIVISION CHART
-# =========================
+@auth_bp.route("/api/dashboard/department-wise", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_department_wise():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/department-wise-Bar{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard department-wise error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/user-wise", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_user_wise():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/User-wise-Bar{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard user-wise error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/status-pie", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_status_pie():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/status-wise-pie{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard status-pie error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/progress", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_progress():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/department-wise-progress-HBar{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard progress error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/department-status", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_department_status():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/department-wise-status-stackedBar{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard department-status error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/top-risks", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_top_risks():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/top-10-risk{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard top-risks error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/severity-distribution", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_severity_distribution():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/risk-percentage{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard severity-distribution error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/heatmap", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_heatmap():
+    try:
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/heatmap{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard heatmap error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@auth_bp.route("/api/dashboard/transition-heatmap", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
+def dashboard_transition_heatmap():
+    try:
+        q = _build_dashboard_query_params()
+        dept_id = request.args.get("dept_id")
+        if dept_id:
+            sep = "&" if q else "?"
+            q = f"{q}{sep}dept_id={dept_id}"
+        response = APIClient.getdata(f"risk-dashboard/risk-transition-heatmap{q}")
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        current_app.logger.error(f"Dashboard transition-heatmap error: {str(e)}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+# Legacy endpoint aliases with backwards-compatible output formats
 @auth_bp.route("/api/dashboard/division", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
 def dashboard_division():
     try:
-        # data = {
-        #     "categories": ["IT", "HR  ", "Finance"],
-        #     "values": [10, 20, 30]
-        # }
-        # return jsonify({"success": True, "data": data})
-        response = APIClient.getdata("risk-dashboard/department-wise-Bar?start_date=2025-01-01&end_date=2026-03-26")
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/department-wise-Bar{q}")
         data = response.json()
-        data_from_api = data.get("data", [])
-
+        data_from_api = data.get("data", []) if isinstance(data, dict) else (data or [])
         graph_data = {
-            "categories": [d["department"] for d in data_from_api],
-            "values": [d["total"] for d in data_from_api]
+            "categories": [d.get("department", "") for d in data_from_api],
+            "values": [d.get("total", 0) for d in data_from_api]
         }
-        current_app.logger.info(f"API responsee->{data}")
-
-        return jsonify({
-            "success": True,
-            "data": graph_data
-        })
-        
-        #return jsonify({"success": True, "data": data})
-
+        return jsonify({"success": True, "data": graph_data})
     except Exception as e:
         current_app.logger.error(str(e))
         return jsonify({"success": False}), 500
 
 
-# =========================
-# 3. CATEGORY CHART
-# =========================
 @auth_bp.route("/api/dashboard/category", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
 def dashboard_category():
     try:
-        # data = {
-        #     "categories": ["High", "Medium", "Low"],
-        #     "values": [15, 25, 10]
-        # }
-        # return jsonify({"success": True, "data": data})
-        response = APIClient.getdata("risk-dashboard/User-wise-Bar?start_date=2025-01-01&end_date=2026-03-27")
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/User-wise-Bar{q}")
         data = response.json()
-        data_from_api = data.get("data", [])
-
+        data_from_api = data.get("data", []) if isinstance(data, dict) else (data or [])
         graph_data = {
-            "categories": [d["employee_name"] for d in data_from_api],
-            "values": [d["total"] for d in data_from_api]
+            "categories": [d.get("employee_name", "") for d in data_from_api],
+            "values": [d.get("total", 0) for d in data_from_api]
         }
-        current_app.logger.info(f"API responsee->{data}")
-
-        return jsonify({
-            "success": True,
-            "data": graph_data
-        })
-
-
+        return jsonify({"success": True, "data": graph_data})
     except Exception as e:
         current_app.logger.error(str(e))
         return jsonify({"success": False}), 500
 
 
-# =========================
-# 4. TREND CHART
-# =========================
 @auth_bp.route("/api/dashboard/trend", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
 def dashboard_trend():
     try:
-        # data = {
-        #     "categories": ["Mon", "Tue", "Wed", "Thu"],
-        #     "high": [100, 120, 170, 167],
-        #     "low": [60, 80, 70, 67]
-        # }
-        # return jsonify({"success": True, "data": data})
-        response = APIClient.getdata("risk-dashboard/department-wise-progress-HBar?start_date=2025-01-01&end_date=2026-03-27")
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/department-wise-progress-HBar{q}")
         data = response.json()
-        data_from_api = data.get("data", [])
-
+        data_from_api = data.get("data", []) if isinstance(data, dict) else (data or [])
         trend_data = {
-        "categories": [d["department"] for d in data_from_api],
-        "high": [d["progress"] for d in data_from_api],
-        "low": [0 for _ in data_from_api]  
+            "categories": [d.get("department", "") for d in data_from_api],
+            "high": [d.get("progress", 0) for d in data_from_api],
+            "low": [0 for _ in data_from_api]
         }
-
         return jsonify({"success": True, "data": trend_data})
-
-
     except Exception as e:
         current_app.logger.error(str(e))
         return jsonify({"success": False}), 500
 
 
-# =========================
-# 5. DISTRIBUTION (PIE)
-# =========================
 @auth_bp.route("/api/dashboard/distribution", methods=["GET"])
+@roles_required("Admin", "Super Admin", "Risk Manager", "Risk Head")
 def dashboard_distribution():
     try:
-        # data = {
-        #     "labels": ["Operational", "Financial", "Compliance"],
-        #     "values": [40, 30, 20]
-        # }
-        # return jsonify({"success": True, "data": data})
-        response = APIClient.getdata("risk-dashboard/status-wise-pie?start_date=2025-01-01&end_date=2026-03-26")
+        q = _build_dashboard_query_params()
+        response = APIClient.getdata(f"risk-dashboard/status-wise-pie{q}")
         data = response.json()
-        data_from_api = data.get("data", [])
-
+        data_from_api = data.get("data", []) if isinstance(data, dict) else (data or [])
         graph_data = {
-            "labels": [d["status"] for d in data_from_api],
-            "values": [d["total"] for d in data_from_api]
+            "labels": [d.get("status", "") for d in data_from_api],
+            "values": [d.get("total", 0) for d in data_from_api]
         }
-        current_app.logger.info(f"API responsee->{data}")
-
-        return jsonify({
-            "success": True,
-            "data": graph_data
-        })
-
-
+        return jsonify({"success": True, "data": graph_data})
     except Exception as e:
         current_app.logger.error(str(e))
         return jsonify({"success": False}), 500
+
     
 @auth_bp.route("/status")
 @menu_required(6)
@@ -2263,11 +2344,16 @@ def uploadRisk_excel():
         #     file
         # )
         response = APIClient.postdatafile_excel(
-        "excel/import",
-        files=files  
+            "excel/import",
+            files=files  
         )
 
-        return jsonify(response.json())
+        try:
+            res_json = response.json()
+        except Exception:
+            res_json = {"success": False, "message": response.text}
+
+        return jsonify(res_json), response.status_code
 
     except Exception as ex:
 
@@ -2275,3 +2361,4 @@ def uploadRisk_excel():
             "success": False,
             "message": str(ex)
         }), 500
+

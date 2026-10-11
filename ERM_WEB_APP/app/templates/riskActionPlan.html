@@ -398,46 +398,84 @@
 
     FillstatusListRisk();
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramTreatmentId = urlParams.get("treatment_id") || urlParams.get("id");
+    const paramDescId = urlParams.get("desc_id") || urlParams.get("description_id");
+    const paramRiskId = urlParams.get("risk_id") || urlParams.get("register_id") || urlParams.get("rrid");
+
+    if (paramTreatmentId && paramTreatmentId !== "0") {
+      sessionStorage.setItem("risk_treatment_id", paramTreatmentId);
+    }
+    if (paramDescId && paramDescId !== "0") {
+      sessionStorage.setItem("risk_description_id", paramDescId);
+    }
+    if (paramRiskId && paramRiskId !== "0") {
+      sessionStorage.setItem("risk_register_id", paramRiskId);
+    }
+
     let risk_treatment_id = sessionStorage.getItem("risk_treatment_id");
     let risk_description_id = sessionStorage.getItem("risk_description_id");
     let risk_register_id = sessionStorage.getItem("risk_register_id");
 
-   $("#RfId").val(risk_treatment_id);
-   riskfollowup(risk_treatment_id);
+    $("#RfId").val(risk_treatment_id);
+    if (risk_treatment_id && risk_treatment_id !== "0") {
+      riskfollowup(risk_treatment_id);
+    }
 
-   console.log("risk_register_id", risk_register_id);
-   console.log("risk_description_id", risk_description_id);
-   console.log("risk_treatment_id", risk_treatment_id);
-   getRiskRegisterbyid(risk_register_id);
-   getRiskDescriptiondetailsbyid(risk_description_id,risk_treatment_id);
-   //getRiskTreatmentbyTreatmentid(risk_treatment_id);
-   $("#Target_Date_Next").val(APP_DATA.current_date)
-   document.getElementById("Target_Date_Next").min = APP_DATA.current_date;
+    if (risk_treatment_id && (!risk_register_id || !risk_description_id)) {
+      axios.get("/getRiskTreatmentbyTreatmentid", { params: { Risk_id: risk_treatment_id } })
+        .then(tResp => {
+          if (tResp.data && tResp.data.data) {
+            const tData = Array.isArray(tResp.data.data) ? tResp.data.data[0] : tResp.data.data;
+            if (tData) {
+              if (tData.risk_register_id) {
+                risk_register_id = tData.risk_register_id;
+                sessionStorage.setItem("risk_register_id", risk_register_id);
+                getRiskRegisterbyid(risk_register_id);
+              }
+              if (tData.risk_description_id) {
+                risk_description_id = tData.risk_description_id;
+                sessionStorage.setItem("risk_description_id", risk_description_id);
+                getRiskDescriptiondetailsbyid(risk_description_id, risk_treatment_id);
+              }
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Failed to auto-resolve treatment parent IDs:", err);
+        });
+    } else {
+      if (risk_register_id) getRiskRegisterbyid(risk_register_id);
+      if (risk_description_id) getRiskDescriptiondetailsbyid(risk_description_id, risk_treatment_id);
+    }
+
+    $("#Target_Date_Next").val(APP_DATA.current_date);
+    const targetDateEl = document.getElementById("Target_Date_Next");
+    if (targetDateEl) {
+      targetDateEl.min = APP_DATA.current_date;
+    }
 });
 
 function FillUserList() {
     axios.get("/getalluser")
     .then(response => {
-
-        if (response.data.Error.Error === false) {
-            var data = response.data.data;
-           optionHTML = '<option value="">--Select--</option>';
+        if (response.data && (response.data.Error === false || (response.data.Error && response.data.Error.Error === false))) {
+            var data = response.data.data || [];
+            optionHTML = '<option value="">--Select--</option>';
             for (var i = 0; i < data.length; i++) {
                 optionHTML += '<option value="' + data[i].id + '">'
                             + data[i].first_name + ' - '
                             + data[i].last_name+
                             '</option>';
             }
-            document.getElementById("Risk_Owner").innerHTML = optionHTML;
-            document.getElementById("Risk_Co_Owner").innerHTML = optionHTML;
-
-          } else {
-            showToast(response.data.Error.Error_message);
+            let roEl = document.getElementById("Risk_Owner");
+            let rcoEl = document.getElementById("Risk_Co_Owner");
+            if (roEl && roEl.tagName === 'SELECT') roEl.innerHTML = optionHTML;
+            if (rcoEl && rcoEl.tagName === 'SELECT') rcoEl.innerHTML = optionHTML;
         }
-
     })
     .catch(error => {
-        showToast("Failed to load departments");
+        console.error("Failed to load user list:", error);
     });
 }
 
@@ -501,203 +539,196 @@ function FillstatusListRisk() {
 }
 
  function getRiskRegisterbyid(id) {
+    if (!id || id === "0" || id === "undefined" || id === "null") return;
     axios.get("/getRiskRegisterbyid", {
-        params: { RiskRegister_id:id }
-    })
-        .then(response => {
-               console.log("response getRiskRegisterbyid tbldata:", response);
-if (response.data.Error.Error === false) {
+        params: { RiskRegister_id: id }
+    })
+    .then(response => {
+        console.log("response getRiskRegisterbyid tbldata:", response);
+        let respData = response.data;
+        let isSuccess = (respData && (respData.Error === false || (respData.Error && respData.Error.Error === false) || respData.status === true || respData.data));
+        if (isSuccess && respData.data) {
+            let rawData = respData.data;
+            let data = Array.isArray(rawData) ? rawData[0] : rawData;
+            if (!data) return;
 
-    let data = response.data.data;
+            if (data.risk_id) $("#Risk_Id").val(data.risk_id);
+            if (data.department_name || data.dept_name || data.dept_short_name) {
+                $("#value").val(data.department_name || data.dept_name || data.dept_short_name);
+            }
+            if (data.financial_year) $("#financial_year").val(data.financial_year);
+            if (data.risk_status) $("#Approval_Status").val(data.risk_status);
+            if (data.risk_name) $("#RiskName").val(data.risk_name);
+            if (data.risk_owner_name) $("#Risk_Owner").val(data.risk_owner_name);
+            if (data.risk_co_owner_name) $("#Risk_Co_Owner").val(data.risk_co_owner_name);
+            if (data.risk_progress !== undefined && data.risk_progress !== null) {
+                $("#Risk_Progress").val(data.risk_progress);
+            }
 
-    $("#Risk_Id").val(data.risk_id);
-    $("#value").val(data.department_name);
-    $("#financial_year").val(data.financial_year);
-    $("#Approval_Status").val(data.risk_status);
-    $("#RiskName").val(data.risk_name);
+            // Created Date
+            if (data.created_on) {
+                let dateOnly = data.created_on.split("T")[0];
+                $("#Created_on").val(dateOnly);
 
-    // Created Date
-    if (data.created_on) {
-        let dateOnly = data.created_on.split("T")[0];
-        $("#Created_on").val(dateOnly);
+                let dateTime = data.created_on.replace("T", " ").split(".")[0];
+                $("#Target_Date").val(dateTime);
+            }
 
-        let dateTime = data.created_on.replace("T", " ").split(".")[0];
-        $("#Target_Date").val(dateTime);
-    }
+            let tableHTML = "";
+            tableHTML += `
+            <tr>
+                <td>Risk Functional Head</td>
+                <td>${data.risk_function_head_approval_by_name ?? ""}</td>
+                <td>${formatDate(data.risk_function_head_approval_on)}</td>
+            </tr>`;
 
-    let tableHTML = "";
+            tableHTML += `
+            <tr>
+                <td>Risk Manager</td>
+                <td>${data.risk_manager_approval_by_name ?? ""}</td>
+                <td>${formatDate(data.risk_manager_approved_on)}</td>
+            </tr>`;
 
-    tableHTML += `
-    <tr>
-        <td>Risk Functional Head</td>
-        <td>${data.risk_function_head_approval_by_name ?? ""}</td>
-        <td>${formatDate(data.risk_function_head_approval_on)}</td>
-    </tr>`;
+            tableHTML += `
+            <tr>
+                <td>Risk Head</td>
+                <td>${data.risk_head_approval_by_name ?? ""}</td>
+                <td>${formatDate(data.risk_head_approved_on)}</td>
+            </tr>`;
 
-    tableHTML += `
-    <tr>
-        <td>Risk Manager</td>
-        <td>${data.risk_manager_approval_by_name ?? ""}</td>
-        <td>${formatDate(data.risk_manager_approved_on)}</td>
-    </tr>`;
-
-    tableHTML += `
-    <tr>
-        <td>Risk Head</td>
-        <td>${data.risk_head_approval_by_name ?? ""}</td>
-        <td>${formatDate(data.risk_head_approved_on)}</td>
-    </tr>`;
-
-    $("#ActionPlanTable--1 tbody").html(tableHTML);
-}
-        else {
-            showToast(response.data.Error.Error_message);
+            $("#ActionPlanTable--1 tbody").html(tableHTML);
         }
-        })
-        .catch(error => {
-            //showToast("Failed to load categories");
-        })
-        .finally(() => {
-        });
+    })
+    .catch(error => {
+        console.error("Error in getRiskRegisterbyid:", error);
+    });
   }
 
 function formatDate(dateString){
-
-    // if(!dateString) return "";
-
-    // let date = new Date(dateString);
-
-    // let day = ("0" + date.getDate()).slice(-2);
-    // let month = ("0" + (date.getMonth()+1)).slice(-2);
-    // let year = date.getFullYear();
-
-    // return day + "-" + month + "-" + year;
-    //return dateString.replace("T", " ").split(".")[0]
     if (!dateString) return "";
 
-      let date = new Date(dateString);
+    let date = new Date(dateString);
+    if (isNaN(date)) return "";
 
-      if (isNaN(date)) return "";
+    let day = String(date.getDate()).padStart(2, '0');
+    let month = String(date.getMonth() + 1).padStart(2, '0');
+    let year = date.getFullYear();
 
-      let day = String(date.getDate()).padStart(2, '0');
-      let month = String(date.getMonth() + 1).padStart(2, '0');
-      let year = date.getFullYear();
+    let hours = String(date.getHours()).padStart(2, '0');
+    let minutes = String(date.getMinutes()).padStart(2, '0');
+    let seconds = String(date.getSeconds()).padStart(2, '0');
 
-      let hours = String(date.getHours()).padStart(2, '0');
-      let minutes = String(date.getMinutes()).padStart(2, '0');
-      let seconds = String(date.getSeconds()).padStart(2, '0');
-
-      return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
 }
 
 
 function getRiskDescriptiondetailsbyid(id,treatmentid) {
+    if (!id || id === "0" || id === "undefined" || id === "null") return;
     axios.get("/getRiskDescriptiondetailsbyids", {
-        params: { RiskRegisterDescriptiondetail_id:id }
-    })
-        .then(response => {
-               console.log("response getRiskDescriptiondetailsbyid: ", response);
+        params: { RiskRegisterDescriptiondetail_id: id }
+    })
+    .then(response => {
+        console.log("response getRiskDescriptiondetailsbyid: ", response);
 
-        if (response.data.Error.Error === false) {
+        let respData = response.data;
+        let isSuccess = (respData && (respData.Error === false || (respData.Error && respData.Error.Error === false) || respData.status === true || respData.data));
+        if (isSuccess && respData.data) {
+          let rawData = respData.data;
+          let mainData = Array.isArray(rawData) ? rawData[0] : rawData;
+          if (!mainData) return;
 
+          // Populate top-level Risk Details from mainData
+          if (mainData.risk_id) $("#Risk_Id").val(mainData.risk_id);
+          if (mainData.risk_name) $("#RiskName").val(mainData.risk_name);
+          if (mainData.department_name || mainData.dept_name || mainData.dept_short_name) {
+              $("#value").val(mainData.department_name || mainData.dept_name || mainData.dept_short_name);
+          }
+          if (mainData.financial_year) $("#financial_year").val(mainData.financial_year);
+          if (mainData.created_on) {
+              let dateOnly = mainData.created_on.split("T")[0];
+              $("#Created_on").val(dateOnly);
+              let dateTime = mainData.created_on.replace("T", " ").split(".")[0];
+              $("#Target_Date").val(dateTime);
+          }
+          if (mainData.risk_owner_name) $("#Risk_Owner").val(mainData.risk_owner_name);
+          if (mainData.risk_co_owner_name) $("#Risk_Co_Owner").val(mainData.risk_co_owner_name);
+          if (mainData.risk_progress !== undefined && mainData.risk_progress !== null) {
+              $("#Risk_Progress").val(mainData.risk_progress);
+          }
 
-          let mainData = response.data.data[0];
-          let desc = mainData.risk_descriptions[0];
-          //let treatment = desc.treatments[0];
-          let treatment = desc.treatments.find(
-              t => t.risk_treatment_id == treatmentid
-               );
+          // Trigger register details/approval table if risk_register_id is present
+          if (mainData.risk_register_id) {
+              sessionStorage.setItem("risk_register_id", mainData.risk_register_id);
+              getRiskRegisterbyid(mainData.risk_register_id);
+          }
 
-          if (treatment) {
-              $("#Action_plan").val(treatment.action_plan);
-              $("#Risk_Status").val(treatment.risk_status_name);
-              if (APP_DATA.userId === treatment.action_owner_id)
-                {
-                    if (treatment.progress === "100" && treatment.risk_status_name === "Completed")
-                    {
-                        $("#btnsubmit").hide();
-                        setDivDisabled('divDetail', true);
-                    }
-                    else{
-                        if (treatment.approval_status)
-                        {
-                            if (treatment.approval_status.toString() === "-1" )
-                            {
-                                $("#btnsubmit").show();
-                                setDivDisabled('divDetail', false);
-                            }
-                            else{
-                                $("#btnsubmit").hide();
-                                setDivDisabled('divDetail', true);
-                            }
-                        }
-                        else{
-                             $("#btnsubmit").show();
-                            setDivDisabled('divDetail', false);
-                        }
-                    }
-                }
+          let descList = mainData.risk_descriptions || [];
+          let desc = descList.length > 0 ? descList[0] : mainData;
+          let treatment = null;
+          if (desc && desc.treatments && desc.treatments.length > 0) {
+              treatment = desc.treatments.find(t => String(t.risk_treatment_id) === String(treatmentid)) || desc.treatments[0];
+          }
 
-                if (treatment.progress == "100" && treatment.risk_status_name == "Completed" && APP_DATA.userType === "Risk Manager") {
-                    if (treatment.approval_status)
-                    {
-                        if (treatment.approval_status.toString() === "1" || treatment.approval_status.toString() === "-1")
-                        {
-                            $("#apr_rejc").hide();
-                        }
-                        else{
-                            $("#apr_rejc").show();
-                        }
-                    }
-                    else{
-                        $("#apr_rejc").show();
-                    }
-                }
-                else {
-                        $("#apr_rejc").hide();
-                    }
-              //if (APP_DATA.userType === "Risk Owner" || APP_DATA.userType === "Functional Head" || APP_DATA.userType === "Risk Manager" || APP_DATA.userType === "Risk Head")
-              //  {
-              //    if(treatment.approval_status==="-1"){
-              //     $("#btnsubmit").hide();
-              //    setDivDisabled('divDetail', true);
-              //    
-              //    }
-              //    else{
-              //      $("#btnsubmit").show();
-              //    setDivDisabled('divDetail', false);
-              //    }
-              // }
-          }
-          console.log("mainData", mainData);
-          console.log("desc", desc);
-          console.log("treatment", treatment);
-          $("#Risk_Description").val(desc.risk_description);
-          $("#Risk_Mitigation").val(desc.mitigation);
-          $("#InherentRiskLevel").text(desc.inherent_color_code);
-          $("#InherentRiskLevel").css("background-color", desc.inherent_color_str);
-          $("#CurrentRiskLevel").text(desc.current_color_code);
-          $("#CurrentRiskLevel").css("background-color", desc.current_color_str);
-          //$("#Action_plan").val(treatment.action_plan);
-          //$("#Risk_Status").val(treatment.risk_status_name);
-          $("#Risk_Owner").val(mainData.risk_owner_name);
-          //$("#Risk_Co_Owner").val(treatment.risk_co_owner_name);
-          $("#Risk_Co_Owner").val(mainData.risk_co_owner_name);
-          //alert(treatment.risk_co_owner_name)
-          $("#Risk_Progress").val(mainData.risk_progress);
-          //if(mainData.risk_manager_approval_status==""){
-          //alert("check" + treatment.approval_status);
-         
+          if (treatment) {
+              $("#Action_plan").val(treatment.action_plan || "");
+              $("#Risk_Status").val(treatment.risk_status_name || "");
+              if (APP_DATA.userId === treatment.action_owner_id) {
+                  if (treatment.progress === "100" && treatment.risk_status_name === "Completed") {
+                      $("#btnsubmit").hide();
+                      setDivDisabled('divDetail', true);
+                  } else {
+                      if (treatment.approval_status) {
+                          if (treatment.approval_status.toString() === "-1" ) {
+                              $("#btnsubmit").show();
+                              setDivDisabled('divDetail', false);
+                          } else {
+                              $("#btnsubmit").hide();
+                              setDivDisabled('divDetail', true);
+                          }
+                      } else {
+                          $("#btnsubmit").show();
+                          setDivDisabled('divDetail', false);
+                      }
+                  }
+              }
+
+              if (treatment.progress == "100" && treatment.risk_status_name == "Completed" && APP_DATA.userType === "Risk Manager") {
+                  if (treatment.approval_status) {
+                      if (treatment.approval_status.toString() === "1" || treatment.approval_status.toString() === "-1") {
+                          $("#apr_rejc").hide();
+                      } else {
+                          $("#apr_rejc").show();
+                      }
+                  } else {
+                      $("#apr_rejc").show();
+                  }
+              } else {
+                  $("#apr_rejc").hide();
+              }
+          }
+
+          if (desc) {
+              $("#Risk_Description").val(desc.risk_description || "");
+              $("#Risk_Mitigation").val(desc.mitigation || "");
+              if (desc.inherent_color_code) {
+                  $("#InherentRiskLevel").text(desc.inherent_color_code);
+                  $("#InherentRiskLevel").css("background-color", desc.inherent_color_str || "#FFA500");
+              }
+              if (desc.current_color_code) {
+                  $("#CurrentRiskLevel").text(desc.current_color_code);
+                  $("#CurrentRiskLevel").css("background-color", desc.current_color_str || "#90EE90");
+              }
+          }
         } else {
-            showToast(response.data.Error.Error_message);
+            if (respData && respData.Error && respData.Error.Error_message) {
+                showToast(respData.Error.Error_message);
+            }
         }
-        })
-        .catch(error => {
-            //showToast("Failed to load categories");
-        })
-        .finally(() => {
-        });
-  }
+    })
+    .catch(error => {
+        console.error("Error in getRiskDescriptiondetailsbyid:", error);
+    });
+}
 
 function getRiskTreatmentbyTreatmentid(id) {
   axios.get("/getRiskTreatmentbyTreatmentid", {

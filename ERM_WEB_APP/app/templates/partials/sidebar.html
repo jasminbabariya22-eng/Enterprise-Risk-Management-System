@@ -1,14 +1,26 @@
 <!--begin::Sidebar-->
-<aside class="app-sidebar bg-white shadow-sm" data-bs-theme="light" style="width: 250px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 56px);">
+<aside class="app-sidebar bg-white shadow-sm" data-bs-theme="light" style="border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 56px); overflow: hidden;">
   <!-- Sidebar Header -->
-  <div class="px-4 pt-3 pb-2">
+  <div class="px-4 pt-3 pb-2" style="overflow: hidden; white-space: nowrap;">
     <h6 class="fw-bold mb-0" style="color: #0f172a; font-size: 15px; letter-spacing: -0.2px;">Function List</h6>
   </div>
 
   <!-- Function List Scrollable Area -->
-  <div class="sidebar-wrapper flex-grow-1" style="overflow-y: auto; padding: 6px 12px;">
+  <div class="sidebar-wrapper flex-grow-1" style="overflow-y: auto; overflow-x: hidden; padding: 6px 12px;">
     <nav>
       <ul class="nav flex-column" role="navigation" aria-label="Main navigation" style="gap: 4px;">
+        <!-- Dashboard (Authorized Roles Only) -->
+        {% if usertype in privileged_roles %}
+        <li class="nav-item mb-1">
+          <a href="/dashboard" class="sidebar-func-link" title="Enterprise Dashboard">
+            <span class="func-icon-wrap">
+              <i class="bi bi-grid-1x2-fill text-primary" style="font-size: 13px;"></i>
+            </span>
+            <span class="func-name fw-bold" style="color: #0f172a;">Risk Dashboard</span>
+          </a>
+        </li>
+        {% endif %}
+
         <!-- All Item -->
         <li class="nav-item">
           <a href="/risk_register/all" class="sidebar-func-link {% if active_dept|string == 'all' or not active_dept %}active{% endif %}" title="All Functions">
@@ -65,6 +77,16 @@
 </aside>
 
 <style>
+  .app-sidebar {
+    width: 250px;
+    min-width: 250px;
+    transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  body.sidebar-collapse .app-sidebar {
+    margin-left: -250px !important;
+  }
+
   .sidebar-func-link {
     display: flex;
     align-items: center;

@@ -1,221 +1,940 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Enterprise Dashboard</title>
+{% block content %}
+<div class="erm-home-container py-4 px-3 px-md-4">
+  <!-- Top Welcome Hero Section -->
+  <div class="home-hero-card card border-0 shadow-sm rounded-4 mb-4 overflow-hidden position-relative">
+    <div class="hero-bg-gradient position-absolute top-0 start-0 w-100 h-100"></div>
+    <div class="card-body p-4 p-lg-5 position-relative text-white">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span class="badge rounded-pill px-3 py-2 fw-semibold fs-13 shadow-xs" style="background: #ffffff; color: #10233F;">
+              <i class="bi bi-person-badge-fill me-1 text-primary"></i>
+              {% if usertype %}
+                {{ usertype }}
+              {% else %}
+                Authenticated User
+              {% endif %}
+            </span>
+            <span class="badge rounded-pill px-3 py-2 fw-medium fs-13" style="background: rgba(255, 255, 255, 0.18); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(4px);">
+              <i class="bi bi-calendar3 me-1 text-info"></i> FY {{ session_data.financial_year or '2026-2027' }}
+            </span>
+            <span class="badge rounded-pill px-3 py-2 fs-13 d-none d-sm-inline-flex" id="currentDateTimeBadge" style="background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(4px);">
+              <i class="bi bi-clock me-1"></i> Live
+            </span>
+          </div>
 
-    <!-- Bootstrap -->
-     <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
-    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+          <h2 class="display-6 fw-bold mb-2 tracking-tight text-white">
+            Welcome back, <span class="text-gradient-teal">{{ session_data.fname|default('Risk Officer') }} {{ session_data.lname|default('') }}</span>
+          </h2>
 
-    <!-- Axios -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> -->
-     <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
-
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        #loadingSpinner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container mt-4">
-
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4>Welcome <span id="usernameLabel"></span></h4>
-            <small class="text-muted">
-                Role: <span id="roleLabel"></span>
-            </small>
+          <p class="hero-subtitle mb-0 text-white-75 fs-15 max-w-700">
+            {% if usertype in ['Admin', 'Super Admin'] %}
+              Manage organization-wide governance, user authorizations, department structures, and executive risk intelligence from your centralized administration hub.
+            {% elif usertype == 'Risk Head' %}
+              Review high-severity risks, provide Stage-3 final governance sign-offs, and monitor enterprise risk posture across all business divisions.
+            {% elif usertype == 'Risk Manager' %}
+              Conduct Stage-2 risk evaluations, monitor active mitigation treatments, and ensure compliance with enterprise risk management frameworks.
+            {% elif usertype == 'Functional Head' %}
+              Oversee departmental risk profile, provide Stage-1 endorsements for your team's proposals, and manage mitigation execution.
+            {% elif usertype == 'Risk Owner' %}
+              Manage your assigned risk registers, record new inherent risk evaluations, and track treatment action plans to completion.
+            {% elif usertype == 'Action Owner' %}
+              Execute assigned mitigation tasks, update progress milestones, and maintain target completion schedules.
+            {% else %}
+              Access authorized risk registers, monitor compliance progress, and review mitigation workflows.
+            {% endif %}
+          </p>
         </div>
 
-        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
-            Logout
+        <div class="col-lg-4 text-lg-end">
+          <div class="hero-actions d-flex flex-column flex-sm-row flex-lg-column align-items-stretch align-items-lg-end gap-2">
+            <a href="/riskRegister" class="btn btn-light text-navy fw-semibold px-4 py-2-5 rounded-3 shadow-sm hero-btn">
+              <i class="bi bi-table me-2 text-primary"></i> Risk Register
+            </a>
+            {% if usertype in privileged_roles %}
+            <a href="/dashboard" class="btn btn-teal text-white fw-semibold px-4 py-2-5 rounded-3 shadow-sm hero-btn">
+              <i class="bi bi-grid-1x2-fill me-2"></i> Risk Dashboard
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role-Aware Summary KPI Cards -->
+  <div class="row g-3 g-lg-4 mb-4" id="homeKpiContainer">
+    <!-- Card 1 -->
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card card border-0 shadow-sm rounded-4 h-100 p-3 p-lg-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="kpi-icon-wrap bg-primary-subtle text-primary rounded-3" id="kpiIconWrap1">
+            <i class="bi bi-shield-check fs-20" id="kpiIcon1"></i>
+          </span>
+          <span class="badge bg-light text-muted rounded-pill fs-11 fw-medium px-2 py-1">Metric</span>
+        </div>
+        <div class="kpi-value fw-bold text-dark fs-28 mb-1" id="kpiValue1">--</div>
+        <div class="kpi-label text-muted fs-13" id="kpiLabel1">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card card border-0 shadow-sm rounded-4 h-100 p-3 p-lg-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="kpi-icon-wrap bg-warning-subtle text-warning rounded-3" id="kpiIconWrap2">
+            <i class="bi bi-hourglass-split fs-20" id="kpiIcon2"></i>
+          </span>
+          <span class="badge bg-light text-muted rounded-pill fs-11 fw-medium px-2 py-1">Action</span>
+        </div>
+        <div class="kpi-value fw-bold text-dark fs-28 mb-1" id="kpiValue2">--</div>
+        <div class="kpi-label text-muted fs-13" id="kpiLabel2">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card card border-0 shadow-sm rounded-4 h-100 p-3 p-lg-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="kpi-icon-wrap bg-info-subtle text-info rounded-3" id="kpiIconWrap3">
+            <i class="bi bi-check2-circle fs-20" id="kpiIcon3"></i>
+          </span>
+          <span class="badge bg-light text-muted rounded-pill fs-11 fw-medium px-2 py-1">Status</span>
+        </div>
+        <div class="kpi-value fw-bold text-dark fs-28 mb-1" id="kpiValue3">--</div>
+        <div class="kpi-label text-muted fs-13" id="kpiLabel3">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="col-6 col-lg-3">
+      <div class="kpi-card card border-0 shadow-sm rounded-4 h-100 p-3 p-lg-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="kpi-icon-wrap bg-teal-subtle text-teal rounded-3" id="kpiIconWrap4">
+            <i class="bi bi-collection fs-20" id="kpiIcon4"></i>
+          </span>
+          <span class="badge bg-light text-muted rounded-pill fs-11 fw-medium px-2 py-1">Register</span>
+        </div>
+        <div class="kpi-value fw-bold text-dark fs-28 mb-1" id="kpiValue4">--</div>
+        <div class="kpi-label text-muted fs-13" id="kpiLabel4">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role-Authorized Quick Actions Section -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 p-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <div>
+        <h5 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+          <i class="bi bi-lightning-charge-fill text-warning"></i> Authorized Quick Actions
+        </h5>
+        <p class="text-muted fs-13 mb-0">Direct shortcuts to verified functions and workflows authorized for your role.</p>
+      </div>
+      <span class="badge bg-slate-subtle text-slate px-3 py-1-5 rounded-pill fs-12 fw-medium">
+        Role: {{ usertype|default('Viewer') }}
+      </span>
+    </div>
+
+    <div class="row g-3">
+      {% if usertype in ['Admin', 'Super Admin'] %}
+        <!-- Admin Actions -->
+        <div class="col-md-6 col-lg-4">
+          <a href="/dashboard" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-grid-1x2-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Risk Dashboard</h6>
+                <p class="text-muted fs-12 mb-0">Explore interactive risk heatmaps, severity distributions, and departmental KPI matrices.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskRegister" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-teal-subtle text-teal rounded-3 p-3">
+                <i class="bi bi-table fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Risk Register</h6>
+                <p class="text-muted fs-12 mb-0">Access the full enterprise risk catalog with multi-stage approval audit trails.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/users" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-info-subtle text-info rounded-3 p-3">
+                <i class="bi bi-people-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">User Management</h6>
+                <p class="text-muted fs-12 mb-0">Provision and manage user accounts, department associations, and system credentials.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/userRole" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-success-subtle text-success rounded-3 p-3">
+                <i class="bi bi-shield-lock-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Roles & RBAC Access</h6>
+                <p class="text-muted fs-12 mb-0">Configure role hierarchies and menu visibility permissions across user tiers.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/department" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-purple-subtle text-purple rounded-3 p-3">
+                <i class="bi bi-building-gear fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Department Structure</h6>
+                <p class="text-muted fs-12 mb-0">Configure operating functions, department short codes, and sequential risk numbering.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/importRisk" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-warning-subtle text-warning rounded-3 p-3">
+                <i class="bi bi-cloud-arrow-up-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Financial Year Import</h6>
+                <p class="text-muted fs-12 mb-0">Roll forward risks across financial cycles and bulk synchronize risk records.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      {% elif usertype == 'Risk Head' %}
+        <!-- Risk Head Actions -->
+        <div class="col-md-6 col-lg-4">
+          <a href="/dashboard" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-grid-1x2-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Executive Dashboard</h6>
+                <p class="text-muted fs-12 mb-0">Analyze organizational risk heatmaps, top 10 risks, and mitigation progress.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskRegister" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-warning-subtle text-warning rounded-3 p-3">
+                <i class="bi bi-patch-check-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Stage-3 Final Approvals</h6>
+                <p class="text-muted fs-12 mb-0">Review validated risks awaiting executive Risk Head sign-off.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskActionPlan" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-teal-subtle text-teal rounded-3 p-3">
+                <i class="bi bi-tools fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Mitigation Action Plans</h6>
+                <p class="text-muted fs-12 mb-0">Audit risk treatment plans, target dates, and department follow-up notes.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/exportExcel?dept_code=all" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-success-subtle text-success rounded-3 p-3">
+                <i class="bi bi-file-earmark-excel-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Export Risk Register</h6>
+                <p class="text-muted fs-12 mb-0">Generate and download official formatted Excel registers for governance review.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      {% elif usertype == 'Risk Manager' %}
+        <!-- Risk Manager Actions -->
+        <div class="col-md-6 col-lg-4">
+          <a href="/dashboard" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-grid-1x2-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Risk Dashboard</h6>
+                <p class="text-muted fs-12 mb-0">Monitor enterprise risk velocity, status distributions, and mitigation timelines.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskRegister" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-warning-subtle text-warning rounded-3 p-3">
+                <i class="bi bi-clipboard-check-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Stage-2 Manager Reviews</h6>
+                <p class="text-muted fs-12 mb-0">Review departmental endorsed risks and forward verified records to the Risk Head.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskActionPlan" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-info-subtle text-info rounded-3 p-3">
+                <i class="bi bi-calendar-check-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Action Plan Follow-ups</h6>
+                <p class="text-muted fs-12 mb-0">Track ongoing treatment plans and log monthly review follow-up notes.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/exportExcel?dept_code=all" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-success-subtle text-success rounded-3 p-3">
+                <i class="bi bi-file-earmark-spreadsheet fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Export Register (Excel)</h6>
+                <p class="text-muted fs-12 mb-0">Download complete risk and treatment records across all departments.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      {% elif usertype == 'Functional Head' %}
+        <!-- Functional Head Actions -->
+        <div class="col-md-6 col-lg-4">
+          <a href="/risk_register/{{ session_data.userDept|default('all') }}" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-folder2-open fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Department Risk Register</h6>
+                <p class="text-muted fs-12 mb-0">Access and review all risk registrations within your functional department.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/risk_register/{{ session_data.userDept|default('all') }}" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-warning-subtle text-warning rounded-3 p-3">
+                <i class="bi bi-check2-square fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Stage-1 Endorsements</h6>
+                <p class="text-muted fs-12 mb-0">Review newly drafted risks from your team and provide Functional Head approval.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskDetailsAdd" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-teal-subtle text-teal rounded-3 p-3">
+                <i class="bi bi-plus-circle-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Register New Risk</h6>
+                <p class="text-muted fs-12 mb-0">Document a new risk assessment with inherent ratings and mitigation plans.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/exportExcel?dept_code={{ session_data.userDept|default('') }}" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-success-subtle text-success rounded-3 p-3">
+                <i class="bi bi-file-earmark-excel fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Export Dept Report</h6>
+                <p class="text-muted fs-12 mb-0">Download a dedicated risk spreadsheet for your department.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      {% elif usertype == 'Risk Owner' %}
+        <!-- Risk Owner Actions -->
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskRegister" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-shield-lock-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">My Assigned Risks</h6>
+                <p class="text-muted fs-12 mb-0">View risks assigned to you, monitor approval statuses, and update mitigation notes.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskDetailsAdd" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-teal-subtle text-teal rounded-3 p-3">
+                <i class="bi bi-plus-circle-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Submit New Risk</h6>
+                <p class="text-muted fs-12 mb-0">Propose a new operational risk with severity score and mitigation strategy.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+          <a href="/riskActionPlan" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-info-subtle text-info rounded-3 p-3">
+                <i class="bi bi-list-task fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Action Plan Treatments</h6>
+                <p class="text-muted fs-12 mb-0">Manage action plan items and coordinate with designated Action Owners.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      {% elif usertype == 'Action Owner' %}
+        <!-- Action Owner Actions -->
+        <div class="col-md-6 col-lg-6">
+          <a href="/riskTreatment" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-check-circle-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">My Action Tasks</h6>
+                <p class="text-muted fs-12 mb-0">Review mitigation tasks assigned to you and submit progress updates.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="col-md-6 col-lg-6">
+          <a href="/riskActionPlan" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-info-subtle text-info rounded-3 p-3">
+                <i class="bi bi-calendar-event-fill fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Target Dates & Follow-ups</h6>
+                <p class="text-muted fs-12 mb-0">Track target completion deadlines and maintain follow-up documentation.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+
+      {% else %}
+        <!-- Viewer / Generic Actions -->
+        <div class="col-md-6 col-lg-6">
+          <a href="/riskRegister" class="quick-action-card card h-100 border p-3 rounded-3 text-decoration-none transition">
+            <div class="d-flex align-items-start gap-3">
+              <div class="action-icon bg-primary-subtle text-primary rounded-3 p-3">
+                <i class="bi bi-journal-text fs-20"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold text-dark mb-1">Browse Risk Register</h6>
+                <p class="text-muted fs-12 mb-0">View active risk items and published mitigation plans in read-only mode.</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Role-Scoped Workload & Pending Actions Section -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+    <div class="card-header bg-white border-bottom p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <h5 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+          <i class="bi bi-inbox-fill text-primary"></i>
+          <span id="workloadSectionTitle">My Workload & Actionable Items</span>
+        </h5>
+        <p class="text-muted fs-13 mb-0" id="workloadSectionSubtitle">
+          Items currently awaiting your governance review, approval sign-off, or assigned action.
+        </p>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm" style="max-width: 240px;">
+          <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" id="workloadSearchInput" class="form-control bg-light border-start-0" placeholder="Filter tasks..." aria-label="Search">
+        </div>
+        <button class="btn btn-sm btn-outline-secondary rounded-2" id="refreshWorkloadBtn" title="Refresh Workload">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="workloadTable">
+          <thead class="bg-light-subtle text-muted fs-12 text-uppercase">
+            <tr>
+              <th scope="col" class="ps-4" style="width: 120px;">Risk Code</th>
+              <th scope="col">Title & Summary</th>
+              <th scope="col" style="width: 160px;">Department</th>
+              <th scope="col" style="width: 140px;">Inherent Rating</th>
+              <th scope="col" style="width: 140px;">Current Rating</th>
+              <th scope="col" style="width: 200px;">Workflow Stage</th>
+              <th scope="col" class="pe-4 text-end" style="width: 120px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="workloadTableBody">
+            <!-- Dynamic items rendered via JavaScript -->
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                Loading your authorized workload items...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="text-center py-5 px-3 d-none" id="workloadEmptyState">
+        <div class="empty-icon-wrap bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+          <i class="bi bi-check2-circle text-success fs-32"></i>
+        </div>
+        <h6 class="fw-bold text-dark mb-1">All Caught Up!</h6>
+        <p class="text-muted fs-13 max-w-450 mx-auto mb-3">
+          You have no pending approvals or urgent risk items awaiting your review right now.
+        </p>
+        <a href="/riskRegister" class="btn btn-sm btn-outline-primary px-3 rounded-pill">
+          <i class="bi bi-table me-1"></i> Open Risk Register
         </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERM Governance Workflow Reference Card -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 bg-light-subtle">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle-fill text-info"></i> Standard ERM 3-Stage Governance Workflow
+      </h6>
+      <span class="badge bg-white text-muted border px-2 py-1 fs-11">Governance Protocol</span>
     </div>
 
-    <!-- Card -->
-    <div class="card shadow-sm p-4">
-        <h5 class="mb-3">Dynamic Dropdown</h5>
-
-        <div class="mb-3">
-            <label class="form-label">Category</label>
-            <select id="categoryDropdown" class="form-select">
-                <option value="">Select Category</option>
-            </select>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="workflow-step-card bg-white p-3 rounded-3 border h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-warning text-dark rounded-circle p-1 px-2 fw-bold fs-11">1</span>
+            <span class="fw-bold text-dark fs-13">Stage 1: Functional Head</span>
+          </div>
+          <p class="text-muted fs-12 mb-0">
+            Initial review and endorsement by the Functional Head of the initiating operating department.
+          </p>
         </div>
+      </div>
 
-        <div class="mb-3">
-            <label class="form-label">Products</label>
-            <select id="productDropdown" class="form-select" disabled>
-                <option value="">Select Product</option>
-            </select>
+      <div class="col-md-4">
+        <div class="workflow-step-card bg-white p-3 rounded-3 border h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-info text-white rounded-circle p-1 px-2 fw-bold fs-11">2</span>
+            <span class="fw-bold text-dark fs-13">Stage 2: Risk Manager</span>
+          </div>
+          <p class="text-muted fs-12 mb-0">
+            Technical verification of likelihood, impact scoring, mitigation viability, and compliance.
+          </p>
         </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="workflow-step-card bg-white p-3 rounded-3 border h-100">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-primary text-white rounded-circle p-1 px-2 fw-bold fs-11">3</span>
+            <span class="fw-bold text-dark fs-13">Stage 3: Risk Head</span>
+          </div>
+          <p class="text-muted fs-12 mb-0">
+            Executive sign-off and approval, officially activating the risk into the Enterprise Risk Register.
+          </p>
+        </div>
+      </div>
     </div>
-
+  </div>
 </div>
 
-<!-- Loading Spinner
-<div id="loadingSpinner" class="d-flex">
-    <div class="spinner-border text-primary"></div>
-</div> -->
+<style>
+  :root {
+    --erm-navy: #10233F;
+    --erm-blue: #2563EB;
+    --erm-teal: #14B8A6;
+    --erm-bg: #F8FAFC;
+    --erm-slate: #64748B;
+  }
 
-<!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3">
-    <div id="appToast" class="toast align-items-center text-white bg-danger border-0">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMessage"></div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                    data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
+  body {
+    background-color: #f8fafc !important;
+  }
 
-<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> -->
-<script src="{{ url_for('static', filename='cdn/bootstrap.bundle.min.js') }}"></script>
+  .erm-home-container {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .text-navy {
+    color: var(--erm-navy) !important;
+  }
+
+  .hero-bg-gradient {
+    background: linear-gradient(135deg, #10233F 0%, #1e3a8a 60%, #0f766e 100%);
+    opacity: 0.98;
+  }
+
+  .text-gradient-teal {
+    background: linear-gradient(90deg, #38bdf8, #2dd4bf);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .btn-teal {
+    background-color: var(--erm-teal);
+    border-color: var(--erm-teal);
+  }
+
+  .btn-teal:hover {
+    background-color: #0d9488;
+    border-color: #0d9488;
+  }
+
+  .fs-11 { font-size: 11px !important; }
+  .fs-12 { font-size: 12px !important; }
+  .fs-13 { font-size: 13px !important; }
+  .fs-15 { font-size: 15.5px !important; }
+  .fs-20 { font-size: 20px !important; }
+  .fs-28 { font-size: 28px !important; }
+  .fs-32 { font-size: 32px !important; }
+
+  .max-w-700 { max-width: 700px; }
+  .max-w-450 { max-width: 450px; }
+
+  .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+  .kpi-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #eef2f6 !important;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06) !important;
+  }
+
+  .kpi-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+  }
+
+  .quick-action-card {
+    border-color: #e2e8f0 !important;
+    background-color: #ffffff;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .quick-action-card:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd !important;
+    box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.12) !important;
+  }
+
+  .action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+
+  .bg-purple-subtle { background-color: #f3e8ff !important; }
+  .text-purple { color: #9333ea !important; }
+
+  .bg-teal-subtle { background-color: #ccfbf1 !important; }
+  .text-teal { color: #0d9488 !important; }
+
+  .bg-slate-subtle { background-color: #f1f5f9 !important; }
+  .text-slate { color: #475569 !important; }
+
+  .hero-btn {
+    transition: transform 0.15s ease;
+  }
+
+  .hero-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .score-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+</style>
+
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Update Live clock badge
+  function updateTime() {
+    const el = document.getElementById("currentDateTimeBadge");
+    if (el) {
+      const now = new Date();
+      el.innerHTML = `<i class="bi bi-clock me-1"></i> ${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} • ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+  }
+  updateTime();
+  setInterval(updateTime, 60000);
 
-const spinner = document.getElementById("loadingSpinner");
-const categoryDropdown = document.getElementById("categoryDropdown");
-const productDropdown = document.getElementById("productDropdown");
+  let workloadDataCache = [];
 
-// ============================
-// Spinner Functions
-// ============================
-function showSpinner() {
-    spinner.style.display = "flex";
-}
+  // Load Workload and Summary from backend
+  function loadHomeWorkload() {
+    axios.get("/api/home/workload")
+      .then(response => {
+        const payload = response.data;
+        if (payload && payload.data) {
+          renderSummaryCards(payload.data.summary || {});
+          workloadDataCache = payload.data.workload || [];
+          renderWorkloadTable(workloadDataCache);
+        } else {
+          renderFallbackSummary();
+          renderWorkloadTable([]);
+        }
+      })
+      .catch(error => {
+        console.error("Home workload load error:", error);
+        renderFallbackSummary();
+        renderWorkloadTable([]);
+      });
+  }
 
-function hideSpinner() {
-    spinner.style.display = "none";
-}
+  function renderSummaryCards(summary) {
+    const keys = ["card_1", "card_2", "card_3", "card_4"];
+    keys.forEach((k, idx) => {
+      const item = summary[k];
+      const i = idx + 1;
+      const valEl = document.getElementById(`kpiValue${i}`);
+      const lblEl = document.getElementById(`kpiLabel${i}`);
+      const iconEl = document.getElementById(`kpiIcon${i}`);
+      const iconWrapEl = document.getElementById(`kpiIconWrap${i}`);
 
-// ============================
-// Toast
-// ============================
-function showToast(message) {
-    document.getElementById("toastMessage").innerText = message;
-    const toast = new bootstrap.Toast(document.getElementById("appToast"));
-    toast.show();
-}
+      if (item && valEl && lblEl) {
+        valEl.innerText = item.value !== undefined ? item.value : 0;
+        lblEl.innerText = item.label || "";
+        if (item.icon && iconEl) {
+          iconEl.className = `bi ${item.icon} fs-20`;
+        }
+        if (item.color && iconWrapEl) {
+          iconWrapEl.className = `kpi-icon-wrap bg-${item.color}-subtle text-${item.color} rounded-3`;
+        }
+      }
+    });
+  }
 
-// ============================
-// Load Logged User
-// ==================
-// ==========
-function loadUser() {
-alert("call apigggg")
-    //showSpinner();
-alert("call api")
-    axios.get("/user")
-        .then(response => {
-            document.getElementById("usernameLabel").innerText =
-                response.data.user_fname;
+  function renderFallbackSummary() {
+    document.getElementById("kpiValue1").innerText = "Active";
+    document.getElementById("kpiLabel1").innerText = "System Status";
+    document.getElementById("kpiValue2").innerText = "2026-2027";
+    document.getElementById("kpiLabel2").innerText = "Financial Year";
+    document.getElementById("kpiValue3").innerText = "{{ usertype|default('Viewer') }}";
+    document.getElementById("kpiLabel3").innerText = "Active Role";
+    document.getElementById("kpiValue4").innerText = "ERM Hub";
+    document.getElementById("kpiLabel4").innerText = "Platform Mode";
+  }
 
-            // document.getElementById("roleLabel").innerText =
-            //     response.data.role;
-        })
-        .catch(error => {
-            showToast("Failed to load user info");
-        })
-        .finally(() => {
-            hideSpinner();
-        });
-}
+  function renderWorkloadTable(items) {
+    const tbody = document.getElementById("workloadTableBody");
+    const emptyState = document.getElementById("workloadEmptyState");
+    const table = document.getElementById("workloadTable");
 
-// ============================
-// Load Categories
-// ============================
-function loadCategories() {
+    if (!items || items.length === 0) {
+      tbody.innerHTML = "";
+      table.classList.add("d-none");
+      emptyState.classList.remove("d-none");
+      return;
+    }
 
-    //showSpinner();
-//hideSpinner();
-    axios.get("/user")
-        .then(response => {
+    table.classList.remove("d-none");
+    emptyState.classList.add("d-none");
 
-            // response.data.forEach(item => {
-            //     const option = document.createElement("option");
-            //     option.value = item.user_fname;
-            //     option.text = item.user_fname;
-            //     categoryDropdown.appendChild(option);
-            // });
-             const option = document.createElement("option");
-                option.value = response.data.user_fname;
-                option.text = response.data.user_fname;
-                categoryDropdown.appendChild(option);
-        })
-        .catch(error => {
-            showToast("Failed to load categories");
-        })
-        .finally(() => {
-            //hideSpinner();
-        });
-}
+    let html = "";
+    items.forEach(item => {
+      const inhBg = item.inherent_color ? `${item.inherent_color}18` : '#f1f5f9';
+      const currBg = item.current_color ? `${item.current_color}18` : '#f1f5f9';
 
-// ============================
-// Load Products
-// ============================
-categoryDropdown.addEventListener("change", function () {
-
-    const categoryId = this.value;
-
-    productDropdown.innerHTML =
-        '<option value="">Select Product</option>';
-    productDropdown.disabled = true;
-
-    if (!categoryId) return;
-
-    showSpinner();
-
-    axios.get("/api/products", {
-        params: { category_id: categoryId }
-    })
-    .then(response => {
-
-        response.data.forEach(item => {
-            const option = document.createElement("option");
-            option.value = item.id;
-            option.text = item.name;
-            productDropdown.appendChild(option);
-        });
-
-        productDropdown.disabled = false;
-
-    })
-    .catch(error => {
-        showToast("Failed to load products");
-    })
-    .finally(() => {
-        hideSpinner();
+      html += `
+        <tr>
+          <td class="ps-4">
+            <span class="fw-bold text-navy fs-13 font-monospace">${escapeHtml(item.risk_id || '-')}</span>
+          </td>
+          <td>
+            <div class="fw-bold text-dark fs-13 text-truncate" style="max-width: 320px;" title="${escapeHtml(item.risk_name || '')}">
+              ${escapeHtml(item.risk_name || 'Untitled Risk')}
+            </div>
+            <small class="text-muted fs-11">Owner: ${escapeHtml(item.owner_name || 'Unassigned')}</small>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border fs-12 px-2 py-1">
+              <i class="bi bi-building me-1 text-muted"></i>${escapeHtml(item.dept_name || 'General')}
+            </span>
+          </td>
+          <td>
+            <span class="score-badge" style="background-color: ${inhBg}; color: ${item.inherent_color || '#334155'};">
+              <span class="score-dot" style="background-color: ${item.inherent_color || '#334155'};"></span>
+              ${item.inherent_score ? `${item.inherent_score} • ` : ''}${escapeHtml(item.inherent_level || 'N/A')}
+            </span>
+          </td>
+          <td>
+            <span class="score-badge" style="background-color: ${currBg}; color: ${item.current_color || '#334155'};">
+              <span class="score-dot" style="background-color: ${item.current_color || '#334155'};"></span>
+              ${item.current_score ? `${item.current_score} • ` : ''}${escapeHtml(item.current_level || 'N/A')}
+            </span>
+          </td>
+          <td>
+            <span class="badge bg-${item.stage_badge || 'secondary'}-subtle text-${item.stage_badge || 'secondary'} rounded-pill px-2-5 py-1 fs-11 fw-semibold">
+              ${escapeHtml(item.stage || 'In Review')}
+            </span>
+          </td>
+          <td class="pe-4 text-end">
+            <button type="button" onclick="handleWorkloadAction('${escapeHtml(item.type || 'risk')}', '${escapeHtml(String(item.id || ''))}', '${escapeHtml(item.action_url || '')}', '${escapeHtml(String(item.treatment_id || item.id || ''))}', '${escapeHtml(String(item.description_id || ''))}', '${escapeHtml(String(item.risk_register_id || ''))}')" class="btn btn-sm btn-outline-primary px-3 rounded-2 fs-12 fw-medium">
+              ${escapeHtml(item.action_label || 'View')} <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </td>
+        </tr>
+      `;
     });
 
-});
+    tbody.innerHTML = html;
+  }
 
-// ============================
-// Initialize
-// ============================
-document.addEventListener("DOMContentLoaded", function () {
-    loadUser();
-    loadCategories();
-});
+  window.handleWorkloadAction = function(type, id, url, treatmentId, descId, riskId) {
+    if (type === 'risk' && id) {
+      sessionStorage.setItem("rrid", id);
+      sessionStorage.setItem("btn", "1");
+      window.location.href = url || `/riskDetails?id=${id}`;
+    } else if (type === 'treatment') {
+      const tId = treatmentId || id;
+      if (tId) sessionStorage.setItem("risk_treatment_id", tId);
+      if (descId) sessionStorage.setItem("risk_description_id", descId);
+      if (riskId) sessionStorage.setItem("risk_register_id", riskId);
+      window.location.href = url || `/riskActionPlan?treatment_id=${tId}&desc_id=${descId || ''}&risk_id=${riskId || ''}`;
+    } else {
+      window.location.href = url || '/riskRegister';
+    }
+  };
 
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Workload table search filter
+  const searchInput = document.getElementById("workloadSearchInput");
+  if (searchInput) {
+    searchInput.addEventListener("input", function (e) {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) {
+        renderWorkloadTable(workloadDataCache);
+        return;
+      }
+      const filtered = workloadDataCache.filter(item => {
+        return (
+          (item.risk_id && item.risk_id.toLowerCase().includes(q)) ||
+          (item.risk_name && item.risk_name.toLowerCase().includes(q)) ||
+          (item.dept_name && item.dept_name.toLowerCase().includes(q)) ||
+          (item.owner_name && item.owner_name.toLowerCase().includes(q)) ||
+          (item.stage && item.stage.toLowerCase().includes(q))
+        );
+      });
+      renderWorkloadTable(filtered);
+    });
+  }
+
+  // Refresh workload button
+  const refreshBtn = document.getElementById("refreshWorkloadBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", function () {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span>`;
+      loadHomeWorkload();
+      setTimeout(() => {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = `<i class="bi bi-arrow-clockwise"></i>`;
+      }, 500);
+    });
+  }
+
+  // Initial load
+  loadHomeWorkload();
+});
 </script>
-
-</body>
-</html>
+{% endblock %}

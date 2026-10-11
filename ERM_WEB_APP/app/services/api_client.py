@@ -64,10 +64,6 @@ class APIClient:
     def getbyid(endpoint, data, headers=None):
         try:
             token = session.get("token")
-            current_app.logger.info(f"Token(getbyid): {token}")
-            current_app.logger.info(f"{current_app.config['BASE_API_URL']}/{endpoint}/{data}")
-            deptid=data
-            current_app.logger.info(f"getbyid data Id {data}")
             default_headers = {
                 "Content-Type": "application/json"
             }
@@ -77,14 +73,14 @@ class APIClient:
 
             if headers:
                 default_headers.update(headers)
-            response = requests.get(
-                f"{current_app.config['BASE_API_URL']}/{endpoint}/{data}",
-		verify=False,
+            base_url = current_app.config['BASE_API_URL'].rstrip('/')
+            url = f"{base_url}/{endpoint.lstrip('/')}/{data}"
+            response = _http_session.get(
+                url,
                 headers=default_headers,
-                timeout=current_app.config["API_TIMEOUT"]
+                verify=False,
+                timeout=5
             )
-            response.raise_for_status()
-            current_app.logger.info(f"getbyid data responce {response}")
             return response
 
         except requests.exceptions.RequestException as e:
@@ -95,9 +91,6 @@ class APIClient:
     def putdataold(endpoint, data, headers=None):
         try:
             token = session.get("token")
-            current_app.logger.info(f"Token(putdataold): {token}")
-            deptid=data
-            current_app.logger.info(f"Put data by Id {data}")
             default_headers = {
                 "Content-Type": "application/json"
             }
@@ -107,14 +100,14 @@ class APIClient:
 
             if headers:
                 default_headers.update(headers)
-            response = requests.put(
-                f"{current_app.config['BASE_API_URL']}/{endpoint}/{data}",
+            base_url = current_app.config['BASE_API_URL'].rstrip('/')
+            url = f"{base_url}/{endpoint.lstrip('/')}/{data}"
+            response = _http_session.put(
+                url,
                 headers=default_headers,
-		verify=False,
-                timeout=current_app.config["API_TIMEOUT"]
+                verify=False,
+                timeout=5
             )
-            response.raise_for_status()
-            current_app.logger.info(f"Update Dept responce {response}")
             return response
 
         except requests.exceptions.RequestException as e:
@@ -123,33 +116,28 @@ class APIClient:
 
     @staticmethod
     def putdata(endpoint, data, headers=None):
-    
         try:
-        
             token = session.get("token")
-    
             default_headers = {
                 "Content-Type": "application/json"
             }
-    
+
             if token:
                 default_headers["Authorization"] = f"Bearer {token}"
-    
+
             if headers:
                 default_headers.update(headers)
-            current_app.logger.info(f" API URL For Get Call {current_app.config['BASE_API_URL']}/{endpoint}")
-            response = requests.put(
-                f"{current_app.config['BASE_API_URL']}/{endpoint}",
+            base_url = current_app.config['BASE_API_URL'].rstrip('/')
+            url = f"{base_url}/{endpoint.lstrip('/')}"
+            response = _http_session.put(
+                url,
                 json=data,
-		verify=False,
                 headers=default_headers,
-                timeout=current_app.config["API_TIMEOUT"]
+                verify=False,
+                timeout=5
             )
-    
-            response.raise_for_status()
-    
             return response
-    
+
         except requests.exceptions.RequestException as e:
             current_app.logger.error(f"API PUT Error: {str(e)}")
             raise
@@ -272,7 +260,6 @@ class APIClient:
     def deletebyid(endpoint, headers=None):
         try:
             token = session.get("token")
-            current_app.logger.info(f"Token(deletebyid): {token}")
             default_headers = {
                 "Content-Type": "application/json"
             }
@@ -282,18 +269,18 @@ class APIClient:
 
             if headers:
                 default_headers.update(headers)
-            response = requests.delete(
-                f"{current_app.config['BASE_API_URL']}/{endpoint}",
+            base_url = current_app.config['BASE_API_URL'].rstrip('/')
+            url = f"{base_url}/{endpoint.lstrip('/')}"
+            response = _http_session.delete(
+                url,
                 headers=default_headers,
-		verify=False,
-                timeout=current_app.config["API_TIMEOUT"]
+                verify=False,
+                timeout=5
             )
-            response.raise_for_status()
-            current_app.logger.info(f"deletebyid data responce {response}")
             return response
 
         except requests.exceptions.RequestException as e:
-            current_app.logger.error(f"API GET Error: {str(e)}")
+            current_app.logger.error(f"API DELETE Error: {str(e)}")
             raise
 
     @staticmethod

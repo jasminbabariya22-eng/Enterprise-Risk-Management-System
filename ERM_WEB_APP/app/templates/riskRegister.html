@@ -892,14 +892,14 @@
     if (inBadge) {
       const inScore = (row.inherent_risk_likelihood_id || 1) * (row.inherent_risk_impact_id || 1);
       inBadge.innerText = `${row.inherent_risk_level || 'Level'} (${inScore})`;
-      inBadge.className = inScore >= 16 ? 'badge-risk-critical' : (inScore >= 10 ? 'badge-risk-high' : (inScore >= 6 ? 'badge-risk-medium' : 'badge-risk-low'));
+      inBadge.className = inScore >= 20 ? 'badge-risk-critical' : (inScore >= 14 ? 'badge-risk-high' : (inScore >= 8 ? 'badge-risk-medium' : 'badge-risk-low'));
     }
 
     const resBadge = document.getElementById('drawerResidualBadge');
     if (resBadge) {
       const resScore = (row.current_risk_likelihood_id || 1) * (row.current_risk_impact_id || 1);
       resBadge.innerText = `${row.current_risk_level || 'Level'} (${resScore})`;
-      resBadge.className = resScore >= 16 ? 'badge-risk-critical' : (resScore >= 10 ? 'badge-risk-high' : (resScore >= 6 ? 'badge-risk-medium' : 'badge-risk-low'));
+      resBadge.className = resScore >= 20 ? 'badge-risk-critical' : (resScore >= 14 ? 'badge-risk-high' : (resScore >= 8 ? 'badge-risk-medium' : 'badge-risk-low'));
     }
 
     // Governance statuses

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#10233F"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="12" y1="10" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Geometric Shield -->
+  <path d="M24 4L8 10V22C8 31.5 14.8 40.3 24 44C33.2 40.3 40 31.5 40 22V10L24 4Z" 
+        fill="url(#shieldGrad)" stroke="#3B82F6" stroke-width="1.5" stroke-linejoin="round"/>
+  
+  <!-- Subtle Internal Facet -->
+  <path d="M24 4L40 10V22C40 31.5 33.2 40.3 24 44V4Z" fill="#FFFFFF" fill-opacity="0.08"/>
+
+  <!-- Connected Risk Network Nodes -->
+  <!-- Top Node -->
+  <circle cx="24" cy="14" r="2.75" fill="#14B8A6"/>
+  <!-- Left Node -->
+  <circle cx="16" cy="22" r="2.25" fill="#38BDF8"/>
+  <!-- Right Node -->
+  <circle cx="32" cy="22" r="2.25" fill="#38BDF8"/>
+  <!-- Center Assurance Node -->
+  <circle cx="24" cy="26" r="3" fill="#FFFFFF"/>
+  <!-- Bottom Node -->
+  <circle cx="24" cy="34" r="2.25" fill="#14B8A6"/>
+
+  <!-- Network Connection Lines -->
+  <line x1="24" y1="14" x2="16" y2="22" stroke="#60A5FA" stroke-width="1.5" stroke-opacity="0.75" stroke-dasharray="2 1"/>
+  <line x1="24" y1="14" x2="32" y2="22" stroke="#60A5FA" stroke-width="1.5" stroke-opacity="0.75" stroke-dasharray="2 1"/>
+  <line x1="16" y1="22" x2="24" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-opacity="0.9"/>
+  <line x1="32" y1="22" x2="24" y2="26" stroke="#FFFFFF" stroke-width="1.5" stroke-opacity="0.9"/>
+  <line x1="24" y1="26" x2="24" y2="34" stroke="#14B8A6" stroke-width="1.5" stroke-opacity="0.85"/>
+
+  <!-- Dynamic Checkmark Overlay -->
+  <path d="M20 26.5L22.5 29L28 23.5" stroke="#10233F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

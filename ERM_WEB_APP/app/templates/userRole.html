@@ -1,276 +1,894 @@
 {% extends "base.html" %}
 
-
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}">
 
-<link rel="stylesheet" href="{{ url_for('static', filename='cdn/datatables.min.css') }}">
-<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
-<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+<style>
+  :root {
+    --erm-navy: #10233F;
+    --erm-blue: #2563EB;
+    --erm-blue-light: #EFF6FF;
+    --erm-teal: #14B8A6;
+    --erm-bg: #F8FAFC;
+    --erm-card-bg: #FFFFFF;
+    --erm-border: #E2E8F0;
+    --erm-text-primary: #0F172A;
+    --erm-text-secondary: #64748B;
+    --erm-success: #10B981;
+    --erm-warning: #F59E0B;
+    --erm-danger: #EF4444;
+  }
 
+  body {
+    background-color: var(--erm-bg) !important;
+  }
 
-        <!--begin::App Content Header-->
-        <div class="app-content-header">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <div class="col-sm-6">
-                <!-- <h3 class="mb-0">Risk Register</h3> -->
-                  <span style="float:left; margin-right:20px">User Role</span>
-        <!-- Title Icon Start -->
-        <span>
-            <a class="pl-5 navigate plus-icon-color" href="" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()"><i class="bi bi-plus-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Add"></i></a>
-            <a class="pl-5 edit-icon-color disabled" href="#"><i class="bi bi-pencil-square" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"></i></a>
-            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"></i></a>
-            <a class="pl-5 export-icon-color" href="#" onclick="downloadExcel()"><i class="bi bi-file-earmark-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Export"></i></a>
-        </span>
+  .admin-page-container {
+    padding: 20px 24px 40px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
 
-              </div>
-              <div class="col-sm-6">
-                
-              </div>
-            </div>
-            <!--end::Row-->
-          </div>
-          <!--end::Container-->
-        </div>
-        <!--end::App Content Header-->
-        <!--begin::App Content-->
-        <div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
+  /* Header Styling */
+  .admin-header {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
 
-          
+  .admin-breadcrumb {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--erm-teal);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-<div class="bd-example m-0 border-0 tab-content active table-responsive"> 
-<table id="RoleList" class="table table-hover table-bordered" style="width: 100%;">
-  <thead>
-    <tr class="tb-head">
-      <th scope="col">Role Name</th>
-      <th scope="col">Role Description</th>
-      <th scope="col" width="60">Action</th>
-    </tr>
-    </tr>
-  </thead>
+  .admin-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-<tbody>
+  .admin-subtitle {
+    font-size: 13px;
+    color: var(--erm-text-secondary);
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
 
-</tbody>
-</table> 
+  .admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-</div>  
+  /* KPI Summary Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
 
+  .kpi-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
 
-  <!-- Start PopUp -->
-   
-   <!-- Modal -->
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 35, 63, 0.06);
+  }
+
+  .kpi-icon-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .kpi-icon-blue { background: #EFF6FF; color: #2563EB; }
+  .kpi-icon-green { background: #ECFDF5; color: #10B981; }
+  .kpi-icon-purple { background: #FAF5FF; color: #9333EA; }
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    line-height: 1.2;
+  }
+
+  .kpi-label {
+    font-size: 12.5px;
+    color: var(--erm-text-secondary);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  /* Content Card */
+  .admin-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+  }
+
+  .admin-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--erm-border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #FCFDFE;
+  }
+
+  .search-input-group {
+    position: relative;
+    min-width: 260px;
+    max-width: 360px;
+  }
+
+  .search-input-group i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+  }
+
+  .search-input-group input {
+    padding-left: 36px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--erm-border);
+    font-size: 13.5px;
+    background: #FFFFFF;
+  }
+
+  .search-input-group input:focus {
+    border-color: var(--erm-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  /* Buttons */
+  .btn-erm-primary {
+    background: var(--erm-blue);
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 13.5px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    transition: all 0.15s ease;
+  }
+
+  .btn-erm-primary:hover {
+    background: #1D4ED8;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-erm-secondary {
+    background: #FFFFFF;
+    color: var(--erm-text-primary);
+    border: 1px solid var(--erm-border);
+    font-weight: 600;
+    font-size: 13.5px;
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .btn-erm-secondary:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: var(--erm-navy);
+  }
+
+  /* Table Customizations */
+  #RoleList_wrapper {
+    padding: 0;
+  }
+
+  #RoleList thead th {
+    background: #F8FAFC !important;
+    color: var(--erm-navy) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 18px !important;
+    border-bottom: 1px solid var(--erm-border) !important;
+    border-top: none !important;
+  }
+
+  #RoleList tbody td {
+    padding: 14px 18px !important;
+    font-size: 13.5px !important;
+    color: var(--erm-text-primary) !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+  }
+
+  #RoleList tbody tr:hover td {
+    background-color: #F8FAFC !important;
+  }
+
+  .role-title-cell {
+    font-weight: 700;
+    color: var(--erm-navy);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .role-badge-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #FAF5FF;
+    color: #7E22CE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .menu-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .menu-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: #F1F5F9;
+    color: #334155;
+    border: 1px solid #E2E8F0;
+  }
+
+  .menu-chip.chip-active {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border-color: #DBEAFE;
+  }
+
+  .action-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--erm-text-secondary);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+
+  .action-btn:hover {
+    background: #F1F5F9;
+    color: var(--erm-navy);
+  }
+
+  .action-btn.edit-btn:hover {
+    background: #EFF6FF;
+    color: var(--erm-blue);
+    border-color: #BFDBFE;
+  }
+
+  .action-btn.delete-btn:hover {
+    background: #FEF2F2;
+    color: var(--erm-danger);
+    border-color: #FECACA;
+  }
+
+  /* Modal Customizations */
+  .modal-content {
+    border-radius: 14px;
+    border: 1px solid var(--erm-border);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-header {
+    background: #F8FAFC;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--erm-border);
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .modal-footer {
+    padding: 14px 24px;
+    background: #F8FAFC;
+    border-top: 1px solid var(--erm-border);
+  }
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid var(--erm-border);
+    font-size: 13.5px;
+    padding: 8px 12px;
+  }
+
+  .form-control:focus {
+    border-color: var(--erm-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  /* Permission Checkbox Grid */
+  .permission-panel {
+    background: #F8FAFC;
+    border: 1px solid var(--erm-border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+
+  .permission-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #E2E8F0;
+  }
+
+  .permission-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .permission-quick-toggle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--erm-blue);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .permission-quick-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .permission-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  .permission-card {
+    background: #FFFFFF;
+    border: 1px solid var(--erm-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .permission-card:hover {
+    border-color: var(--erm-blue);
+    background: #F8FAFC;
+  }
+
+  .permission-card.is-checked {
+    border-color: #BFDBFE;
+    background: #EFF6FF;
+  }
+
+  .permission-card input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--erm-blue);
+  }
+
+  .permission-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--erm-text-primary);
+    user-select: none;
+    cursor: pointer;
+    flex-grow: 1;
+  }
+
+  /* Empty State */
+  .empty-state-box {
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #F1F5F9;
+    color: #94A3B8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+  }
+</style>
+
+<div class="admin-page-container">
+  <!-- Header with Breadcrumb & Actions -->
+  <div class="admin-header">
+    <div>
+      <div class="admin-breadcrumb">
+        <i class="bi bi-shield-lock-fill"></i> User Management &bull; Access Control
+      </div>
+      <h1 class="admin-title">
+        <i class="bi bi-shield-check text-primary"></i> User Roles &amp; Menu Permissions
+      </h1>
+      <p class="admin-subtitle">
+        Define enterprise role profiles and configure module-level authorization matrix for platform navigation.
+      </p>
+    </div>
+    <div class="admin-header-actions">
+      <button class="btn btn-erm-secondary" onclick="exportRolesCSV()" title="Export role definitions">
+        <i class="bi bi-file-earmark-arrow-down"></i> Export
+      </button>
+      <button class="btn btn-erm-secondary" onclick="loadrole()" title="Refresh role list">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+      <button class="btn btn-erm-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()">
+        <i class="bi bi-plus-lg"></i> Add User Role
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Stat Summary Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-purple">
+        <i class="bi bi-shield-lock"></i>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiTotalRoles">0</div>
+        <div class="kpi-label">Configured Roles</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-blue">
+        <i class="bi bi-layout-text-window-reverse"></i>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiTotalMenus">0</div>
+        <div class="kpi-label">Protected Menu Modules</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-green">
+        <i class="bi bi-key"></i>
+      </div>
+      <div>
+        <div class="kpi-value">RBAC Enforced</div>
+        <div class="kpi-label">Security Protocol</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Data Card -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="m-0 fw-bold" style="color: var(--erm-navy);">
+          <i class="bi bi-shield-shaded me-1 text-primary"></i> Role Definitions &amp; Menu Assignments
+        </h6>
+        <span class="badge bg-light text-secondary border px-2 py-1" id="badgeRoleCount">0 Roles</span>
+      </div>
+      <div class="search-input-group">
+        <i class="bi bi-search"></i>
+        <input type="text" id="roleSearchInput" class="form-control" placeholder="Search role name, description...">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="RoleList" class="table table-hover align-middle mb-0" style="width: 100%;">
+        <thead>
+          <tr class="tb-head">
+            <th scope="col" style="min-width: 180px;">Role Name</th>
+            <th scope="col" style="min-width: 220px;">Role Description</th>
+            <th scope="col" style="min-width: 320px;">Assigned Navigation Menus</th>
+            <th scope="col" style="width: 100px; text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic Records -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add / Edit User Role -->
 <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Add/Edit User Role </h1>
+        <h5 class="modal-title" id="staticBackdropLabel">
+          <i class="bi bi-shield-plus text-primary" id="modalRoleTitleIcon"></i> <span id="modalRoleTitleText">Add New User Role</span>
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body">
-       <div class="row">
+        <form id="roleForm" onsubmit="event.preventDefault(); saveusersrole();">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="roleName" class="form-label">Role Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="roleName" placeholder="e.g. Risk Manager, Executive Reviewer" required autofocus>
+              <div class="field-help">Unique display title for this permission tier.</div>
+            </div>
 
-      <div class="col-lg-12">
-    <div class="row mb-3">
-  <label for="colFormLabelSm" class="col-sm-3 col-form-label col-form-label-sm">Role Name <span class="star">*</span></label>
-  <div class="col-sm-9">
-    <input type="text" class="form-control form-control-sm" id="roleName" placeholder="Role Name">
-  </div>
-  </div>
-      </div>
+            <div class="col-md-6">
+              <label for="roleDescription" class="form-label">Role Description</label>
+              <input type="text" class="form-control" id="roleDescription" placeholder="e.g. Departmental oversight and risk approval access">
+              <div class="field-help">Brief overview of responsibilities and scope.</div>
+            </div>
 
-      <div class="col-lg-12">
-    <div class="row mb-3">
-  <label for="colFormLabelSm" class="col-sm-3 col-form-label col-form-label-sm">Role Description</label>
-  <div class="col-sm-9">
-  <textarea class="form-control form-control-sm" rows="3" id="roleDescription" placeholder="Role Description"></textarea>
-  </div>
-  </div>
-      </div>
+            <!-- Visual Menu Permissions Grid -->
+            <div class="col-12">
+              <div class="permission-panel">
+                <div class="permission-header">
+                  <div class="permission-title">
+                    <i class="bi bi-toggles text-primary"></i> Authorized Menu Access
+                  </div>
+                  <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="permission-quick-toggle" onclick="toggleAllMenus(true)">Select All</button>
+                    <span class="text-muted small">&bull;</span>
+                    <button type="button" class="permission-quick-toggle text-secondary" onclick="toggleAllMenus(false)">Clear All</button>
+                  </div>
+                </div>
 
-
-      </div>
-
-
-      <div class="bd-example m-0 border-0 tab-content active table-responsive"> 
-<table id="MenuList" class="table table-hover table-bordered" style="width: 100%;">
-  <thead>
-    <tr class="tb-head">
-      <!-- <th width="10%"><input type="checkbox" id="selectAll"></th> -->
-       <th>Select</th>
-      <th scope="col">Menu Name</th>
-    </tr>
-    </tr>
-  </thead>
-
-</tbody>
-</table> 
-
-</div>  
-
+                <div id="dynamicPermissionGrid" class="permission-grid">
+                  <!-- Dynamically populated checkboxes -->
+                  <div class="text-muted small p-2">Loading system menus...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
       </div>
 
       <div class="modal-footer">
-        
-          <button type="button" class="btn btn-primary text-white" onclick="saveusersrole()">Save</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" >Close</button>
+        <button type="button" class="btn btn-erm-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-erm-primary" id="btnSaveRole" onclick="saveusersrole()">
+          <i class="bi bi-check2-circle"></i> Save User Role
+        </button>
       </div>
     </div>
   </div>
-  
-
-    <!--End PopUp-->
-  
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const selectAll = document.getElementById("selectAll");
-
-    // MASTER CLICK
-    selectAll.addEventListener("click", function () {
-        const checkboxes = document.querySelectorAll(".childCheckbox");
-
-        checkboxes.forEach(function (checkbox) {
-            checkbox.checked = selectAll.checked;
-        });
-    });
-
-    // CHILD CLICK
-    document.addEventListener("click", function (e) {
-        if (e.target.classList.contains("childCheckbox")) {
-
-            const checkboxes = document.querySelectorAll(".childCheckbox");
-            const checked = document.querySelectorAll(".childCheckbox:checked");
-
-            selectAll.checked = checkboxes.length === checked.length;
-        }
-    });
-
-});
-	</script>
-  
-          </div>
-          <!--end::Container-->
-          <!-- Toast -->
-<div class="toast position-fixed top-0 end-0 p-3 mt-5" id="toastMsg" style="z-index:9999!important;">
-<div class="toast-body bg-success text-white"></div>
-
 </div>
+
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deleteRoleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center p-4">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEF2F2; color: #EF4444; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 16px;">
+          <i class="bi bi-shield-exclamation"></i>
         </div>
-        <!--end::App Content-->
-      
-    <script>
-      let table;
-let selectedRow = null;
+        <h6 class="fw-bold mb-2" style="color: var(--erm-navy);">Delete User Role?</h6>
+        <p class="text-muted small mb-4">Are you sure you want to delete <strong id="deleteRoleName">this role</strong>? Assigned users may lose access permissions.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <button type="button" class="btn btn-erm-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm px-3" id="btnConfirmDeleteRole" onclick="executeDeleteRole()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+  <div id="toastMsg" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-2" id="toastMsgBody">
+        <i class="bi bi-check-circle-fill"></i> <span>Success message</span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='cdn/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
+
+<script>
+let roleDataTable = null;
 let selectedId = null;
+let pendingDeleteRoleId = null;
+let rawRoleList = [];
+let cachedMenuList = [];
+let menuIdMap = {};
+
+const MENU_ICONS = {
+  1: "bi-grid-1x2",
+  2: "bi-clipboard-data",
+  3: "bi-people",
+  4: "bi-shield-lock",
+  5: "bi-building",
+  6: "bi-toggles",
+  7: "bi-file-earmark-arrow-up",
+  8: "bi-cloud-arrow-up"
+};
+
+$(document).ready(function() {
+  loadmenulist().then(() => {
+    loadrole();
+  });
+
+  $('#roleSearchInput').on('keyup', function() {
+    if (roleDataTable) {
+      roleDataTable.search(this.value).draw();
+    }
+  });
+});
 
 async function loadmenulist() {
   try {
-    //alert("loadmenulist");
     const response = await axios.get('/FillMenuList');
-    console.log("response FillMenuList", response);
+    console.log("FillMenuList response:", response);
 
-    if (response.data.Error.Error === false) {
-      var data = response.data.data;
-
-      $('#MenuList').DataTable({
-        destroy: true,
-        data: data,
-        paging: false,
-        autoWidth: false, 
-        columns: [
-          
-          {
-            data: "menu_id",
-            width:"50px",
-            render: function (data) {
-              return `
-               <input type="checkbox" class="row-checkbox" value="${data}" />
-              `;
-            }
-          },
-          { data: "menu_name" }
-        ]
-      });
-
-
-    } else {
-      showToast(response.data.Error.Error_message);
+    let data = [];
+    if (response.data && (response.data.Error === false || (response.data.Error && response.data.Error.Error === false) || response.data.data)) {
+      data = response.data.data || [];
+    } else if (Array.isArray(response.data)) {
+      data = response.data;
     }
 
+    cachedMenuList = data;
+    menuIdMap = {};
+    data.forEach(m => {
+      menuIdMap[m.menu_id] = m.menu_name;
+    });
+
+    $('#kpiTotalMenus').text(data.length);
+    renderPermissionGrid(data);
+
   } catch (error) {
-    showToast("Failed to load MenuList");
+    console.error("loadmenulist Error:", error);
   }
 }
 
+function renderPermissionGrid(menus) {
+  const container = document.getElementById("dynamicPermissionGrid");
+  if (!container) return;
 
+  if (!menus || menus.length === 0) {
+    container.innerHTML = '<div class="text-muted small">No menu modules configured in system.</div>';
+    return;
+  }
 
-$(document).ready(function(){
- 
- loadmenulist();
-  loadrole();
-});
+  let html = '';
+  menus.forEach(m => {
+    const icon = MENU_ICONS[m.menu_id] || "bi-app";
+    html += `
+      <label class="permission-card" id="permCard_${m.menu_id}">
+        <input type="checkbox" class="row-checkbox" value="${m.menu_id}" onchange="updatePermCardState(${m.menu_id})">
+        <i class="bi ${icon} text-primary fs-6"></i>
+        <span class="permission-label">${escapeHtml(m.menu_name)}</span>
+      </label>
+    `;
+  });
 
+  container.innerHTML = html;
+}
 
+function updatePermCardState(menuId) {
+  const card = document.getElementById(`permCard_${menuId}`);
+  if (!card) return;
+  const cb = card.querySelector('input[type="checkbox"]');
+  if (cb && cb.checked) {
+    card.classList.add('is-checked');
+  } else {
+    card.classList.remove('is-checked');
+  }
+}
+
+function toggleAllMenus(checked) {
+  document.querySelectorAll("#dynamicPermissionGrid .row-checkbox").forEach(cb => {
+    cb.checked = checked;
+    updatePermCardState(cb.value);
+  });
+}
 
 async function loadrole() {
   try {
     const response = await axios.get('/get_usersrole_all');
-    
-    if (response.data.Error.Error === false) {
-      var data = response.data.data;
+    console.log("get_usersrole_all response:", response);
 
-      $('#RoleList').DataTable({
-        destroy: true,
-        data: data,
-        columns: [
-          { data: "name" },
-          { data: "description" },
-         //{
-         //  data: "id",
-         //  render: function (data) {
-         //    return `
-         //      <a href="#"><i class="bi bi-pencil-square edit-icon-color"
-         //      data-bs-toggle="modal" title="Edit" 
-         //      onclick="editusersrole(${data})"></i></a>
-         //      |
-         //      <a href="#"><i class="bi bi-trash delete-icon-color"
-         //      data-bs-toggle="tooltip" title="History" onclick="deleteusersrole(${data})"></i></a>
-         //    `;
-         //  }
-         //}
-
-         {
-           data: "id",
-           render: function (data) {
-             return `
-               <a href="#"><i class="bi bi-pencil-square edit-icon-color"
-               data-bs-toggle="modal" title="Edit" 
-               onclick="editusersrole(${data})"></i></a>
-             `;
-           }
-         }
-        ]
-      });
-
-
-    } else {
-      showToast(response.data.Error.Error_message);
+    let data = [];
+    if (response.data && (response.data.Error === false || (response.data.Error && response.data.Error.Error === false) || response.data.data)) {
+      data = response.data.data || [];
+    } else if (Array.isArray(response.data)) {
+      data = response.data;
     }
 
+    rawRoleList = data;
+    updateRoleKPIs(data);
+
+    if (roleDataTable) {
+      roleDataTable.destroy();
+    }
+
+    roleDataTable = $('#RoleList').DataTable({
+      destroy: true,
+      data: data,
+      dom: 'rtip',
+      pageLength: 10,
+      order: [[0, 'asc']],
+      language: {
+        emptyTable: `
+          <div class="empty-state-box">
+            <div class="empty-state-icon"><i class="bi bi-shield-lock"></i></div>
+            <h6 class="fw-bold text-dark mb-1">No User Roles Defined</h6>
+            <p class="text-muted small mb-3">Create access roles to grant menu modules and enterprise governance responsibilities.</p>
+            <button class="btn btn-erm-primary btn-sm" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()">
+              <i class="bi bi-plus-lg"></i> Add First Role
+            </button>
+          </div>
+        `
+      },
+      columns: [
+        {
+          data: "name",
+          render: function(data) {
+            return `
+              <div class="role-title-cell">
+                <div class="role-badge-icon"><i class="bi bi-shield-lock"></i></div>
+                <span>${escapeHtml(data || "Untitled Role")}</span>
+              </div>
+            `;
+          }
+        },
+        {
+          data: "description",
+          render: function(data) {
+            if (!data || !data.trim()) return '<span class="text-muted small fst-italic">No description provided</span>';
+            return `<span class="text-secondary small">${escapeHtml(data)}</span>`;
+          }
+        },
+        {
+          data: "menuids",
+          render: function(data) {
+            const menuIds = Array.isArray(data) ? data : [];
+            if (menuIds.length === 0) {
+              return '<span class="badge bg-light text-muted border">No Menus Assigned</span>';
+            }
+
+            let chips = '';
+            menuIds.forEach(id => {
+              const menuName = menuIdMap[id] || `Menu #${id}`;
+              const icon = MENU_ICONS[id] || "bi-app";
+              chips += `<span class="menu-chip chip-active"><i class="bi ${icon}"></i>${escapeHtml(menuName)}</span>`;
+            });
+
+            return `<div class="menu-chip-list">${chips}</div>`;
+          }
+        },
+        {
+          data: "id",
+          orderable: false,
+          className: "text-center",
+          render: function(data, type, row) {
+            return `
+              <div class="action-btn-group justify-content-center">
+                <button type="button" class="action-btn edit-btn" onclick="editusersrole(${data})" title="Edit Role & Permissions">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button type="button" class="action-btn delete-btn" onclick="confirmDeleteRole(${data}, '${escapeAttr(row.name || '')}')" title="Delete Role">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ]
+    });
+
   } catch (error) {
-    showToast("Failed to load MenuRole");
+    console.error("loadrole Error:", error);
+    showToast("Failed to load user roles", "bg-danger");
   }
 }
 
-function validate(){
-  if(!roleName.value){
-    showToast("Fill required fields","bg-danger");
+function updateRoleKPIs(data) {
+  const total = data.length;
+  $('#kpiTotalRoles').text(total);
+  $('#badgeRoleCount').text(`${total} Roles`);
+}
+
+function validate() {
+  const name = $('#roleName').val().trim();
+  if (!name) {
+    showToast("Please enter a Role Name", "bg-danger");
+    $('#roleName').focus();
     return false;
   }
   return true;
@@ -278,107 +896,188 @@ function validate(){
 
 function getSelectedMenuIds() {
   let ids = [];
-
-  document.querySelectorAll("#MenuList .row-checkbox:checked").forEach((cb) => {
-    ids.push(parseInt(cb.value)); 
+  document.querySelectorAll("#dynamicPermissionGrid .row-checkbox:checked").forEach((cb) => {
+    ids.push(parseInt(cb.value));
   });
-
   return ids;
 }
 
-async function saveusersrole(){
-  if(!validate()) return;
-  
+async function saveusersrole() {
+  if (!validate()) return;
+
+  const btn = $('#btnSaveRole');
+  btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...');
 
   const data = {
-    name:roleName.value,
-    description:roleDescription.value,
-    menuids:getSelectedMenuIds(),
+    name: $('#roleName').val().trim(),
+    description: $('#roleDescription').val().trim(),
+    menuids: getSelectedMenuIds()
   };
-  console.log("Data pass Object:", data);
 
-  if(selectedId){
-    await axios.put(`/usersrole/update/${selectedId}`,data);
-    
-    showToast("User Role updated successfully");
-    clearall();
-    
-  } else {
-    await axios.post('/usersrole/create',data)
-    //showToast("User Role created successfully");
-    //clearall();
-    .then(response => {
-        if (response.data.Error.Error === false) 
-        {
-            var data = response.data.data;
-            showToast("User Role created successfully");
-            clearall();
-          }
-          else {
-            //showToast(response.data.Error.Error_message);
-             showToast("Failed to create user role", "bg-danger");
-          }
-    })
+  try {
+    if (selectedId) {
+      await axios.put(`/usersrole/update/${selectedId}`, data);
+      showToast("User role and permissions updated successfully!", "bg-success");
+      clearall();
+      bootstrap.Modal.getInstance(document.getElementById('staticBackdrop')).hide();
+      await loadrole();
+    } else {
+      const response = await axios.post('/usersrole/create', data);
+      if (response.data && response.data.Error && response.data.Error.Error === true) {
+        showToast(response.data.Error.Error_message || "Failed to create user role", "bg-danger");
+      } else {
+        showToast("User role created successfully!", "bg-success");
+        clearall();
+        bootstrap.Modal.getInstance(document.getElementById('staticBackdrop')).hide();
+        await loadrole();
+      }
+    }
+  } catch (err) {
+    console.error("saveusersrole error:", err);
+    const msg = err.response?.data?.message || err.response?.data?.Error?.Error_message || "Failed to save user role";
+    showToast(msg, "bg-danger");
+  } finally {
+    btn.prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Save User Role');
   }
-  loadrole()
-  bootstrap.Modal.getInstance(staticBackdrop).hide();
-  
 }
 
-async function editusersrole(id){
- 
-  const res = await axios.get(`/usersrole/${id}`);
-  const u = res.data.data;
-  console.log("Data Get  editusersrole:", u);
+async function editusersrole(id) {
+  try {
+    selectedId = id;
 
-  selectedId = u.id;
-  roleName.value=u.name;
-  roleDescription.value=u.description;
-  setSelectedMenus(u.menuids);
-  
+    // Instant local cache check
+    let u = rawRoleList.find(x => x.id === id);
+    if (!u) {
+      const res = await axios.get(`/usersrole/${id}`);
+      u = res.data.data;
+      if (Array.isArray(u)) u = u[0];
+    }
 
-  new bootstrap.Modal(staticBackdrop).show();
+    if (!u) {
+      showToast("Role details not found", "bg-danger");
+      return;
+    }
+
+    $('#modalRoleTitleIcon').removeClass('bi-shield-plus').addClass('bi-pencil-square');
+    $('#modalRoleTitleText').text('Edit User Role & Permissions');
+
+    $('#roleName').val(u.name || '');
+    $('#roleDescription').val(u.description || '');
+    setSelectedMenus(u.menuids || []);
+
+    const modalEl = document.getElementById('staticBackdrop');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  } catch (err) {
+    console.error("editusersrole error:", err);
+    showToast("Failed to fetch user role details", "bg-danger");
+  }
 }
 
 function setSelectedMenus(menuIds) {
-  document.querySelectorAll("#MenuList .row-checkbox").forEach((cb) => {
+  const ids = Array.isArray(menuIds) ? menuIds : [];
+  document.querySelectorAll("#dynamicPermissionGrid .row-checkbox").forEach((cb) => {
     const value = parseInt(cb.value);
-    if (menuIds.includes(value)) {
-      cb.checked = true;
-    } else {
-      cb.checked = false;
-    }
-
+    cb.checked = ids.includes(value);
+    updatePermCardState(value);
   });
 }
 
-
-function showToast(msg,cls="bg-success"){
-  let toastEl=document.getElementById('toastMsg');
-  toastEl.querySelector('.toast-body').innerText=msg;
-  toastEl.querySelector('.toast-body').className="toast-body text-white "+cls;
-  new bootstrap.Toast(toastEl).show();
+function confirmDeleteRole(id, name) {
+  pendingDeleteRoleId = id;
+  $('#deleteRoleName').text(name ? `"${name}"` : "this role");
+  const modal = new bootstrap.Modal(document.getElementById('deleteRoleModal'));
+  modal.show();
 }
 
-async function deleteusersrole(id){
-  if(!confirm("Are you sure you want to delete this user role?")){
+async function executeDeleteRole() {
+  if (!pendingDeleteRoleId) return;
+
+  const btn = $('#btnConfirmDeleteRole');
+  btn.prop('disabled', true).text('Deleting...');
+
+  try {
+    await axios.delete(`/usersrole/delete/${pendingDeleteRoleId}`);
+    showToast("User role deleted successfully!", "bg-success");
+    bootstrap.Modal.getInstance(document.getElementById('deleteRoleModal')).hide();
+    await loadrole();
+  } catch (err) {
+    console.error("deleteusersrole error:", err);
+    showToast("Failed to delete user role", "bg-danger");
+  } finally {
+    btn.prop('disabled', false).text('Delete');
+    pendingDeleteRoleId = null;
+  }
+}
+
+function clearall() {
+  $('#roleName').val("");
+  $('#roleDescription').val("");
+  toggleAllMenus(false);
+  selectedId = null;
+  $('#modalRoleTitleIcon').removeClass('bi-pencil-square').addClass('bi-shield-plus');
+  $('#modalRoleTitleText').text('Add New User Role');
+}
+
+function exportRolesCSV() {
+  if (!rawRoleList || rawRoleList.length === 0) {
+    showToast("No role data available to export", "bg-warning");
     return;
   }
-  await axios.delete(`/usersrole/delete/${id}`);
+
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "ID,Role Name,Description,Assigned Menus\n";
+
+  rawRoleList.forEach(r => {
+    const menuNames = (r.menuids || []).map(id => menuIdMap[id] || `#${id}`).join("; ");
+    const row = [
+      r.id || '',
+      `"${(r.name || '').replace(/"/g, '""')}"`,
+      `"${(r.description || '').replace(/"/g, '""')}"`,
+      `"${menuNames.replace(/"/g, '""')}"`
+    ];
+    csvContent += row.join(",") + "\n";
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `ERM_Roles_Permissions_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function showToast(msg, bgClass = "bg-success") {
+  const toastEl = document.getElementById('toastMsg');
+  const toastBody = document.getElementById('toastMsgBody');
   
-   loadrole();
-  showToast("User Role deleted successfully");
- 
+  toastEl.className = `toast align-items-center text-white border-0 shadow-lg ${bgClass}`;
+  
+  let icon = "bi-check-circle-fill";
+  if (bgClass.includes('danger')) icon = "bi-exclamation-octagon-fill";
+  if (bgClass.includes('warning')) icon = "bi-exclamation-triangle-fill";
+  if (bgClass.includes('info')) icon = "bi-info-circle-fill";
+
+  toastBody.innerHTML = `<i class="bi ${icon} fs-5 me-2"></i><span>${escapeHtml(msg)}</span>`;
+  
+  const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+  toast.show();
 }
 
-function clearall(){
-   roleName.value="";
-   roleDescription.value="";
-    document.querySelectorAll("#MenuList .row-checkbox").forEach(cb => {
-        cb.checked = false;
-    });
-    selectedId = null;
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
-    </script>
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/'/g, "\\'");
+}
+</script>
 {% endblock %}
-

@@ -731,7 +731,15 @@
   var isProcessing = false;
 
   $(document).ready(function () {
-    $("#rrid").val('0');  
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramRiskId = urlParams.get("id") || urlParams.get("rrid");
+    if (paramRiskId && paramRiskId !== "0") {
+      sessionStorage.setItem("rrid", paramRiskId);
+      sessionStorage.setItem("btn", "1");
+      $("#rrid").val(paramRiskId);
+    } else {
+      $("#rrid").val(sessionStorage.getItem("rrid") || '0');
+    }
     FillCoOwnerUserList();
     FillDepartment();
     FillApprovalStatusList('risk');
@@ -878,8 +886,8 @@
     $('#InherentLikelihoodBtn').val(l).trigger('change');
     $('#InherentImpactBtn').val(i).trigger('change');
 
-    $('.heatmap-cell').removeClass('active-inherent');
-    $(`.heatmap-cell[data-l="${l}"][data-i="${i}"]`).addClass('active-inherent');
+    $('#interactive5x5Grid .heatmap-cell').removeClass('active-inherent');
+    $(`#interactive5x5Grid .heatmap-cell[data-l="${l}"][data-i="${i}"]`).addClass('active-inherent');
 
     const score = l * i;
     let label = score >= 20 ? 'Critical' : (score >= 14 ? 'High' : (score >= 8 ? 'Medium' : 'Low'));
@@ -892,8 +900,8 @@
     $('#CurrentLikelihoodBtn').val(l).trigger('change');
     $('#CurrentImpactBtn').val(i).trigger('change');
 
-    $('.hm-cell-current').removeClass('active-residual');
-    $(`.hm-cell-current[data-l="${l}"][data-i="${i}"]`).addClass('active-residual');
+    $('#interactive5x5GridCurrent .heatmap-cell').removeClass('active-residual');
+    $(`#interactive5x5GridCurrent .heatmap-cell[data-l="${l}"][data-i="${i}"]`).addClass('active-residual');
 
     const score = l * i;
     let label = score >= 20 ? 'Critical' : (score >= 14 ? 'High' : (score >= 8 ? 'Medium' : 'Low'));
@@ -909,7 +917,8 @@
     $('#InherentImpactBtn').val('-1').trigger('change');
     $('#CurrentLikelihoodBtn').val('-1').trigger('change');
     $('#CurrentImpactBtn').val('-1').trigger('change');
-    $('.heatmap-cell').removeClass('active-inherent').removeClass('active-residual');
+    $('#interactive5x5Grid .heatmap-cell').removeClass('active-inherent');
+    $('#interactive5x5GridCurrent .heatmap-cell').removeClass('active-residual');
     $('#hmScoreBadge').attr('class', 'badge bg-secondary').text('Score: -');
     $('#hmCurrentScoreBadge').attr('class', 'badge bg-secondary').text('Score: -');
   }
@@ -919,26 +928,30 @@
   });
 
   function FillCoOwnerUserList() {
-    axios.get("/getdeptwiseuser", {
-      params: { dept_code: APP_DATA.userDept }
-    })
+    axios.get("/getalluser")
     .then(response => {
-      if (response.data.Error.Error === false) {
+      if (response.data && response.data.Error && response.data.Error.Error === false) {
         var data = response.data.data;
-        optionHTML_User_Co = '<option value="-1">--Select--</option>';
+        optionHTML_User_Co = '<option value="-1">--Select Co Risk Owner--</option>';
         for (var i = 0; i < data.length; i++) {
           optionHTML_User_Co += '<option value="' + data[i].id + '">' 
                               + data[i].first_name + ' - ' 
                               + data[i].last_name + 
                               '</option>';
         }
-        document.getElementById("CoRisk_Owner").innerHTML = optionHTML_User_Co;
+        const coEl = document.getElementById("CoRisk_Owner");
+        if (coEl) {
+          coEl.innerHTML = optionHTML_User_Co;
+          if (MASTER_DATA && MASTER_DATA.risk_co_owner_id && MASTER_DATA.risk_co_owner_id !== 0 && MASTER_DATA.risk_co_owner_id !== "0" && MASTER_DATA.risk_co_owner_id !== -1) {
+            $(coEl).val(MASTER_DATA.risk_co_owner_id);
+          }
+        }
       } else {
         showToast(response.data.Error.Error_message, "bg-danger");
       }
     })
     .catch(error => {
-      showToast("Failed to load co owner list", "bg-danger");
+      console.error("Failed to load co owner list:", error);
     });
   }
 
@@ -956,6 +969,13 @@
           }
           document.getElementById("Risk_Owner").innerHTML = optionHTML_User;
           document.getElementById("Risk_Owner").value = APP_DATA.userId;
+          
+          const urlParams = new URLSearchParams(window.location.search);
+          const paramRiskId = urlParams.get("id") || urlParams.get("rrid");
+          if (paramRiskId && paramRiskId !== "0") {
+            sessionStorage.setItem("rrid", paramRiskId);
+            sessionStorage.setItem("btn", "1");
+          }
           
           let risk_id = sessionStorage.getItem("rrid");
           let btn = sessionStorage.getItem("btn");
@@ -1479,7 +1499,12 @@
         $("#Risk_Id").val(response.data.data[0].risk_id);
         $("#Department").val(response.data.data[0].dept_id);
         $("#Risk_Owner").val(response.data.data[0].risk_owner_id);
-        $("#CoRisk_Owner").val(response.data.data[0].risk_co_owner_id);
+        const coOwnerVal = response.data.data[0].risk_co_owner_id;
+        if (coOwnerVal && coOwnerVal !== 0 && coOwnerVal !== "0" && coOwnerVal !== -1) {
+          $("#CoRisk_Owner").val(coOwnerVal);
+        } else {
+          $("#CoRisk_Owner").val("-1");
+        }
         $("#Financial_Year").val(response.data.data[0].financial_year);
         $("#Approval_Status").val(response.data.data[0].risk_status);
         let app_status = response.data.data[0].rd_risk_status_name;

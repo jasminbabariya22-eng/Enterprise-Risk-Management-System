@@ -1,297 +1,908 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <style>
-    .disabled {
-        pointer-events: none;
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
+  :root {
+    --erm-navy: #10233F;
+    --erm-navy-dark: #0A1728;
+    --erm-blue: #2563EB;
+    --erm-blue-light: #EFF6FF;
+    --erm-teal: #14B8A6;
+    --erm-teal-light: #F0FDFA;
+    --erm-bg: #F8FAFC;
+    --erm-card-bg: #FFFFFF;
+    --erm-border: #E2E8F0;
+    --erm-text-primary: #0F172A;
+    --erm-text-secondary: #64748B;
+    --erm-success: #10B981;
+    --erm-warning: #F59E0B;
+    --erm-danger: #EF4444;
+  }
+
+  body {
+    background-color: var(--erm-bg) !important;
+  }
+
+  .admin-page-container {
+    padding: 20px 24px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Header Styling */
+  .admin-header {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .admin-breadcrumb {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--erm-teal);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .admin-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .admin-subtitle {
+    font-size: 13px;
+    color: var(--erm-text-secondary);
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .stat-icon-green { background: #ECFDF5; color: #059669; }
+  .stat-icon-blue { background: var(--erm-blue-light); color: var(--erm-blue); }
+  .stat-icon-teal { background: var(--erm-teal-light); color: var(--erm-teal); }
+  .stat-icon-amber { background: #FEF3C7; color: #D97706; }
+
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--erm-text-secondary);
+  }
+
+  .stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin-top: 2px;
+  }
+
+  /* Card Container */
+  .upload-section-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .upload-section-header {
+    padding: 16px 24px;
+    background: #FAFCFF;
+    border-bottom: 1px solid var(--erm-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .upload-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .upload-section-body {
+    padding: 24px;
+  }
+
+  /* Drag and Drop Zone */
+  .drop-zone {
+    border: 2px dashed #CBD5E1;
+    border-radius: 12px;
+    padding: 40px 24px;
+    text-align: center;
+    background: #F8FAFC;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--erm-blue);
+    background: #EFF6FF;
+  }
+
+  .drop-zone-icon {
+    font-size: 48px;
+    color: var(--erm-blue);
+    margin-bottom: 12px;
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .drop-zone:hover .drop-zone-icon {
+    transform: translateY(-4px);
+  }
+
+  .drop-zone-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin-bottom: 6px;
+  }
+
+  .drop-zone-subtitle {
+    font-size: 13px;
+    color: var(--erm-text-secondary);
+    margin-bottom: 16px;
+  }
+
+  /* File preview item */
+  .file-preview-card {
+    display: none;
+    background: #FFFFFF;
+    border: 1px solid var(--erm-border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .file-details {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .file-icon {
+    font-size: 28px;
+    color: #107C41; /* Excel green */
+  }
+
+  .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--erm-navy);
+    word-break: break-all;
+  }
+
+  .file-meta {
+    font-size: 12px;
+    color: var(--erm-text-secondary);
+  }
+
+  /* Progress Bar */
+  .upload-progress-container {
+    display: none;
+    margin-top: 20px;
+  }
+
+  .progress-modern {
+    height: 8px;
+    border-radius: 6px;
+    background: #E2E8F0;
+    overflow: hidden;
+  }
+
+  .progress-bar-modern {
+    background: linear-gradient(90deg, var(--erm-blue) 0%, var(--erm-teal) 100%);
+    transition: width 0.3s ease;
+  }
+
+  /* Response Status Cards */
+  .result-banner {
+    display: none;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .result-banner-success {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+  }
+
+  .result-banner-danger {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+  }
+
+  .result-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .summary-pill {
+    background: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .summary-pill-label {
+    font-size: 12px;
+    color: var(--erm-text-secondary);
+    font-weight: 500;
+  }
+
+  .summary-pill-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--erm-navy);
+  }
+
+  /* Validation Error Table */
+  .error-table-container {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    background: #FFFFFF;
+    margin-top: 14px;
+  }
+
+  .error-table {
+    width: 100%;
+    margin-bottom: 0;
+    font-size: 12.5px;
+  }
+
+  .error-table thead th {
+    background: #FEF2F2;
+    color: #991B1B;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-bottom: 1px solid #FECACA;
+    position: sticky;
+    top: 0;
+  }
+
+  .error-table tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #FEE2E2;
+    color: #7F1D1D;
+  }
+
+  /* Specification Guide Box */
+  .guide-box {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .guide-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .col-pill {
+    display: inline-block;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11.5px;
+    font-family: monospace;
+    color: var(--erm-navy);
+    margin: 3px 4px 3px 0;
+  }
+
+  .col-pill.required {
+    border-color: #FCA5A5;
+    background: #FFF5F5;
+    color: #DC2626;
+  }
+
+  /* Buttons */
+  .btn-erm-primary {
+    background: var(--erm-blue);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  }
+
+  .btn-erm-primary:hover:not(:disabled) {
+    background: #1D4ED8;
+    color: #FFFFFF;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-erm-primary:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .btn-erm-outline {
+    background: transparent;
+    color: var(--erm-text-secondary);
+    border: 1px solid var(--erm-border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-erm-outline:hover {
+    background: #F1F5F9;
+    color: var(--erm-navy);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 </style>
 
 <script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
 
-<!--begin::App Content Header-->
-<div class="app-content-header">
-    <div class="container-fluid">
-        <div class="row">
-
-            <div class="col-sm-6">
-
-                <span style="float:left; margin-right:20px">
-                    Upload Risk
-                </span>
-
-                <!-- Title Icons -->
-                  <span>
-            <a class="pl-5 navigate plus-icon-color" href="" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()"><i class="bi bi-plus-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Add"></i></a>
-            <a class="pl-5 edit-icon-color disabled" href="#"><i class="bi bi-pencil-square" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"></i></a>
-            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"></i></a>
-            <a class="pl-5 export-icon-color" href="#"><i class="bi bi-file-earmark-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Export"></i></a>
-
-        </span>
-
-            </div>
-
-            <div class="col-sm-6">
-
-            </div>
-
-        </div>
+<div class="admin-page-container">
+  <!-- Header -->
+  <div class="admin-header">
+    <div>
+      <div class="admin-breadcrumb">
+        <i class="bi bi-cloud-arrow-up"></i> Data Management &bull; Bulk Risk Upload
+      </div>
+      <h1 class="admin-title">
+        <i class="bi bi-file-earmark-spreadsheet text-success"></i> Bulk Risk Spreadsheet Upload
+      </h1>
+      <p class="admin-subtitle">
+        Upload standardized Excel (.xlsx) workbooks to bulk register risk entries, descriptions, treatments, and user assignments.
+      </p>
     </div>
-</div>
-<!--end::App Content Header-->
-
-
-
-<!--begin::App Content-->
-<div class="app-content">
-    <div class="container-fluid">
-
-        <div id="div1">
-
-            <div class="modal-body">
-
-                <div class="row">
-
-                    <div class="col-lg-8">
-
-                        <div class="row mb-3">
-
-                            <label class="col-sm-3 col-form-label col-form-label-sm">
-                                Upload Excel
-                                <span class="star">*</span>
-                            </label>
-
-                            <div class="col-sm-9">
-
-                                <input
-                                    type="file"
-                                    class="form-control"
-                                    id="riskFile"
-                                    accept=".xlsx">
-
-                                <small class="text-muted">
-                                    Only Excel (.xlsx) files are allowed.
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-
-                <button
-                    id="btnProceed"
-                    type="button"
-                    class="btn btn-primary"
-                    onclick="uploadRisk()">
-
-                    Proceed
-
-                </button>
-
-                <button
-                    id="btnCancel"
-                    type="button"
-                    class="btn btn-secondary ms-2"
-                    onclick="cancelUpload()">
-
-                    Cancel
-
-                </button>
-
-            </div>
-
-        </div>
-
+    <div class="d-flex align-items-center gap-2">
+      <a href="/riskRegister" class="btn btn-erm-outline">
+        <i class="bi bi-journal-text"></i> View Risk Register
+      </a>
     </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon-wrapper stat-icon-green">
+        <i class="bi bi-file-earmark-excel"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Supported Format</span>
+        <span class="stat-value">.xlsx (Excel OpenXML)</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper stat-icon-blue">
+        <i class="bi bi-check2-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Validation Engine</span>
+        <span class="stat-value">Strict Multi-tier</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper stat-icon-teal">
+        <i class="bi bi-database-check"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Database Ingestion</span>
+        <span class="stat-value">Registers, Descs & Treatments</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon-wrapper stat-icon-amber">
+        <i class="bi bi-hdd-network"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Max File Size</span>
+        <span class="stat-value">25 MB</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Response Banner -->
+  <div id="successBanner" class="result-banner result-banner-success">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-check-circle-fill text-success fs-3"></i>
+      <div>
+        <h4 class="mb-1 text-success fw-bold fs-6">Excel Spreadsheet Ingested Successfully</h4>
+        <p id="successMessage" class="mb-0 text-muted small">Risk records and associated workflows were committed to the database.</p>
+      </div>
+    </div>
+    <div id="successSummaryGrid" class="result-summary-grid">
+      <div class="summary-pill">
+        <span class="summary-pill-label">Users Mapped</span>
+        <span class="summary-pill-val text-primary" id="sumUsers">0</span>
+      </div>
+      <div class="summary-pill">
+        <span class="summary-pill-label">Risk Registers</span>
+        <span class="summary-pill-val text-success" id="sumRegisters">0</span>
+      </div>
+      <div class="summary-pill">
+        <span class="summary-pill-label">Descriptions</span>
+        <span class="summary-pill-val text-info text-dark" id="sumDescriptions">0</span>
+      </div>
+      <div class="summary-pill">
+        <span class="summary-pill-label">Treatments</span>
+        <span class="summary-pill-val text-teal" id="sumTreatments">0</span>
+      </div>
+    </div>
+    <div class="mt-3 pt-2 border-top d-flex gap-2">
+      <a href="/riskRegister" class="btn btn-sm btn-primary rounded-2">
+        <i class="bi bi-arrow-right-circle me-1"></i> View Ingested Risks
+      </a>
+      <button type="button" class="btn btn-sm btn-outline-secondary rounded-2" onclick="dismissBanners()">
+        Dismiss
+      </button>
+    </div>
+  </div>
+
+  <!-- Error / Validation Banner -->
+  <div id="errorBanner" class="result-banner result-banner-danger">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-exclamation-octagon-fill text-danger fs-3"></i>
+      <div>
+        <h4 id="errorBannerTitle" class="mb-1 text-danger fw-bold fs-6">Spreadsheet Validation Failed</h4>
+        <p id="errorBannerMessage" class="mb-0 text-danger small">Please correct the spreadsheet errors listed below and re-upload.</p>
+      </div>
+    </div>
+    
+    <!-- Table for cell/row validation errors -->
+    <div id="errorTableContainer" class="error-table-container" style="display: none;">
+      <table class="table error-table">
+        <thead>
+          <tr>
+            <th style="width: 80px;">Row</th>
+            <th style="width: 180px;">Column / Field</th>
+            <th style="width: 180px;">Input Value</th>
+            <th>Validation Error Message</th>
+          </tr>
+        </thead>
+        <tbody id="errorTableBody">
+          <!-- Injected dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 pt-2 border-top d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-danger rounded-2" onclick="dismissBanners()">
+        Dismiss & Try Again
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Upload Card -->
+  <div class="upload-section-card">
+    <div class="upload-section-header">
+      <h3 class="upload-section-title">
+        <i class="bi bi-upload text-primary"></i> 1. Select & Upload Risk Workbook
+      </h3>
+      <span class="badge bg-light text-secondary border">Excel Parser Ingestion</span>
+    </div>
+    
+    <div class="upload-section-body">
+      <!-- Drag & Drop Zone -->
+      <div id="dropZone" class="drop-zone" onclick="document.getElementById('riskFile').click();">
+        <input
+          type="file"
+          class="d-none"
+          id="riskFile"
+          accept=".xlsx"
+          onchange="handleFileSelected(this.files)">
+
+        <i class="bi bi-file-earmark-arrow-up drop-zone-icon"></i>
+        <div class="drop-zone-title">Drag and drop your Excel spreadsheet here</div>
+        <div class="drop-zone-subtitle">or click to browse your local files (.xlsx format only, max 25MB)</div>
+        <button type="button" class="btn btn-sm btn-outline-primary px-3 rounded-pill" onclick="event.stopPropagation(); document.getElementById('riskFile').click();">
+          <i class="bi bi-folder2-open me-1"></i> Browse File
+        </button>
+      </div>
+
+      <!-- File Details Preview Card -->
+      <div id="filePreviewCard" class="file-preview-card mt-3" style="display: none;">
+        <div class="file-details">
+          <i class="bi bi-file-earmark-excel-fill file-icon"></i>
+          <div>
+            <div class="file-name" id="previewFileName">filename.xlsx</div>
+            <div class="file-meta" id="previewFileSize">0 KB</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+            <i class="bi bi-check-lg me-1"></i> Ready
+          </span>
+          <button type="button" class="btn btn-sm btn-outline-danger rounded-2" onclick="cancelUpload()" title="Remove file">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload Progress Container -->
+      <div id="uploadProgressContainer" class="upload-progress-container">
+        <div class="d-flex justify-content-between align-items-center mb-1 small text-muted">
+          <span id="progressStatusText"><i class="bi bi-arrow-repeat spin me-1"></i> Uploading & Parsing Spreadsheet...</span>
+          <span id="progressPercentText">100%</span>
+        </div>
+        <div class="progress progress-modern">
+          <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated progress-bar-modern" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="d-flex align-items-center justify-content-end gap-3 mt-4 pt-3 border-top">
+        <button id="btnCancel" type="button" class="btn btn-erm-outline" onclick="cancelUpload()">
+          <i class="bi bi-x-circle"></i> Clear Selection
+        </button>
+        <button id="btnProceed" type="button" class="btn btn-erm-primary" onclick="uploadRisk()">
+          <i class="bi bi-cloud-arrow-up"></i> Proceed Upload
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spreadsheet Template Specification Guide -->
+  <div class="guide-box">
+    <div class="guide-title">
+      <i class="bi bi-info-square-fill text-primary"></i> Required Spreadsheet Schema & Field Reference
+    </div>
+    <p class="text-secondary small mb-3">
+      Ensure your Excel workbook has the first worksheet structured with the expected enterprise headers. The parser automatically validates department codes, risk scoring matrix values, and owner emails before committing.
+    </p>
+
+    <div class="mb-3">
+      <div class="small fw-bold text-navy mb-1">Mandatory Columns:</div>
+      <div>
+        <span class="col-pill required">Department Code</span>
+        <span class="col-pill required">Risk ID / Number</span>
+        <span class="col-pill required">Risk Name / Statement</span>
+        <span class="col-pill required">Risk Category</span>
+        <span class="col-pill required">Inherent Likelihood</span>
+        <span class="col-pill required">Inherent Impact</span>
+        <span class="col-pill required">Risk Owner Email</span>
+        <span class="col-pill required">Treatment Action</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="small fw-bold text-navy mb-1">Optional & Secondary Columns:</div>
+      <div>
+        <span class="col-pill">Risk Description</span>
+        <span class="col-pill">Root Cause</span>
+        <span class="col-pill">Consequences</span>
+        <span class="col-pill">Current Controls</span>
+        <span class="col-pill">Residual Likelihood</span>
+        <span class="col-pill">Residual Impact</span>
+        <span class="col-pill">Action Owner Email</span>
+        <span class="col-pill">Target Date (YYYY-MM-DD)</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-
-
-<!-- Toast -->
-<div class="toast position-fixed top-0 end-0 p-3 mt-5"
-     id="toastMsg"
-     style="z-index:9999!important;">
-
-    <div class="toast-body bg-success text-white"></div>
-
+<!-- Global Toast -->
+<div class="toast position-fixed top-0 end-0 p-3 mt-5" id="toastMsg" style="z-index: 99999 !important;">
+  <div class="toast-body bg-success text-white rounded-3 shadow-lg d-flex align-items-center justify-content-between">
+    <span id="toastText">Action completed successfully</span>
+    <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+  </div>
 </div>
-
-
 
 <script>
+  $(document).ready(function () {
+    setupDragAndDrop();
+  });
 
-$(document).ready(function(){
+  function setupDragAndDrop() {
+    const dropZone = document.getElementById("dropZone");
 
-});
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('dragover');
+      }, false);
+    });
 
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+      }, false);
+    });
 
-function validateFile(){
+    dropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        document.getElementById('riskFile').files = files;
+        handleFileSelected(files);
+      }
+    }, false);
+  }
 
-    let fileInput=document.getElementById("riskFile");
-
-    if(fileInput.files.length===0){
-
-        showToast("Please select an Excel file.","bg-danger");
-        return false;
+  function handleFileSelected(files) {
+    if (!files || files.length === 0) {
+      cancelUpload();
+      return;
     }
 
-    let file=fileInput.files[0];
+    const file = files[0];
+    const ext = file.name.split('.').pop().toLowerCase();
 
-    let extension=file.name.split('.').pop().toLowerCase();
+    if (ext !== "xlsx") {
+      showToast("Only Excel (.xlsx) files are allowed.", "bg-danger");
+      cancelUpload();
+      return;
+    }
 
-    if(extension!="xlsx"){
+    if (file.size > 25 * 1024 * 1024) {
+      showToast("File size exceeds maximum limit of 25MB.", "bg-danger");
+      cancelUpload();
+      return;
+    }
 
-        showToast("Only Excel (.xlsx) files are allowed.","bg-danger");
+    $("#previewFileName").text(file.name);
+    $("#previewFileSize").text(formatBytes(file.size));
+    $("#filePreviewCard").fadeIn(200);
+    dismissBanners();
+  }
 
-        fileInput.value="";
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
 
-        return false;
+  function validateFile() {
+    const fileInput = document.getElementById("riskFile");
+    if (!fileInput.files || fileInput.files.length === 0) {
+      showToast("Please select an Excel file (.xlsx) first.", "bg-danger");
+      return false;
+    }
+
+    const file = fileInput.files[0];
+    const extension = file.name.split('.').pop().toLowerCase();
+
+    if (extension !== "xlsx") {
+      showToast("Only Excel (.xlsx) files are allowed.", "bg-danger");
+      cancelUpload();
+      return false;
     }
 
     return true;
+  }
 
-}
+  async function uploadRisk() {
+    if (!validateFile()) return;
 
+    dismissBanners();
+    const btn = document.getElementById("btnProceed");
+    const progressContainer = document.getElementById("uploadProgressContainer");
 
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Ingesting...';
+    progressContainer.style.display = "block";
 
-async function uploadRisk(){
+    const formData = new FormData();
+    formData.append("file", document.getElementById("riskFile").files[0]);
 
-    if(!validateFile())
-        return;
-
-    let btn=document.getElementById("btnProceed");
-
-    btn.disabled=true;
-    btn.innerHTML="Uploading...";
-
-    let formData=new FormData();
-
-    formData.append(
-        "file",
-        document.getElementById("riskFile").files[0]
-    );
-
-    try{
-
-        const response=await axios.post(
-            "/uploadRisk/Proceed",
-            formData,
-            {
-                headers:{
-                    "Content-Type":"multipart/form-data"
-                }
-            }
-        );
-
-        console.log(response.data);
-
-        if(response.data.Error){
-
-            if(response.data.Error.Error==false){
-
-                showToast(
-                    response.data.Error.Error_message,
-                    "bg-success"
-                );
-
-            }
-            else{
-
-                showToast(
-                    response.data.Error.Error_message,
-                    "bg-danger"
-                );
-
-            }
-
+    try {
+      const response = await axios.post("/uploadRisk/Proceed", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
         }
-        else if(response.data.message){
+      });
 
-            showToast(
-                response.data.message,
-                "bg-success"
-            );
+      const res = response.data;
+      console.log("Upload Risk response:", res);
 
+      if (res && res.success === true) {
+        showSuccessBanner(res);
+        showToast(res.message || "Excel imported successfully.", "bg-success");
+        cancelUpload(false);
+      } else if (res && res.success === false) {
+        showErrorBanner(res);
+        showToast(res.message || "Spreadsheet validation failed.", "bg-danger");
+      } else if (res && res.Error) {
+        if (res.Error.Error === false) {
+          showSuccessBanner({ message: res.Error.Error_message || "Uploaded successfully" });
+          showToast(res.Error.Error_message || "Success", "bg-success");
+          cancelUpload(false);
+        } else {
+          showErrorBanner({ message: res.Error.Error_message || "Upload failed" });
+          showToast(res.Error.Error_message || "Failed", "bg-danger");
         }
-        else{
-
-            showToast(
-                "Risk uploaded successfully.",
-                "bg-success"
-            );
-
-        }
-
-        document.getElementById("riskFile").value="";
-
+      } else {
+        showSuccessBanner({ message: "Risk spreadsheet processed successfully." });
+        showToast("Risk spreadsheet processed successfully.", "bg-success");
+        cancelUpload(false);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      const errRes = error.response ? error.response.data : null;
+      if (errRes) {
+        showErrorBanner(errRes);
+        showToast(errRes.message || errRes.detail || "Failed to upload Excel file.", "bg-danger");
+      } else {
+        showErrorBanner({ message: "Failed to connect to server during upload." });
+        showToast("Failed to upload Excel file.", "bg-danger");
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Proceed Upload';
+      progressContainer.style.display = "none";
     }
-    catch(error){
+  }
 
-        console.log(error);
-
-        if(error.response &&
-           error.response.data &&
-           error.response.data.message){
-
-            showToast(
-                error.response.data.message,
-                "bg-danger"
-            );
-
-        }
-        else{
-
-            showToast(
-                "Failed to upload Excel file.",
-                "bg-danger"
-            );
-
-        }
-
-    }
-    finally{
-
-        btn.disabled=false;
-        btn.innerHTML="Proceed";
-
+  function showSuccessBanner(data) {
+    $("#successBanner").slideDown(250);
+    $("#successMessage").text(data.message || "Risk records and associated workflows were committed to the database.");
+    
+    if (data.summary) {
+      $("#sumUsers").text(data.summary.users ?? 0);
+      $("#sumRegisters").text(data.summary.risk_registers ?? 0);
+      $("#sumDescriptions").text(data.summary.risk_descriptions ?? 0);
+      $("#sumTreatments").text(data.summary.risk_treatments ?? 0);
+      $("#successSummaryGrid").show();
+    } else {
+      $("#successSummaryGrid").hide();
     }
 
-}
+    document.getElementById("successBanner").scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
+  function showErrorBanner(data) {
+    $("#errorBanner").slideDown(250);
+    $("#errorBannerTitle").text(data.message || "Spreadsheet Validation Failed");
+    
+    const count = data.total_errors ? ` (${data.total_errors} errors detected)` : "";
+    $("#errorBannerMessage").text((data.detail || data.message || "Please correct the spreadsheet errors below.") + count);
 
+    const tbody = $("#errorTableBody");
+    tbody.empty();
 
-function cancelUpload(){
+    if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+      data.errors.forEach(err => {
+        const row = $('<tr></tr>');
+        const rowVal = $('<td></td>').text(err.row ?? 'N/A');
+        const colVal = $('<td></td>').html('<code>' + $('<div>').text(err.column ?? '').html() + '</code>');
+        const inputVal = $('<td></td>').text(err.value ?? '-');
+        const msgVal = $('<td></td>').text(err.message ?? '');
 
-    document.getElementById("riskFile").value="";
+        row.append(rowVal).append(colVal).append(inputVal).append(msgVal);
+        tbody.append(row);
+      });
+      $("#errorTableContainer").show();
+    } else {
+      $("#errorTableContainer").hide();
+    }
 
-}
+    document.getElementById("errorBanner").scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
+  function dismissBanners() {
+    $("#successBanner").slideUp(150);
+    $("#errorBanner").slideUp(150);
+  }
 
+  function cancelUpload(clearBanners = true) {
+    document.getElementById("riskFile").value = "";
+    $("#filePreviewCard").fadeOut(150);
+    if (clearBanners) {
+      dismissBanners();
+    }
+  }
 
-function showToast(msg,cls="bg-success"){
-
-    let toastEl=document.getElementById("toastMsg");
-
-    toastEl.querySelector(".toast-body").innerText=msg;
-
-    toastEl.querySelector(".toast-body").className=
-        "toast-body text-white "+cls;
-
-    new bootstrap.Toast(toastEl).show();
-
-}
-
+  function showToast(msg, cls = "bg-success") {
+    const toastEl = document.getElementById("toastMsg");
+    const toastBody = toastEl.querySelector(".toast-body");
+    document.getElementById("toastText").innerText = msg;
+    toastBody.className = "toast-body text-white rounded-3 shadow-lg d-flex align-items-center justify-content-between " + cls;
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+      bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 4000 }).show();
+    }
+  }
 </script>
-
 {% endblock %}

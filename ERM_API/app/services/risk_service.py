@@ -614,9 +614,8 @@ def get_risk_by_id(db, id):
             )
             .filter(
                 RiskRegister.is_deleted == 0,
-                RiskRegister.risk_function_head_approval_status == 1,
-                RiskRegister.risk_head_approval_status == 1,
-                RiskRegister.risk_manager_approval_status == 1
+                RiskDescription.is_deleted == 0,
+                RiskTreatment.is_deleted == 0
             )
         )
             
@@ -1707,6 +1706,13 @@ def get_risk_by_description_id(db, description_id):
                 .joinedload(RiskTreatment.status),
 
                 joinedload(RiskDescription.risk_register)
+                .joinedload(RiskRegister.department),
+
+                joinedload(RiskDescription.risk_register)
+                .joinedload(RiskRegister.risk_owner),
+
+                joinedload(RiskDescription.risk_register)
+                .joinedload(RiskRegister.risk_co_owner)
             )
             .filter(
                 RiskDescription.risk_description_id == description_id,
@@ -1774,8 +1780,14 @@ def get_risk_by_description_id(db, description_id):
             }
 
             # Risk Register info
+            dept_name = None
+            if rd.risk_register and rd.risk_register.department:
+                dept_name = rd.risk_register.department.dept_name or rd.risk_register.department.dept_short_name
+
             risk_dict = {
                 **to_dict(rd.risk_register),
+                "department_name": dept_name,
+                "dept_name": dept_name,
                 "risk_owner_name": (
                     f"{rd.risk_register.risk_owner.first_name or ''} "
                     f"{rd.risk_register.risk_owner.last_name or ''}".strip()

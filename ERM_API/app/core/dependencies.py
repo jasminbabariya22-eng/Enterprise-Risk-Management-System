@@ -21,6 +21,26 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 
+DASHBOARD_AUTHORIZED_ROLES = {"Admin", "Super Admin", "Risk Manager", "Risk Head"}
+
+# Dependency to strictly enforce RBAC for dashboard routes
+def require_dashboard_access(current_user: dict = Depends(get_current_user)):
+    role_name = (
+        current_user.get("role_name") or 
+        current_user.get("user_type_name") or 
+        current_user.get("user_type") or 
+        ""
+    ).strip()
+    
+    authorized_roles_lower = {r.lower() for r in DASHBOARD_AUTHORIZED_ROLES}
+    if role_name.lower() not in authorized_roles_lower:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: Dashboard access is restricted to Admin, Risk Manager, and Risk Head roles."
+        )
+    return current_user
+
+
 # from fastapi import Depends, HTTPException, status
 # from jose import JWTError, jwt
 # from app.core.config import settings

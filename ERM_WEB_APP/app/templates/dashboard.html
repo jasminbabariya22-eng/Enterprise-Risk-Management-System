@@ -1,401 +1,1173 @@
 {% extends "base.html" %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='cdn/apexcharts.css') }}">
 
 <style>
-.chart-box {
-    height: 300px;
+:root {
+  --erm-navy: #10233F;
+  --erm-blue: #2563EB;
+  --erm-teal: #14B8A6;
+  --erm-bg: #F8FAFC;
+  --erm-card-bg: #FFFFFF;
+  --erm-border: #E2E8F0;
+  --erm-text-main: #0F172A;
+  --erm-text-muted: #64748B;
+  --erm-shadow: 0 1px 3px 0 rgba(16, 35, 63, 0.05), 0 1px 2px -1px rgba(16, 35, 63, 0.05);
+  --erm-shadow-hover: 0 10px 15px -3px rgba(16, 35, 63, 0.08), 0 4px 6px -4px rgba(16, 35, 63, 0.04);
 }
-.chart-box > div {
-    height: 100% !important;
+
+.dashboard-container {
+  background-color: var(--erm-bg);
+  min-height: calc(100vh - 56px);
+  padding: 24px 28px;
+  font-family: inherit;
+  color: var(--erm-text-main);
+}
+
+/* Header & Filter Bar */
+.dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-title-box h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--erm-navy);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-title-box p {
+  font-size: 13.5px;
+  color: var(--erm-text-muted);
+  margin-bottom: 0;
+}
+
+.dashboard-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-card {
+  background: var(--erm-card-bg);
+  border: 1px solid var(--erm-border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--erm-shadow);
+}
+
+.filter-input {
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 5px 8px;
+  color: var(--erm-text-main);
+  background: #FFF;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.filter-input:focus {
+  border-color: var(--erm-blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.preset-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--erm-text-muted);
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  background: #F1F5F9;
+  color: var(--erm-navy);
+}
+
+.preset-btn.active {
+  background: #EFF6FF;
+  color: var(--erm-blue);
+  border-color: #BFDBFE;
+  font-weight: 600;
+}
+
+.btn-erm-action {
+  background: var(--erm-card-bg);
+  border: 1px solid var(--erm-border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--erm-navy);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: var(--erm-shadow);
+  transition: all 0.2s ease;
+}
+
+.btn-erm-action:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  transform: translateY(-1px);
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #059669;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  padding: 3px 8px;
+  border-radius: 9999px;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #10B981;
+  border-radius: 50%;
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* KPI Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--erm-card-bg);
+  border: 1px solid var(--erm-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: var(--erm-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--erm-shadow-hover);
+  border-color: #CBD5E1;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.kpi-card.kpi-total::before { background: #2563EB; }
+.kpi-card.kpi-open::before { background: #F59E0B; }
+.kpi-card.kpi-progress::before { background: #06B6D4; }
+.kpi-card.kpi-completed::before { background: #10B981; }
+.kpi-card.kpi-approved::before { background: #6366F1; }
+.kpi-card.kpi-rejected::before { background: #EF4444; }
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.kpi-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--erm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpi-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.kpi-total .kpi-icon-wrap { background: #EFF6FF; color: #2563EB; }
+.kpi-open .kpi-icon-wrap { background: #FFFBEB; color: #D97706; }
+.kpi-progress .kpi-icon-wrap { background: #ECFEFF; color: #0891B2; }
+.kpi-completed .kpi-icon-wrap { background: #ECFDF5; color: #059669; }
+.kpi-approved .kpi-icon-wrap { background: #EEF2FF; color: #4F46E5; }
+.kpi-rejected .kpi-icon-wrap { background: #FEF2F2; color: #DC2626; }
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--erm-navy);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-subtext {
+  font-size: 12px;
+  color: var(--erm-text-muted);
+}
+
+/* Charts Grid */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.col-span-12 { grid-column: span 12; }
+.col-span-8 { grid-column: span 8; }
+.col-span-7 { grid-column: span 7; }
+.col-span-6 { grid-column: span 6; }
+.col-span-5 { grid-column: span 5; }
+.col-span-4 { grid-column: span 4; }
+
+@media (max-width: 1200px) {
+  .col-span-8, .col-span-7, .col-span-6, .col-span-5, .col-span-4 {
+    grid-column: span 12;
+  }
+}
+
+.erm-card {
+  background: var(--erm-card-bg);
+  border: 1px solid var(--erm-border);
+  border-radius: 12px;
+  box-shadow: var(--erm-shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.erm-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--erm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAFAFC;
+}
+
+.erm-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--erm-navy);
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.erm-card-title i {
+  color: var(--erm-blue);
+}
+
+.erm-card-body {
+  padding: 20px;
+  flex-grow: 1;
+  position: relative;
+}
+
+.chart-container {
+  min-height: 290px;
+  width: 100%;
+}
+
+/* Top Risks Table */
+.table-erm {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.table-erm th {
+  background: #F8FAFC;
+  color: var(--erm-navy);
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--erm-border);
+  text-align: left;
+}
+
+.table-erm td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.table-erm tbody tr:hover td {
+  background-color: #F8FAFC;
+}
+
+.risk-badge-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 12px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  border: 1px solid #DBEAFE;
+  display: inline-block;
+}
+
+.risk-badge-id:hover {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.severity-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.severity-critical { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+.severity-high { background: #FFF7ED; color: #EA580C; border: 1px solid #FFEDD5; }
+.severity-medium { background: #FEFCE8; color: #CA8A04; border: 1px solid #FEF08A; }
+.severity-low { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+
+.progress-track {
+  height: 6px;
+  background: #E2E8F0;
+  border-radius: 9999px;
+  overflow: hidden;
+  width: 80px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--erm-teal);
+  border-radius: 9999px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--erm-text-muted);
+}
+
+.empty-state i {
+  font-size: 38px;
+  color: #CBD5E1;
+  margin-bottom: 12px;
+}
+
+.empty-state h5 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--erm-navy);
+  margin-bottom: 4px;
+}
+
+.empty-state p {
+  font-size: 13px;
+  margin-bottom: 0;
 }
 </style>
 
-<div class="app-content-header">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-sm-6">
-        <h3 class="mb-0">Dashboard</h3>
+<div class="dashboard-container">
+  <!-- Top Header & Controls -->
+  <div class="dashboard-header">
+    <div class="dashboard-title-box">
+      <h2>
+        <i class="bi bi-shield-check text-primary"></i>
+        Risk Intelligence Dashboard
+      </h2>
+      <p>Enterprise risk overview, monitoring & governance metrics</p>
+    </div>
+
+    <div class="dashboard-controls">
+      <!-- Live Sync Status -->
+      <div class="live-badge" title="Live database synchronization">
+        <div class="live-dot"></div>
+        <span>Synced</span>
+        <span id="lastUpdatedTime" style="opacity: 0.8; margin-left: 2px;">--:--</span>
+      </div>
+
+      <!-- Quick Preset Filter Buttons -->
+      <div class="filter-card p-1">
+        <button type="button" class="preset-btn active" data-preset="current_fy" onclick="applyPreset('current_fy', this)">Current FY</button>
+        <button type="button" class="preset-btn" data-preset="this_quarter" onclick="applyPreset('this_quarter', this)">This Quarter</button>
+        <button type="button" class="preset-btn" data-preset="this_month" onclick="applyPreset('this_month', this)">This Month</button>
+        <button type="button" class="preset-btn" data-preset="all_time" onclick="applyPreset('all_time', this)">All Time</button>
+      </div>
+
+      <!-- Date Range Pickers -->
+      <div class="filter-card">
+        <i class="bi bi-calendar3 text-muted" style="font-size: 13px;"></i>
+        <input type="date" id="dashStartDate" class="filter-input" title="Filter Start Date" onchange="onCustomDateChange()">
+        <span class="text-muted" style="font-size: 12px;">to</span>
+        <input type="date" id="dashEndDate" class="filter-input" title="Filter End Date" onchange="onCustomDateChange()">
+      </div>
+
+      <!-- Refresh Action -->
+      <button type="button" class="btn-erm-action" id="btnRefreshDashboard" onclick="refreshDashboardData()" title="Refresh Dashboard Data">
+        <i class="bi bi-arrow-repeat" id="refreshIcon"></i>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards Grid -->
+  <div class="kpi-grid">
+    <!-- 1. Total Risks -->
+    <div class="kpi-card kpi-total">
+      <div class="kpi-header">
+        <span class="kpi-title">Total Risks</span>
+        <div class="kpi-icon-wrap"><i class="bi bi-layers-fill"></i></div>
+      </div>
+      <div class="kpi-value" id="kpiTotalRisks">-</div>
+      <div class="kpi-subtext">Registered across all departments</div>
+    </div>
+
+    <!-- 2. Open Risks -->
+    <div class="kpi-card kpi-open">
+      <div class="kpi-header">
+        <span class="kpi-title">Open Risks</span>
+        <div class="kpi-icon-wrap"><i class="bi bi-exclamation-circle-fill"></i></div>
+      </div>
+      <div class="kpi-value" id="kpiOpenRisks">-</div>
+      <div class="kpi-subtext">Draft & Under initial review</div>
+    </div>
+
+    <!-- 3. In Progress -->
+    <div class="kpi-card kpi-progress">
+      <div class="kpi-header">
+        <span class="kpi-title">In Progress</span>
+        <div class="kpi-icon-wrap"><i class="bi bi-hourglass-split"></i></div>
+      </div>
+      <div class="kpi-value" id="kpiInProgress">-</div>
+      <div class="kpi-subtext">Under active mitigation</div>
+    </div>
+
+    <!-- 4. Completed -->
+    <div class="kpi-card kpi-completed">
+      <div class="kpi-header">
+        <span class="kpi-title">Completed</span>
+        <div class="kpi-icon-wrap"><i class="bi bi-check-circle-fill"></i></div>
+      </div>
+      <div class="kpi-value" id="kpiCompleted">-</div>
+      <div class="kpi-subtext">Resolved & closed</div>
+    </div>
+
+    <!-- 5. Approved -->
+    <div class="kpi-card kpi-approved">
+      <div class="kpi-header">
+        <span class="kpi-title">Approved</span>
+        <div class="kpi-icon-wrap"><i class="bi bi-patch-check-fill"></i></div>
+      </div>
+      <div class="kpi-value" id="kpiApproved">-</div>
+      <div class="kpi-subtext">Governance & risk approved</div>
+    </div>
+
+    <!-- 6. Rejected -->
+    <div class="kpi-card kpi-rejected">
+      <div class="kpi-header">
+        <span class="kpi-title">Rejected</span>
+        <div class="kpi-icon-wrap"><i class="bi bi-x-circle-fill"></i></div>
+      </div>
+      <div class="kpi-value" id="kpiRejected">-</div>
+      <div class="kpi-subtext">Returned for revision</div>
+    </div>
+  </div>
+
+  <!-- Row 1: Status Donut & Department Volume -->
+  <div class="charts-grid">
+    <!-- Risk Status Breakdown (Donut) -->
+    <div class="col-span-5 erm-card">
+      <div class="erm-card-header">
+        <h3 class="erm-card-title">
+          <i class="bi bi-pie-chart-fill"></i>
+          Risk Status Distribution
+        </h3>
+        <span class="badge bg-light text-dark border" style="font-size: 11px;">Current Filter</span>
+      </div>
+      <div class="erm-card-body">
+        <div id="chartStatusPie" class="chart-container"></div>
+      </div>
+    </div>
+
+    <!-- Department-wise Risk Count (Horizontal Bar) -->
+    <div class="col-span-7 erm-card">
+      <div class="erm-card-header">
+        <h3 class="erm-card-title">
+          <i class="bi bi-bar-chart-fill"></i>
+          Department-Wise Risk Overview
+        </h3>
+        <span class="badge bg-light text-dark border" style="font-size: 11px;">Risk Volume</span>
+      </div>
+      <div class="erm-card-body">
+        <div id="chartDeptBar" class="chart-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Severity Distribution & Department Progress -->
+  <div class="charts-grid">
+    <!-- Severity & Priority Breakdown -->
+    <div class="col-span-5 erm-card">
+      <div class="erm-card-header">
+        <h3 class="erm-card-title">
+          <i class="bi bi-shield-shaded"></i>
+          Risk Severity & Priority Breakdown
+        </h3>
+        <span class="badge bg-light text-dark border" style="font-size: 11px;">5x5 Matrix Rating</span>
+      </div>
+      <div class="erm-card-body">
+        <div id="chartSeverityRadial" class="chart-container"></div>
+      </div>
+    </div>
+
+    <!-- Department Progress -->
+    <div class="col-span-7 erm-card">
+      <div class="erm-card-header">
+        <h3 class="erm-card-title">
+          <i class="bi bi-graph-up-arrow"></i>
+          Department Mitigation Progress
+        </h3>
+        <span class="badge bg-light text-dark border" style="font-size: 11px;">Avg Completion %</span>
+      </div>
+      <div class="erm-card-body">
+        <div id="chartDeptProgress" class="chart-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Top 10 High Priority Risks Table -->
+  <div class="erm-card mb-4">
+    <div class="erm-card-header">
+      <h3 class="erm-card-title">
+        <i class="bi bi-flag-fill text-danger"></i>
+        Top Priority Risks Requiring Attention
+      </h3>
+      <a href="/riskRegister" class="text-decoration-none fw-semibold text-primary" style="font-size: 12.5px;">
+        View Full Register <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+    <div class="erm-card-body p-0">
+      <div class="table-responsive">
+        <table class="table-erm">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Risk ID</th>
+              <th>Risk Name & Description</th>
+              <th>Department</th>
+              <th>Risk Owner</th>
+              <th style="text-align: center;">Score</th>
+              <th>Severity</th>
+              <th style="width: 120px;">Progress</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="topRisksTableBody">
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                Loading priority risk registers...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
-<div class="app-content">
-  <div class="container-fluid">
-
-    <!-- ========================= -->
-    <!-- SUMMARY CARDS -->
-    <!-- ========================= -->
-    <div class="row">
-
-      <!-- TOTAL -->
-      <div class="col-lg-2 col-6">
-        <div class="small-box text-bg-primary">
-          <div class="inner">
-            <h4>Total</h4>
-            <h6 id="totalCount">0</h6>
-          </div>
-          <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-        </div>
-      </div>
-
-      <!-- COMPLETED -->
-      <div class="col-lg-2 col-6">
-        <div class="small-box text-bg-success">
-          <div class="inner">
-            <h4>Completed</h4>
-            <h6 id="completedCount">0</h6>
-          </div>
-         <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-        </div>
-      </div>
-
-      <!-- OPENED -->
-      <div class="col-lg-2 col-6">
-        <div class="small-box text-bg-warning">
-          <div class="inner">
-            <h4>Opened</h4>
-            <h6 id="openedCount">0</h6>
-          </div>
-          <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-dark link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-        </div>
-      </div>
-
-      <!-- IN PROGRESS -->
-      <div class="col-lg-2 col-6">
-        <div class="small-box text-bg-secondary">
-          <div class="inner">
-            <h4>In Progress</h4>
-            <h6 id="progressCount">0</h6>
-          </div>
-          <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
-                    ></path>
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
-                    ></path>
-                  </svg>
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-        </div>
-      </div>
-
-      <!-- APPROVED -->
-      <div class="col-lg-2 col-6">
-        <div class="small-box text-bg-info">
-          <div class="inner">
-            <h4>Approved</h4>
-            <h6 id="approvedCount">0</h6>
-          </div>
-        <svg
-                  class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true">
-  <path
-  clip-rule="evenodd"
-  fill-rule="evenodd"
-  d="M6.956 1.745C7.021.81 7.908.087 8.864.325l.261.066c.463.116.874.456 1.012.965.22.816.533 2.511.062 4.51a10 10 0 0 1 .443-.051c.713-.065 1.669-.072 2.516.21.518.173.994.681 1.2 1.273.184.532.16 1.162-.234 1.733q.086.18.138.363c.077.27.113.567.113.856s-.036.586-.113.856c-.039.135-.09.273-.16.404.169.387.107.819-.003 1.148a3.2 3.2 0 0 1-.488.901c.054.152.076.312.076.465 0 .305-.089.625-.253.912C13.1 15.522 12.437 16 11.5 16H8c-.605 0-1.07-.081-1.466-.218a4.8 4.8 0 0 1-.97-.484l-.048-.03c-.504-.307-.999-.609-2.068-.722C2.682 14.464 2 13.846 2 13V9c0-.85.685-1.432 1.357-1.615.849-.232 1.574-.787 2.132-1.41.56-.627.914-1.28 1.039-1.639.199-.575.356-1.539.428-2.59z">
-</path>
-
-<path
-  clip-rule="evenodd"
-  fill-rule="evenodd"
-  d="M6.956 1.745C7.021.81 7.908.087 8.864.325l.261.066c.463.116.874.456 1.012.965.22.816.533 2.511.062 4.51a10 10 0 0 1 .443-.051c.713-.065 1.669-.072 2.516.21.518.173.994.681 1.2 1.273.184.532.16 1.162-.234 1.733q.086.18.138.363c.077.27.113.567.113.856s-.036.586-.113.856c-.039.135-.09.273-.16.404.169.387.107.819-.003 1.148a3.2 3.2 0 0 1-.488.901c.054.152.076.312.076.465 0 .305-.089.625-.253.912C13.1 15.522 12.437 16 11.5 16H8c-.605 0-1.07-.081-1.466-.218a4.8 4.8 0 0 1-.97-.484l-.048-.03c-.504-.307-.999-.609-2.068-.722C2.682 14.464 2 13.846 2 13V9c0-.85.685-1.432 1.357-1.615.849-.232 1.574-.787 2.132-1.41.56-.627.914-1.28 1.039-1.639.199-.575.356-1.539.428-2.59z">
-</path>
-</svg>
-                  <!-- <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
-                    ></path>
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
-                    ></path>
-                  </svg> -->
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-        </div>
-      </div>
-
-      <!-- REJECTED -->
-      <div class="col-lg-2 col-6">
-        <div class="small-box text-bg-danger">
-          <div class="inner">
-            <h4>Rejected</h4>
-            <h6 id="rejectedCount">0</h6>
-          </div>
-         <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-  <path
-  clip-rule="evenodd"
-  fill-rule="evenodd"
-  d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
-
-  <path
-  clip-rule="evenodd"
-  fill-rule="evenodd"
-  d="M6.146 5.146a.5.5 0 0 1 .708 0L8 6.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 7l1.147 1.146a.5.5 0 0 1-.708.708L8 7.707 6.854 8.854a.5.5 0 1 1-.708-.708L7.293 7 6.146 5.854a.5.5 0 0 1 0-.708"/>
-</svg>
-                  <!-- <svg
-                    class="small-box-icon"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z"
-                    ></path>
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z"
-                    ></path>
-                  </svg> -->
-                  <a
-                    href="#"
-                    class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover"
-                  >
-                    More info <i class="bi bi-link-45deg"></i>
-                  </a>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ========================= -->
-    <!-- CHARTS -->
-    <!-- ========================= -->
-    <div class="row">
-
-      <!-- Division (LINE CHART) -->
-      <div class="col-lg-6">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 class="card-title">Risks By Division</h3>
-          </div>
-          <div class="card-body">
-            <div class="chart-box">
-              <div id="revenue-chart"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Category -->
-      <div class="col-lg-6">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 class="card-title">Risks By Category</h3>
-          </div>
-          <div class="card-body">
-            <div class="chart-box">
-              <div id="sales-chart"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Trend -->
-      <div class="col-lg-6">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 class="card-title">Risk Trend</h3>
-          </div>
-          <div class="card-body">
-            <div class="chart-box">
-              <div id="visitors-chart"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pie -->
-      <div class="col-lg-6">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 class="card-title">Risk Distribution</h3>
-          </div>
-          <div class="card-body">
-            <div class="chart-box">
-              <div id="pie-chart"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-<!-- ========================= -->
-<!-- SCRIPTS -->
-<!-- ========================= -->
-
+<!-- JavaScript Dependencies & Dashboard Logic -->
 <script src="{{ url_for('static', filename='cdn/apexcharts.min.js') }}"></script>
-
 <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
 
 <script>
+// Dashboard State Management
+let currentFilter = {
+  startDate: "",
+  endDate: "",
+  preset: "current_fy"
+};
+
+let chartInstances = {
+  statusPie: null,
+  deptBar: null,
+  severityRadial: null,
+  deptProgress: null
+};
+
+let activeRequestId = 0;
+
+// Initialize on DOM Ready
 document.addEventListener("DOMContentLoaded", function () {
-    loadSummary();
-    loadDivisionChart();
-    loadCategoryChart();
-    loadTrendChart();
-    loadDistributionChart();
+  initDatePresets();
+  refreshDashboardData();
 });
 
-function loadSummary() {
-    axios.get("/api/dashboard/summary").then(res => {
-        const d = res.data.data.data;
-        $("#totalCount").text(d.total);
-        $("#completedCount").text(d.Completed);
-        $("#openedCount").text(d.Opened);
-        $("#progressCount").text(d.in_progress);
-        $("#approvedCount").text(d.Approved);
-        $("#rejectedCount").text(d.Rejected);
-    });
+// Calculate and set initial Indian Financial Year (April 1 - March 31)
+function initDatePresets() {
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-indexed (0=Jan, 3=Apr)
+  const currentYear = now.getFullYear();
+
+  let fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+  let fyEndYear = fyStartYear + 1;
+
+  const fyStart = `${fyStartYear}-04-01`;
+  const fyEnd = `${fyEndYear}-03-31`;
+
+  document.getElementById("dashStartDate").value = fyStart;
+  document.getElementById("dashEndDate").value = fyEnd;
+
+  currentFilter.startDate = fyStart;
+  currentFilter.endDate = fyEnd;
 }
 
-function loadDivisionChart() {
-    axios.get("/api/dashboard/division").then(res => {
-        const d = res.data.data;
+// Preset Filter Handler
+function applyPreset(presetName, btnEl) {
+  document.querySelectorAll(".preset-btn").forEach(btn => btn.classList.remove("active"));
+  if (btnEl) btnEl.classList.add("active");
 
-        new ApexCharts(document.querySelector("#revenue-chart"), {
-            chart: { type: 'line', height: 300 },
-            stroke: { curve: 'smooth', width: 3 },
-            markers: { size: 4 },
-            series: [{ name: "Risks", data: d.values }],
-            xaxis: { categories: d.categories }
-        }).render();
-    });
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  let start = "";
+  let end = "";
+
+  if (presetName === "current_fy") {
+    let fyStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+    start = `${fyStartYear}-04-01`;
+    end = `${fyStartYear + 1}-03-31`;
+  } else if (presetName === "this_quarter") {
+    const qIndex = Math.floor(currentMonth / 3);
+    const qStartMonth = (qIndex * 3) + 1;
+    const qEndMonth = qStartMonth + 2;
+    const lastDayOfQ = new Date(currentYear, qEndMonth, 0).getDate();
+    start = `${currentYear}-${String(qStartMonth).padStart(2, '0')}-01`;
+    end = `${currentYear}-${String(qEndMonth).padStart(2, '0')}-${String(lastDayOfQ).padStart(2, '0')}`;
+  } else if (presetName === "this_month") {
+    const m = currentMonth + 1;
+    const lastDay = new Date(currentYear, m, 0).getDate();
+    start = `${currentYear}-${String(m).padStart(2, '0')}-01`;
+    end = `${currentYear}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  } else if (presetName === "all_time") {
+    start = "2020-01-01";
+    end = "2030-12-31";
+  }
+
+  document.getElementById("dashStartDate").value = start;
+  document.getElementById("dashEndDate").value = end;
+
+  currentFilter.startDate = start;
+  currentFilter.endDate = end;
+  currentFilter.preset = presetName;
+
+  refreshDashboardData();
 }
 
-function loadCategoryChart() {
-    axios.get("/api/dashboard/category").then(res => {
-        const d = res.data.data;
-
-        new ApexCharts(document.querySelector("#sales-chart"), {
-            chart: { type: 'bar', height: 300 },
-            series: [{ name: "Category", data: d.values }],
-            xaxis: { categories: d.categories }
-        }).render();
-    });
+function onCustomDateChange() {
+  document.querySelectorAll(".preset-btn").forEach(btn => btn.classList.remove("active"));
+  currentFilter.startDate = document.getElementById("dashStartDate").value;
+  currentFilter.endDate = document.getElementById("dashEndDate").value;
+  currentFilter.preset = "custom";
+  refreshDashboardData();
 }
 
-function loadTrendChart() {
-    axios.get("/api/dashboard/trend").then(res => {
-        const d = res.data.data;
+// Master Refresh Function
+async function refreshDashboardData() {
+  const reqId = ++activeRequestId;
+  const icon = document.getElementById("refreshIcon");
+  if (icon) icon.classList.add("fa-spin", "bi-arrow-repeat");
 
-        new ApexCharts(document.querySelector("#visitors-chart"), {
-            chart: { type: 'line', height: 300 },
-            stroke: { curve: 'smooth' },
-            series: [
-                { name: "High", data: d.high },
-                { name: "Low", data: d.low }
-            ],
-            xaxis: { categories: d.categories }
-        }).render();
-    });
+  const start = currentFilter.startDate || "";
+  const end = currentFilter.endDate || "";
+  const query = `?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
+
+  try {
+    // Fetch all dashboard data concurrently
+    const [
+      summaryRes,
+      deptRes,
+      statusRes,
+      progressRes,
+      severityRes,
+      topRisksRes
+    ] = await Promise.allSettled([
+      axios.get(`/api/dashboard/summary${query}`),
+      axios.get(`/api/dashboard/department-wise${query}`),
+      axios.get(`/api/dashboard/status-pie${query}`),
+      axios.get(`/api/dashboard/progress${query}`),
+      axios.get(`/api/dashboard/severity-distribution${query}`),
+      axios.get(`/api/dashboard/top-risks${query}`)
+    ]);
+
+    // Check for stale response
+    if (reqId !== activeRequestId) return;
+
+    // Update Last Synced Timestamp
+    const now = new Date();
+    document.getElementById("lastUpdatedTime").textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // 1. Update KPI Summary Cards
+    if (summaryRes.status === "fulfilled" && summaryRes.value.data) {
+      const d = summaryRes.value.data.data || summaryRes.value.data;
+      updateKpis(d);
+    }
+
+    // 2. Render Status Donut Chart
+    if (statusRes.status === "fulfilled" && statusRes.value.data) {
+      const items = statusRes.value.data.data || statusRes.value.data || [];
+      renderStatusPie(items);
+    }
+
+    // 3. Render Department Volume Bar Chart
+    if (deptRes.status === "fulfilled" && deptRes.value.data) {
+      const items = deptRes.value.data.data || deptRes.value.data || [];
+      renderDeptBar(items);
+    }
+
+    // 4. Render Severity Radial / Donut Chart
+    if (severityRes.status === "fulfilled" && severityRes.value.data) {
+      const items = severityRes.value.data.data || severityRes.value.data || [];
+      renderSeverityChart(items);
+    }
+
+    // 5. Render Department Progress Chart
+    if (progressRes.status === "fulfilled" && progressRes.value.data) {
+      const items = progressRes.value.data.data || progressRes.value.data || [];
+      renderDeptProgress(items);
+    }
+
+    // 6. Render Top 10 High Priority Risks Table
+    if (topRisksRes.status === "fulfilled" && topRisksRes.value.data) {
+      const items = topRisksRes.value.data.data || topRisksRes.value.data || [];
+      renderTopRisksTable(items);
+    } else if (topRisksRes.status === "rejected") {
+      console.error("Top risks fetch error:", topRisksRes.reason);
+      renderTopRisksTable([]);
+    }
+
+  } catch (err) {
+    console.error("Dashboard refresh error:", err);
+  } finally {
+    if (icon) icon.classList.remove("fa-spin");
+  }
 }
 
-function loadDistributionChart() {
-    axios.get("/api/dashboard/distribution").then(res => {
-        const d = res.data.data;
+// KPI Display Updater
+function updateKpis(d) {
+  document.getElementById("kpiTotalRisks").textContent = d.total ?? 0;
+  document.getElementById("kpiOpenRisks").textContent = d.open_risks ?? ( (d.New || 0) + (d.Open || 0) + (d.Pending || 0) );
+  document.getElementById("kpiInProgress").textContent = d.in_progress ?? 0;
+  document.getElementById("kpiCompleted").textContent = d.completed ?? ( (d.Complete || 0) + (d.Close || 0) );
+  document.getElementById("kpiApproved").textContent = d.approved ?? (d.Approved ?? 0);
+  document.getElementById("kpiRejected").textContent = d.rejected ?? (d.Rejected ?? 0);
+}
 
-        new ApexCharts(document.querySelector("#pie-chart"), {
-            chart: { type: 'pie', height: 300 },
-            series: d.values,
-            labels: d.labels
-        }).render();
-    });
+// 1. Status Donut Chart
+function renderStatusPie(dataList) {
+  if (chartInstances.statusPie) {
+    chartInstances.statusPie.destroy();
+    chartInstances.statusPie = null;
+  }
+
+  const container = document.querySelector("#chartStatusPie");
+  if (!container) return;
+
+  if (!dataList || dataList.length === 0 || dataList.every(x => x.total === 0)) {
+    container.innerHTML = `<div class="empty-state"><i class="bi bi-pie-chart"></i><h5>No Status Data</h5><p>No risks match the selected date range.</p></div>`;
+    return;
+  }
+
+  const labels = dataList.map(x => x.status);
+  const series = dataList.map(x => x.total);
+
+  const statusColors = {
+    "Risk Head Approved (Final)": "#10B981",
+    "Risk Manager Approved": "#3B82F6",
+    "Function Head Approved": "#6366F1",
+    "In Progress": "#06B6D4",
+    "Completed": "#059669",
+    "Submitted to Function Head": "#F59E0B",
+    "Draft": "#94A3B8",
+    "Rejected / Returned": "#EF4444"
+  };
+
+  const colors = labels.map(l => statusColors[l] || "#94A3B8");
+
+  const options = {
+    chart: {
+      type: 'donut',
+      height: 290,
+      fontFamily: 'inherit'
+    },
+    series: series,
+    labels: labels,
+    colors: colors,
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return Math.round(val) + "%";
+      },
+      dropShadow: { enabled: false }
+    },
+    legend: {
+      position: 'bottom',
+      fontSize: '11.5px',
+      markers: { radius: 12 }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '65%',
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: 'Total Risks',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#64748B',
+              formatter: function (w) {
+                return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+              }
+            }
+          }
+        }
+      }
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return val + " Risks";
+        }
+      }
+    }
+  };
+
+  chartInstances.statusPie = new ApexCharts(container, options);
+  chartInstances.statusPie.render();
+}
+
+// 2. Department Volume Bar Chart
+function renderDeptBar(dataList) {
+  if (chartInstances.deptBar) {
+    chartInstances.deptBar.destroy();
+    chartInstances.deptBar = null;
+  }
+
+  const container = document.querySelector("#chartDeptBar");
+  if (!container) return;
+
+  if (!dataList || dataList.length === 0) {
+    container.innerHTML = `<div class="empty-state"><i class="bi bi-bar-chart"></i><h5>No Department Data</h5><p>No registered department risks found.</p></div>`;
+    return;
+  }
+
+  const categories = dataList.map(x => x.department);
+  const values = dataList.map(x => x.total);
+
+  const options = {
+    chart: {
+      type: 'bar',
+      height: 290,
+      toolbar: { show: false },
+      fontFamily: 'inherit'
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        horizontal: true,
+        barHeight: '55%',
+        distributed: false
+      }
+    },
+    colors: ['#2563EB'],
+    dataLabels: {
+      enabled: true,
+      textAnchor: 'start',
+      style: { colors: ['#1E293B'], fontSize: '12px', fontWeight: 600 },
+      formatter: function (val) { return val; },
+      offsetX: 6
+    },
+    series: [{ name: 'Risks', data: values }],
+    xaxis: {
+      categories: categories,
+      labels: { style: { fontSize: '12px', colors: '#64748B' } }
+    },
+    yaxis: {
+      labels: { style: { fontSize: '12px', fontWeight: 500, colors: '#0F172A' } }
+    },
+    grid: {
+      borderColor: '#F1F5F9',
+      strokeDashArray: 4
+    },
+    tooltip: {
+      y: { formatter: function (val) { return val + " Risks"; } }
+    }
+  };
+
+  chartInstances.deptBar = new ApexCharts(container, options);
+  chartInstances.deptBar.render();
+}
+
+// 3. Severity Distribution Radial/Donut
+function renderSeverityChart(dataList) {
+  if (chartInstances.severityRadial) {
+    chartInstances.severityRadial.destroy();
+    chartInstances.severityRadial = null;
+  }
+
+  const container = document.querySelector("#chartSeverityRadial");
+  if (!container) return;
+
+  if (!dataList || dataList.length === 0) {
+    container.innerHTML = `<div class="empty-state"><i class="bi bi-shield-shaded"></i><h5>No Severity Data</h5><p>Severity matrices have not been evaluated yet.</p></div>`;
+    return;
+  }
+
+  const labels = dataList.map(x => x.category);
+  const series = dataList.map(x => x.percentage);
+
+  const severityColorMap = {
+    "Critical Risk": "#DC2626",
+    "High Risk": "#EA580C",
+    "Medium Risk": "#EAB308",
+    "Low Risk": "#10B981"
+  };
+
+  const colors = labels.map(l => severityColorMap[l] || "#3B82F6");
+
+  const options = {
+    chart: {
+      type: 'donut',
+      height: 290,
+      fontFamily: 'inherit'
+    },
+    series: series,
+    labels: labels,
+    colors: colors,
+    legend: {
+      position: 'bottom',
+      fontSize: '11.5px',
+      markers: { radius: 12 }
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return val.toFixed(1) + "%";
+      }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '60%',
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: 'Breakdown',
+              fontSize: '13px',
+              color: '#64748B'
+            }
+          }
+        }
+      }
+    },
+    tooltip: {
+      y: { formatter: function (val) { return val + "%"; } }
+    }
+  };
+
+  chartInstances.severityRadial = new ApexCharts(container, options);
+  chartInstances.severityRadial.render();
+}
+
+// 4. Department Progress Chart
+function renderDeptProgress(dataList) {
+  if (chartInstances.deptProgress) {
+    chartInstances.deptProgress.destroy();
+    chartInstances.deptProgress = null;
+  }
+
+  const container = document.querySelector("#chartDeptProgress");
+  if (!container) return;
+
+  if (!dataList || dataList.length === 0) {
+    container.innerHTML = `<div class="empty-state"><i class="bi bi-graph-up"></i><h5>No Progress Data</h5><p>Department action plans have no reported progress.</p></div>`;
+    return;
+  }
+
+  const categories = dataList.map(x => x.department);
+  const values = dataList.map(x => x.progress);
+
+  const options = {
+    chart: {
+      type: 'bar',
+      height: 290,
+      toolbar: { show: false },
+      fontFamily: 'inherit'
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        columnWidth: '45%',
+        distributed: false
+      }
+    },
+    colors: ['#14B8A6'],
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) { return val + "%"; },
+      offsetY: -20,
+      style: { fontSize: '11px', colors: ["#0F172A"], fontWeight: 600 }
+    },
+    series: [{ name: 'Avg Progress', data: values }],
+    xaxis: {
+      categories: categories,
+      labels: {
+        rotate: -30,
+        rotateAlways: categories.length > 4,
+        style: { fontSize: '11px', colors: '#64748B' }
+      }
+    },
+    yaxis: {
+      max: 100,
+      labels: { formatter: function (val) { return val + "%"; } }
+    },
+    grid: {
+      borderColor: '#F1F5F9',
+      strokeDashArray: 4
+    },
+    tooltip: {
+      y: { formatter: function (val) { return val + "% Completed"; } }
+    }
+  };
+
+  chartInstances.deptProgress = new ApexCharts(container, options);
+  chartInstances.deptProgress.render();
+}
+
+// 5. Top Risks Table
+function renderTopRisksTable(risks) {
+  const tbody = document.getElementById("topRisksTableBody");
+  if (!tbody) return;
+
+  if (!risks || risks.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-4 text-muted">
+          <i class="bi bi-shield-check fs-4 d-block mb-2 text-success"></i>
+          No high-priority risks match the current filter criteria.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = "";
+  risks.forEach((r, idx) => {
+    const score = r.risk_score || (r.likelihood * r.impact) || 1;
+    let sevClass = "severity-low";
+    let sevLabel = r.severity_level || "Low";
+
+    if (score >= 17) {
+      sevClass = "severity-critical";
+      sevLabel = "Critical";
+    } else if (score >= 10) {
+      sevClass = "severity-high";
+      sevLabel = "High";
+    } else if (score >= 5) {
+      sevClass = "severity-medium";
+      sevLabel = "Medium";
+    }
+
+    const progressVal = parseInt(String(r.progress || "0").replace(/[^0-9]/g, '')) || 0;
+
+    html += `
+      <tr>
+        <td>
+          <a href="/riskRegister" class="risk-badge-id" title="View in Risk Register">${r.risk_id}</a>
+        </td>
+        <td>
+          <div class="fw-bold text-dark" style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${r.risk_name}">
+            ${r.risk_name}
+          </div>
+        </td>
+        <td><span class="badge bg-light text-secondary border">${r.department || 'General'}</span></td>
+        <td><div class="text-muted" style="font-size: 12.5px;"><i class="bi bi-person me-1"></i>${r.risk_owner || 'Unassigned'}</div></td>
+        <td style="text-align: center;">
+          <span class="badge rounded-pill" style="background: ${r.color || '#E2E8F0'}; color: #FFF; font-weight: 700; font-size: 12px; padding: 4px 9px;">
+            ${score}
+          </span>
+        </td>
+        <td>
+          <span class="severity-pill ${sevClass}">
+            <i class="bi bi-circle-fill" style="font-size: 6px;"></i> ${sevLabel}
+          </span>
+        </td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div class="progress-track flex-grow-1">
+              <div class="progress-fill" style="width: ${progressVal}%;"></div>
+            </div>
+            <span style="font-size: 11.5px; font-weight: 600; color: #475569;">${progressVal}%</span>
+          </div>
+        </td>
+        <td>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size: 11px; font-weight: 600;">
+            ${r.status || 'Open'}
+          </span>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
 }
 </script>
 

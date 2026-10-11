@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.user import *
@@ -35,21 +36,56 @@ def create_user(
     current_user: dict = Depends(get_current_user)
 ):
     try:
-              
         user_data = user.dict()
-        
+
+        # Check for existing active/undeleted user with same login ID or email
+        existing_log = db.query(User).filter(
+            User.log_id == user_data["log_id"],
+            User.is_deleted == 0
+        ).first()
+        if existing_log:
+            return error_response(f"Login ID '{user_data['log_id']}' is already in use.", 400)
+
+        existing_email = db.query(User).filter(
+            User.email == user_data["email"],
+            User.is_deleted == 0
+        ).first()
+        if existing_email:
+            return error_response(f"Email '{user_data['email']}' is already in use.", 400)
+
         user_data["password"] = get_password_hash(user_data["password"])
 
         # convert empty string to null
-        if user_data.get("contact_no") == "string" or user_data.get("contact_no") == "":
+        if user_data.get("contact_no") in ("string", "", "null", None):
             user_data["contact_no"] = None
 
-        if user_data.get("address") == "string" or user_data.get("address") == "":
+        if user_data.get("address") in ("string", "", "null", None):
             user_data["address"] = None
 
+        # If user_type_id is 0 or None, verify it's a valid ID or set to None
+        if not user_data.get("user_type_id") or user_data.get("user_type_id") == 0:
+            user_data["user_type_id"] = None
+        else:
+            ut = db.query(UserType).filter(UserType.id == user_data["user_type_id"]).first()
+            if not ut:
+                user_data["user_type_id"] = None
+
+        # Default non-nullable database columns
+        if not user_data.get("country"):
+            user_data["country"] = "India"
+
+        if not user_data.get("status"):
+            user_data["status"] = "Active"
+
+        # Auto-compute next ID if sequence is missing in postgres
+        next_id = (db.query(func.coalesce(func.max(User.id), 0)).scalar() or 0) + 1
+
+        creator_id = (current_user.get("id") if isinstance(current_user, dict) else None) or 1
+
         db_user = User(
+            id=next_id,
             **user_data,
-            created_by=current_user["id"],
+            created_by=creator_id,
             created_on=datetime.utcnow(),
             is_deleted=0
         )
@@ -61,11 +97,9 @@ def create_user(
         return success_response({
             "id": db_user.id,
             "log_id": db_user.log_id,
-            # "password": get_decrypted_password(db_user.password),
             "password": db_user.password,
             "first_name": db_user.first_name,
             "last_name": db_user.last_name,
-
             "email": db_user.email,
             "country": db_user.country,
             "address": db_user.address,
@@ -84,6 +118,8 @@ def create_user(
         
     except Exception as e:
         db.rollback()
+        import traceback
+        traceback.print_exc()
         return error_response(str(e), 400)
 
 
@@ -186,12 +222,10 @@ def update_user(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    
     try:
         user = db.query(User).filter(
             User.id == user_id,
-            User.is_deleted == 0,
-            User.status == 'Active'
+            User.is_deleted == 0
         ).first()
 
         if not user:
@@ -199,14 +233,34 @@ def update_user(
 
         update_data = user_update.dict(exclude_unset=True)
         
-        # Hash password if it is being updateds
+        # Hash password if it is being updated
         if "password" in update_data and update_data["password"]:
             update_data["password"] = get_password_hash(update_data["password"])
+        elif "password" in update_data and not update_data["password"]:
+            del update_data["password"]
+
+        if "country" in update_data and not update_data["country"]:
+            del update_data["country"]
+
+        if "user_type_id" in update_data:
+            if not update_data["user_type_id"] or update_data["user_type_id"] == 0:
+                update_data["user_type_id"] = None
+
+        # Check unique constraints if log_id or email is being modified
+        if "log_id" in update_data and update_data["log_id"] != user.log_id:
+            dup_log = db.query(User).filter(User.log_id == update_data["log_id"], User.id != user_id, User.is_deleted == 0).first()
+            if dup_log:
+                return error_response(f"Login ID '{update_data['log_id']}' is already taken.", 400)
+
+        if "email" in update_data and update_data["email"] != user.email:
+            dup_email = db.query(User).filter(User.email == update_data["email"], User.id != user_id, User.is_deleted == 0).first()
+            if dup_email:
+                return error_response(f"Email '{update_data['email']}' is already in use.", 400)
 
         for key, value in update_data.items():
             setattr(user, key, value)
 
-        user.modified_by = current_user["id"]
+        user.modified_by = current_user.get("id") if isinstance(current_user, dict) else 1
         user.modified_on = datetime.utcnow()
 
         db.commit()
@@ -215,7 +269,6 @@ def update_user(
         return success_response({
             "id": user.id,
             "log_id": user.log_id,
-            # "password": get_decrypted_password(user.password),
             "password": user.password,
             "first_name": user.first_name,
             "last_name": user.last_name,
@@ -237,6 +290,8 @@ def update_user(
         
     except Exception as e:
         db.rollback()
+        import traceback
+        traceback.print_exc()
         return error_response(str(e), 400)
 
 # --------------------------------

@@ -4,363 +4,842 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - ERM Enterprise Risk Management</title>
+  <title>Sign In — Enterprise Risk Management System</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='assets/img/erm_logo.svg') }}">
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Bootstrap Icons & Bootstrap -->
+  <!-- Bootstrap Icons & Bootstrap CSS -->
   <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='cdn/bootstrap-icons.min.css') }}" rel="stylesheet">
 
   <style>
+    :root {
+      --erm-navy-dark: #0a1128;
+      --erm-navy-primary: #10233F;
+      --erm-navy-surface: #172c4c;
+      --erm-blue: #2563EB;
+      --erm-blue-light: #3B82F6;
+      --erm-teal: #14B8A6;
+      --erm-teal-light: #2DD4BF;
+      --erm-slate-50: #F8FAFC;
+      --erm-slate-100: #F1F5F9;
+      --erm-slate-200: #E2E8F0;
+      --erm-slate-300: #CBD5E1;
+      --erm-slate-400: #94A3B8;
+      --erm-slate-500: #64748B;
+      --erm-slate-700: #334155;
+      --erm-slate-900: #0F172A;
+      --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font-main);
+      -webkit-font-smoothing: antialiased;
     }
 
     html, body {
       height: 100%;
       width: 100%;
-      overflow: hidden;
-      background-color: #071c24;
+      background-color: var(--erm-slate-50);
+      color: var(--erm-slate-900);
+      overflow-x: hidden;
     }
 
-    /* Main Container with Background Image */
-    .erm-login-wrapper {
-      position: relative;
-      height: 100vh;
+    /* ==========================================================================
+       SPLIT-SCREEN LOGIN LAYOUT
+       ========================================================================== */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
       width: 100vw;
+    }
+
+    /* --------------------------------------------------------------------------
+       LEFT PANEL: BRAND IDENTITY & VISUAL ARTWORK (58% DESKTOP)
+       -------------------------------------------------------------------------- */
+    .brand-panel {
+      flex: 1.35;
+      background: radial-gradient(circle at 20% 15%, rgba(37, 99, 235, 0.25) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 85%, rgba(20, 184, 166, 0.2) 0%, transparent 50%),
+                  linear-gradient(145deg, #0a1128 0%, #10233F 50%, #0d1e38 100%);
+      color: #ffffff;
+      padding: 48px 56px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: url("{{ url_for('static', filename='assets/img/erm_login_bg.jpg') }}") no-repeat center center;
-      background-size: cover;
-      background-attachment: fixed;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    /* Subtle dark teal vignette overlay */
-    .erm-login-overlay {
+    /* Ambient background grid */
+    .brand-panel::before {
+      content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(7, 28, 36, 0.1) 0%, rgba(5, 20, 26, 0.45) 100%);
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
       pointer-events: none;
-      z-index: 1;
     }
 
-    /* Top Navigation Header */
-    .erm-top-nav {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 24px 44px;
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 2;
+    }
+
+    .brand-logo-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .brand-title-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-app-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .brand-app-tag {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--erm-teal-light);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Brand Hero Section */
+    .brand-content {
+      margin: auto 0;
+      max-width: 580px;
+      z-index: 2;
+      padding: 32px 0;
+    }
+
+    .brand-headline {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.18;
+      color: #ffffff;
+      margin-bottom: 18px;
+    }
+
+    .brand-headline span {
+      background: linear-gradient(135deg, #60A5FA 0%, #2DD4BF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtext {
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #94A3B8;
+      margin-bottom: 32px;
+    }
+
+    /* Interactive Vector Risk Network Illustration */
+    .risk-network-visual {
+      width: 100%;
+      height: 220px;
+      margin-bottom: 28px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .network-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .node-pulse {
+      animation: pulseNode 3s infinite ease-in-out;
+    }
+
+    @keyframes pulseNode {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.18); opacity: 1; filter: drop-shadow(0 0 8px rgba(45, 212, 191, 0.8)); }
+    }
+
+    /* Value Proposition Chips */
+    .brand-pillars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pillar-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(6px);
+      font-size: 13px;
+      font-weight: 500;
+      color: #E2E8F0;
+      transition: all 0.2s ease;
+    }
+
+    .pillar-chip:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .pillar-chip i {
+      color: var(--erm-teal-light);
+      font-size: 14px;
+    }
+
+    .brand-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 10;
+      font-size: 12.5px;
+      color: var(--erm-slate-400);
+      z-index: 2;
     }
 
-    .erm-brand-header {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-      user-select: none;
+    .brand-status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background-color: var(--erm-teal);
+      border-radius: 50%;
+      margin-right: 6px;
+      box-shadow: 0 0 8px var(--erm-teal);
     }
 
-    .erm-header-link {
-      color: rgba(255, 255, 255, 0.92);
-      font-size: 14.5px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-
-    .erm-header-link:hover {
-      color: #ffffff;
-      opacity: 0.8;
-      text-decoration: none;
-    }
-
-    /* Centered Glassmorphic Login Card */
-    .erm-login-card {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 440px;
-      background: rgba(255, 255, 255, 0.22);
-      backdrop-filter: blur(28px) saturate(190%);
-      -webkit-backdrop-filter: blur(28px) saturate(190%);
-      border: 1.5px solid rgba(255, 255, 255, 0.45);
-      border-radius: 24px;
-      padding: 38px 36px 26px 36px;
-      box-shadow: 0 25px 60px rgba(2, 18, 24, 0.55), inset 0 1px 1.5px rgba(255, 255, 255, 0.6);
+    /* --------------------------------------------------------------------------
+       RIGHT PANEL: AUTHENTICATION FORM (42% DESKTOP)
+       -------------------------------------------------------------------------- */
+    .auth-panel {
+      flex: 1;
+      background: #ffffff;
+      padding: 48px 64px;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      animation: cardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
     }
 
-    @keyframes cardFadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.95) translateY(16px);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-
-    /* Card Logo */
-    .card-logo-container {
-      margin-bottom: 24px;
+    .auth-header-top {
+      width: 100%;
+      max-width: 400px;
       display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .security-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: var(--erm-slate-100);
+      border: 1px solid var(--erm-slate-200);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--erm-slate-700);
+    }
+
+    .security-badge i {
+      color: var(--erm-blue);
+      font-size: 13px;
+    }
+
+    .auth-form-card {
+      width: 100%;
+      max-width: 400px;
+      margin: auto 0;
+      padding: 12px 0;
+    }
+
+    .auth-welcome-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+      border: 1px solid #BFDBFE;
+      color: var(--erm-blue);
+      display: flex;
+      align-items: center;
       justify-content: center;
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .auth-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--erm-slate-900);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .auth-subtitle {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--erm-slate-500);
+      margin-bottom: 24px;
+    }
+
+    /* Error Alert */
+    .auth-alert-error {
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+      color: #991B1B;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--erm-slate-700);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
       align-items: center;
     }
 
-    /* Form Elements */
-    .erm-form {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .erm-input-group {
-      position: relative;
-      width: 100%;
-    }
-
-    .erm-input-icon {
+    .input-icon-left {
       position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #526571;
+      left: 14px;
+      color: var(--erm-slate-400);
       font-size: 16px;
       pointer-events: none;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: color 0.2s ease;
     }
 
-    .erm-input {
+    .form-control-erm {
       width: 100%;
-      height: 48px;
-      background: rgba(255, 255, 255, 0.42);
-      border: 1px solid rgba(255, 255, 255, 0.65);
-      border-radius: 25px;
-      padding: 0 20px 0 48px;
-      font-size: 14.5px;
+      height: 46px;
+      padding: 0 16px 0 42px;
+      background: #ffffff;
+      border: 1.5px solid var(--erm-slate-300);
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 500;
-      color: #0b2533;
+      color: var(--erm-slate-900);
       outline: none;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .erm-input::placeholder {
-      color: #526571;
+    .form-control-erm::placeholder {
+      color: #94A3B8;
       font-weight: 400;
     }
 
-    .erm-input:focus {
-      background: rgba(255, 255, 255, 0.72);
-      border-color: #f97316;
-      box-shadow: 0 0 0 3.5px rgba(249, 115, 22, 0.28);
+    .form-control-erm:focus {
+      border-color: var(--erm-blue);
+      box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.14);
     }
 
-    /* Forgot Password */
-    .erm-form-options {
+    .form-control-erm:focus + .input-icon-left,
+    .input-wrapper:focus-within .input-icon-left {
+      color: var(--erm-blue);
+    }
+
+    /* Password Toggle Button */
+    .password-toggle-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--erm-slate-400);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 6px;
       display: flex;
-      justify-content: flex-end;
-      margin-top: -4px;
-      margin-bottom: 2px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s ease;
     }
 
-    .erm-forgot-link {
-      font-size: 12.5px;
+    .password-toggle-btn:hover {
+      color: var(--erm-slate-700);
+    }
+
+    .password-toggle-btn:focus-visible {
+      outline: 2px solid var(--erm-blue);
+    }
+
+    /* Form Options Row */
+    .form-options-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      font-size: 13px;
+    }
+
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+      margin: 0;
+    }
+
+    .form-check-input {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--erm-slate-300);
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .form-check-input:checked {
+      background-color: var(--erm-blue);
+      border-color: var(--erm-blue);
+    }
+
+    .form-check-label {
+      color: var(--erm-slate-700);
+      cursor: pointer;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.92);
-      text-decoration: none;
-      transition: color 0.2s;
+      font-size: 13px;
     }
 
-    .erm-forgot-link:hover {
-      color: #ffffff;
+    .forgot-password-link {
+      color: var(--erm-blue);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+
+    .forgot-password-link:hover {
+      color: #1D4ED8;
       text-decoration: underline;
     }
 
     /* Submit Button */
-    .erm-btn-login {
+    .btn-signin {
       width: 100%;
       height: 48px;
-      background: linear-gradient(135deg, #f95a00 0%, #eb4700 100%);
+      background: var(--erm-blue);
       color: #ffffff;
       border: none;
-      border-radius: 25px;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 8px 24px rgba(235, 71, 0, 0.45);
-      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      margin-top: 4px;
       display: flex;
+      align-items: center;
       justify-content: center;
-      align-items: center;
-    }
-
-    .erm-btn-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(235, 71, 0, 0.6);
-      background: linear-gradient(135deg, #ff6b14 0%, #f94c00 100%);
-    }
-
-    .erm-btn-login:active {
-      transform: translateY(0);
-      box-shadow: 0 4px 14px rgba(235, 71, 0, 0.4);
-    }
-
-    /* Inner Card Copyright */
-    .card-footer-copyright {
-      margin-top: 20px;
-      font-size: 11.5px;
-      color: rgba(255, 255, 255, 0.85);
-      text-align: center;
-    }
-
-    /* Bottom Page Footer */
-    .erm-bottom-footer {
-      position: absolute;
-      bottom: 22px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-size: 12.5px;
-      color: rgba(255, 255, 255, 0.8);
-      font-weight: 400;
-      letter-spacing: 0.2px;
-      z-index: 10;
-    }
-
-    /* Alert Styling */
-    .erm-alert-error {
-      width: 100%;
-      background: rgba(254, 226, 226, 0.92);
-      border: 1px solid #f87171;
-      color: #991b1b;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
       gap: 8px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-signin:hover {
+      background: #1D4ED8;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-signin:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-signin:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.4);
+      outline-offset: 2px;
+    }
+
+    /* Right Panel Footer */
+    .auth-footer {
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--erm-slate-400);
+      padding-top: 16px;
+      border-top: 1px solid var(--erm-slate-100);
+    }
+
+    /* ==========================================================================
+       MODAL: FORGOT PASSWORD ASSISTANCE
+       ========================================================================== */
+    .modal-content-erm {
+      border-radius: 16px;
+      border: 1px solid var(--erm-slate-200);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    }
+
+    /* ==========================================================================
+       RESPONSIVE BREAKPOINTS
+       ========================================================================== */
+    @media (max-width: 992px) {
+      .login-container {
+        flex-direction: column;
+      }
+
+      .brand-panel {
+        flex: none;
+        padding: 36px 32px;
+        min-height: 380px;
+      }
+
+      .brand-headline {
+        font-size: 28px;
+      }
+
+      .risk-network-visual {
+        display: none;
+      }
+
+      .auth-panel {
+        flex: none;
+        padding: 40px 24px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .brand-panel {
+        display: none; /* Hide heavy brand panel on small mobile screens */
+      }
+
+      .auth-panel {
+        padding: 32px 20px;
+        min-height: 100vh;
+        justify-content: space-around;
+      }
+
+      .mobile-logo-header {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+    }
+
+    .mobile-logo-header {
+      display: none;
+    }
+
+    /* Accessibility: Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, .node-pulse {
+        animation: none !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="erm-login-wrapper">
-    <div class="erm-login-overlay"></div>
+  <div class="login-container">
 
-    <!-- Top Navigation Header -->
-    <header class="erm-top-nav">
-      <a href="/" class="erm-brand-header">
-        <!-- ERM Top Left Logo -->
-        <svg width="150" height="42" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Orange Connected Node Icon -->
-          <path d="M6 8H26V14H13V20H24V26H13V32H26V38H6V8Z" fill="#F97316"/>
-          <circle cx="6" cy="8" r="3.5" fill="#F97316"/>
-          <circle cx="26" cy="8" r="3.5" fill="#F97316"/>
-          <circle cx="24" cy="23" r="3.5" fill="#F97316"/>
-          <circle cx="6" cy="38" r="3.5" fill="#F97316"/>
-          <circle cx="26" cy="38" r="3.5" fill="#F97316"/>
-          <circle cx="34" cy="14" r="3" fill="#F97316"/>
-          <circle cx="34" cy="31" r="3" fill="#F97316"/>
-          <line x1="26" y1="8" x2="34" y2="14" stroke="#F97316" stroke-width="2"/>
-          <line x1="24" y1="23" x2="34" y2="31" stroke="#F97316" stroke-width="2"/>
-          <!-- Teal 'R' mark -->
-          <path d="M28 8H39C45 8 48 11.5 48 16.5C48 20.5 45 23.5 40 24L48 38H41L34 25H34V38H28V8ZM34 13.5V19.5H38.5C41 19.5 42 18.5 42 16.5C42 14.5 41 13.5 38.5 13.5H34Z" fill="#14B8A6"/>
-          <!-- White ERM text -->
-          <text x="56" y="32" font-family="'Inter', sans-serif" font-size="28" font-weight="900" letter-spacing="1.5" fill="#FFFFFF">ERM</text>
-        </svg>
-      </a>
-      <a href="mailto:support@erm-risk.com?subject=ERM%20Platform%20Demo%20Request" class="erm-header-link" id="btnRequestDemo">Request Demo</a>
-    </header>
-
-    <!-- Glassmorphic Login Card -->
-    <main class="erm-login-card">
-      <!-- Card Center Logo -->
-      <div class="card-logo-container">
-        <svg width="170" height="48" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Orange Connected Node Icon -->
-          <path d="M6 8H26V14H13V20H24V26H13V32H26V38H6V8Z" fill="#F97316"/>
-          <circle cx="6" cy="8" r="3.5" fill="#F97316"/>
-          <circle cx="26" cy="8" r="3.5" fill="#F97316"/>
-          <circle cx="24" cy="23" r="3.5" fill="#F97316"/>
-          <circle cx="6" cy="38" r="3.5" fill="#F97316"/>
-          <circle cx="26" cy="38" r="3.5" fill="#F97316"/>
-          <circle cx="34" cy="14" r="3" fill="#F97316"/>
-          <circle cx="34" cy="31" r="3" fill="#F97316"/>
-          <line x1="26" y1="8" x2="34" y2="14" stroke="#F97316" stroke-width="2"/>
-          <line x1="24" y1="23" x2="34" y2="31" stroke="#F97316" stroke-width="2"/>
-          <!-- Dark Teal 'R' -->
-          <path d="M28 8H39C45 8 48 11.5 48 16.5C48 20.5 45 23.5 40 24L48 38H41L34 25H34V38H28V8ZM34 13.5V19.5H38.5C41 19.5 42 18.5 42 16.5C42 14.5 41 13.5 38.5 13.5H34Z" fill="#0C3440"/>
-          <!-- Bold Dark Teal ERM -->
-          <text x="56" y="32" font-family="'Inter', sans-serif" font-size="28" font-weight="900" letter-spacing="1.5" fill="#0C3440">ERM</text>
-        </svg>
+    <!-- ========================================================================
+         LEFT PANEL: BRAND IDENTITY & VISUAL RISK NETWORK
+         ======================================================================== -->
+    <section class="brand-panel">
+      <!-- Top Brand Mark -->
+      <div class="brand-header">
+        <div class="brand-logo-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="28" height="28" fill="none">
+            <path d="M24 4L8 10V22C8 31.5 14.8 40.3 24 44C33.2 40.3 40 31.5 40 22V10L24 4Z" fill="#2563EB" stroke="#60A5FA" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M24 4L40 10V22C40 31.5 33.2 40.3 24 44V4Z" fill="#FFFFFF" fill-opacity="0.12"/>
+            <circle cx="24" cy="14" r="2.5" fill="#14B8A6"/>
+            <circle cx="16" cy="22" r="2" fill="#93C5FD"/>
+            <circle cx="32" cy="22" r="2" fill="#93C5FD"/>
+            <circle cx="24" cy="26" r="2.5" fill="#FFFFFF"/>
+            <line x1="24" y1="14" x2="16" y2="22" stroke="#93C5FD" stroke-width="1.5" stroke-opacity="0.8"/>
+            <line x1="24" y1="14" x2="32" y2="22" stroke="#93C5FD" stroke-width="1.5" stroke-opacity="0.8"/>
+            <line x1="16" y1="22" x2="24" y2="26" stroke="#FFFFFF" stroke-width="1.5"/>
+            <line x1="32" y1="22" x2="24" y2="26" stroke="#FFFFFF" stroke-width="1.5"/>
+            <path d="M21 26.5L23 28.5L27 24.5" stroke="#10233F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="brand-title-wrap">
+          <h1 class="brand-app-name m-0">Enterprise Risk Management System</h1>
+          <span class="brand-app-tag">Enterprise Governance &amp; Assurance</span>
+        </div>
       </div>
 
-      {% if error %}
-      <div class="erm-alert-error" role="alert">
-        <i class="bi bi-exclamation-circle-fill"></i>
-        <span>{{ error }}</span>
+      <!-- Main Brand Text & Interactive Visual -->
+      <div class="brand-content">
+        <h2 class="brand-headline">
+          Manage Risk.<br>
+          <span>Strengthen Decisions.</span>
+        </h2>
+        <p class="brand-subtext">
+          A centralized workspace for enterprise risk visibility, continuous assessment, governed action plans, and multi-agent AI intelligence.
+        </p>
+
+        <!-- Abstract Connected Risk Network Artwork -->
+        <div class="risk-network-visual" aria-hidden="true">
+          <svg class="network-svg" viewBox="0 0 500 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background Topology Rings -->
+            <circle cx="250" cy="100" r="75" stroke="#2563EB" stroke-width="1" stroke-opacity="0.25" stroke-dasharray="4 4"/>
+            <circle cx="250" cy="100" r="110" stroke="#14B8A6" stroke-width="1" stroke-opacity="0.15"/>
+            
+            <!-- Connection Lines -->
+            <path d="M120 70 L250 100 L380 60" stroke="#3B82F6" stroke-width="1.5" stroke-opacity="0.4"/>
+            <path d="M160 150 L250 100 L340 150" stroke="#14B8A6" stroke-width="1.5" stroke-opacity="0.4"/>
+            <path d="M120 70 L160 150" stroke="#60A5FA" stroke-width="1" stroke-opacity="0.2"/>
+            <path d="M380 60 L340 150" stroke="#2DD4BF" stroke-width="1" stroke-opacity="0.2"/>
+
+            <!-- Peripheral Risk Nodes -->
+            <!-- Node 1: Financial Risk -->
+            <g transform="translate(120, 70)">
+              <circle cx="0" cy="0" r="14" fill="#10233F" stroke="#3B82F6" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="5" fill="#60A5FA" class="node-pulse"/>
+            </g>
+            <!-- Node 2: Operational Risk -->
+            <g transform="translate(160, 150)">
+              <circle cx="0" cy="0" r="12" fill="#10233F" stroke="#14B8A6" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="4" fill="#2DD4BF"/>
+            </g>
+            <!-- Node 3: Strategic Risk -->
+            <g transform="translate(380, 60)">
+              <circle cx="0" cy="0" r="15" fill="#10233F" stroke="#3B82F6" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="5.5" fill="#60A5FA" class="node-pulse"/>
+            </g>
+            <!-- Node 4: Compliance Risk -->
+            <g transform="translate(340, 150)">
+              <circle cx="0" cy="0" r="13" fill="#10233F" stroke="#14B8A6" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="4.5" fill="#2DD4BF"/>
+            </g>
+
+            <!-- Central Centralized Core Node (Shield) -->
+            <g transform="translate(250, 100)">
+              <circle cx="0" cy="0" r="28" fill="#10233F" stroke="#3B82F6" stroke-width="2" filter="drop-shadow(0 0 16px rgba(37, 99, 235, 0.4))"/>
+              <path d="M0 -12L-10 -7V1C-10 7.5 -5 13.5 0 15C5 13.5 10 7.5 10 1V-7L0 -12Z" fill="#2563EB" stroke="#60A5FA" stroke-width="1"/>
+              <path d="M-3 1L-1 3L4 -2" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Pillars -->
+        <div class="brand-pillars">
+          <span class="pillar-chip"><i class="bi bi-shield-check"></i> Governance &amp; RBAC</span>
+          <span class="pillar-chip"><i class="bi bi-grid-3x3"></i> 5x5 Risk Heatmap</span>
+          <span class="pillar-chip"><i class="bi bi-robot"></i> Governed AI Copilot</span>
+        </div>
       </div>
-      {% endif %}
 
-      <!-- Login Form -->
-      <form method="POST" action="/ERM" class="erm-form" autocomplete="on">
-        <div class="erm-input-group">
-          <span class="erm-input-icon"><i class="bi bi-person"></i></span>
-          <input class="erm-input" type="text" id="txtEmail" name="username" placeholder="Username" autocomplete="username" required autofocus>
+      <!-- Left Footer Info -->
+      <div class="brand-footer">
+        <div>
+          <span class="brand-status-dot"></span>
+          <span>Enterprise Platform Active</span>
         </div>
-
-        <div class="erm-input-group">
-          <span class="erm-input-icon"><i class="bi bi-key"></i></span>
-          <input class="erm-input" type="password" id="txtPassword" name="password" placeholder="Password" autocomplete="current-password" required>
-        </div>
-
-        <div class="erm-form-options">
-          <a href="javascript:void(0)" onclick="alert('Please contact your ERM System Administrator or IT Helpdesk to reset your password.')" class="erm-forgot-link">Forgot Password?</a>
-        </div>
-
-        <button type="submit" class="erm-btn-login" id="btnLogin">LOGIN</button>
-      </form>
-
-      <div class="card-footer-copyright">
-        Copyright©2026 All rights reserved.
+        <span>ISO 31000 Compliant Framework</span>
       </div>
+    </section>
+
+    <!-- ========================================================================
+         RIGHT PANEL: AUTHENTICATION FORM
+         ======================================================================== -->
+    <main class="auth-panel">
+      <!-- Top Right Security Status -->
+      <div class="auth-header-top">
+        <div class="mobile-logo-header">
+          <img src="{{ url_for('static', filename='assets/img/erm_logo.svg') }}" width="32" height="32" alt="ERM Logo">
+          <strong style="font-size: 14px; color: var(--erm-slate-900);">Enterprise Risk Management</strong>
+        </div>
+        <div class="security-badge ms-auto">
+          <i class="bi bi-lock-fill"></i>
+          <span>TLS 256-Bit Encrypted</span>
+        </div>
+      </div>
+
+      <!-- Main Login Card & Form -->
+      <div class="auth-form-card">
+        <!-- Icon Badge -->
+        <div class="auth-welcome-icon" aria-hidden="true">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Sign in to manage enterprise risk.</p>
+
+        <!-- Dynamic Error Banner from Flask -->
+        {% if error %}
+        <div class="auth-alert-error" role="alert">
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="font-size: 16px;"></i>
+          <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Authentication Form -->
+        <form method="POST" action="/ERM" class="needs-validation" autocomplete="on">
+          <!-- Username / Email Field -->
+          <div class="form-group">
+            <label for="txtEmail" class="form-label">Username or Email</label>
+            <div class="input-wrapper">
+              <input class="form-control-erm" type="text" id="txtEmail" name="username" placeholder="Enter username or corporate email" autocomplete="username" required autofocus>
+              <span class="input-icon-left"><i class="bi bi-person"></i></span>
+            </div>
+          </div>
+
+          <!-- Password Field with Visibility Toggle -->
+          <div class="form-group">
+            <label for="txtPassword" class="form-label">Password</label>
+            <div class="input-wrapper">
+              <input class="form-control-erm" type="password" id="txtPassword" name="password" placeholder="Enter your password" autocomplete="current-password" required style="padding-right: 42px;">
+              <span class="input-icon-left"><i class="bi bi-key"></i></span>
+              <button type="button" class="password-toggle-btn" id="togglePasswordBtn" title="Show password" aria-label="Toggle password visibility">
+                <i class="bi bi-eye" id="passwordToggleIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Form Options: Remember me & Forgot Password -->
+          <div class="form-options-row">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="chkRemember" name="remember">
+              <label class="form-check-label" for="chkRemember">Remember me</label>
+            </div>
+            <a href="javascript:void(0)" onclick="openForgotModal()" class="forgot-password-link">Forgot password?</a>
+          </div>
+
+          <!-- Sign In Submit Button -->
+          <button type="submit" class="btn-signin" id="btnLogin">
+            <span>Sign in</span>
+            <i class="bi bi-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Right Panel Footer -->
+      <footer class="auth-footer">
+        <p class="m-0">Enterprise Risk Management System &bull; &copy; 2026 All rights reserved.</p>
+      </footer>
     </main>
 
-    <!-- Bottom Page Footer -->
-    <footer class="erm-bottom-footer">
-      © 2026 ERM. All Rights Reserved.
-    </footer>
   </div>
+
+  <!-- ========================================================================
+       MODAL: FORGOT PASSWORD ASSISTANCE
+       ======================================================================== -->
+  <div class="modal fade" id="forgotModal" tabindex="-1" aria-labelledby="forgotModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-erm p-2">
+        <div class="modal-header border-0 pb-0">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 bg-primary bg-opacity-10 text-primary">
+              <i class="bi bi-info-circle-fill fs-5"></i>
+            </div>
+            <h5 class="modal-title fw-bold m-0" id="forgotModalLabel">Password Reset Assistance</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="text-secondary" style="font-size: 13.5px; line-height: 1.6;">
+            For enterprise security and governance compliance, password resets are centrally managed by your Organization's Risk Administrator and IT Security Team.
+          </p>
+          <div class="p-3 bg-light rounded-3 border" style="font-size: 13px;">
+            <div class="fw-semibold text-dark mb-1"><i class="bi bi-envelope-at text-primary me-2"></i>IT Helpdesk &amp; Risk Governance</div>
+            <div class="text-muted">Please reach out to your IT administrator or raise a service ticket in your corporate ITSM portal.</div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-primary btn-sm px-3" data-bs-dismiss="modal">Got it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="{{ url_for('static', filename='cdn/popper.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='cdn/bootstrap.min.js') }}"></script>
+
+  <script>
+    // Password Visibility Toggle
+    document.addEventListener('DOMContentLoaded', function () {
+      const toggleBtn = document.getElementById('togglePasswordBtn');
+      const passwordInput = document.getElementById('txtPassword');
+      const toggleIcon = document.getElementById('passwordToggleIcon');
+
+      if (toggleBtn && passwordInput && toggleIcon) {
+        toggleBtn.addEventListener('click', function () {
+          const isPassword = passwordInput.type === 'password';
+          passwordInput.type = isPassword ? 'text' : 'password';
+          toggleIcon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+          toggleBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+          toggleBtn.title = isPassword ? 'Hide password' : 'Show password';
+        });
+      }
+    });
+
+    function openForgotModal() {
+      const modalEl = document.getElementById('forgotModal');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      } else {
+        alert('Please contact your ERM System Administrator or IT Helpdesk to reset your password.');
+      }
+    }
+  </script>
 </body>
 
 </html>

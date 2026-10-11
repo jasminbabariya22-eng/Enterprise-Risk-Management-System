@@ -1,279 +1,885 @@
 {% extends "base.html" %}
 
-
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='cdn/datatables.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}">
 
-        <!--begin::App Content Header-->
-        <div class="app-content-header">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <div class="col-sm-6">
-                <!-- <h3 class="mb-0">Risk Register</h3> -->
-                  <span style="float:left; margin-right:20px">Function List</span>
-        <!-- Title Icon Start -->
-        <span>
-            <a class="pl-5 navigate plus-icon-color" href="" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()"><i class="bi bi-plus-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Add"></i></a>
-            <a class="pl-5 edit-icon-color disabled" href="#"><i class="bi bi-pencil-square" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"></i></a>
-            <a class="pl-5 delete-icon-color disabled" href="#"><i class="bi bi-trash" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete"></i></a>
-            <a class="pl-5 export-icon-color" href="#" onclick="downloadExcel()"><i class="bi bi-file-earmark-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Export"></i></a>
-        </span>
+<style>
+  :root {
+    --erm-navy: #10233F;
+    --erm-blue: #2563EB;
+    --erm-blue-light: #EFF6FF;
+    --erm-teal: #14B8A6;
+    --erm-bg: #F8FAFC;
+    --erm-card-bg: #FFFFFF;
+    --erm-border: #E2E8F0;
+    --erm-text-primary: #0F172A;
+    --erm-text-secondary: #64748B;
+    --erm-success: #10B981;
+    --erm-danger: #EF4444;
+  }
 
-              </div>
-              <div class="col-sm-6">
-              
-              </div>
-            </div>
-            <!--end::Row-->
-          </div>
-          <!--end::Container-->
-        </div>
-        <!--end::App Content Header-->
-        <!--begin::App Content-->
-        <div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
+  body {
+    background-color: var(--erm-bg) !important;
+  }
 
-          
+  .admin-page-container {
+    padding: 20px 24px 40px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
 
-<div class="bd-example m-0 border-0 tab-content active table-responsive"> 
-<table id="departmentstbl" class="table table-hover table-bordered" style="width: 100%;">
-  <thead>
-    <tr class="tb-head">
-      <th scope="col">Function Name</th>
-      <th scope="col">Short Code</th>
-      <th scope="col">Description</th>
-      <th scope="col" width="60">Action</th>
-    </tr>
-    </tr>
-  </thead>
+  /* Header Styling */
+  .admin-header {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
 
-<tbody>
-</tbody>
-</table> 
+  .admin-breadcrumb {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--erm-teal);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-</div>  
-  <!-- Start PopUp -->
-   <!-- Modal -->
+  .admin-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .admin-subtitle {
+    font-size: 13px;
+    color: var(--erm-text-secondary);
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+
+  .admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* KPI Summary Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 35, 63, 0.06);
+  }
+
+  .kpi-icon-wrap {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .kpi-icon-blue { background: #EFF6FF; color: #2563EB; }
+  .kpi-icon-teal { background: #F0FDFA; color: #0D9488; }
+  .kpi-icon-purple { background: #FAF5FF; color: #9333EA; }
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    line-height: 1.2;
+  }
+
+  .kpi-label {
+    font-size: 12.5px;
+    color: var(--erm-text-secondary);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  /* Content Card */
+  .admin-card {
+    background: var(--erm-card-bg);
+    border: 1px solid var(--erm-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+  }
+
+  .admin-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--erm-border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #FCFDFE;
+  }
+
+  .search-input-group {
+    position: relative;
+    min-width: 260px;
+    max-width: 360px;
+  }
+
+  .search-input-group i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+  }
+
+  .search-input-group input {
+    padding-left: 36px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--erm-border);
+    font-size: 13.5px;
+    background: #FFFFFF;
+  }
+
+  .search-input-group input:focus {
+    border-color: var(--erm-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  /* Buttons */
+  .btn-erm-primary {
+    background: var(--erm-blue);
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 13.5px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    transition: all 0.15s ease;
+  }
+
+  .btn-erm-primary:hover {
+    background: #1D4ED8;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-erm-secondary {
+    background: #FFFFFF;
+    color: var(--erm-text-primary);
+    border: 1px solid var(--erm-border);
+    font-weight: 600;
+    font-size: 13.5px;
+    border-radius: 8px;
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .btn-erm-secondary:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+    color: var(--erm-navy);
+  }
+
+  /* Table Customizations */
+  #departmentstbl_wrapper {
+    padding: 0;
+  }
+
+  #departmentstbl thead th {
+    background: #F8FAFC !important;
+    color: var(--erm-navy) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 18px !important;
+    border-bottom: 1px solid var(--erm-border) !important;
+    border-top: none !important;
+  }
+
+  #departmentstbl tbody td {
+    padding: 14px 18px !important;
+    font-size: 13.5px !important;
+    color: var(--erm-text-primary) !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #F1F5F9 !important;
+  }
+
+  #departmentstbl tbody tr:hover td {
+    background-color: #F8FAFC !important;
+  }
+
+  .dept-code-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    background: #F0FDFA;
+    color: #0F766E;
+    border: 1px solid #CCFBF1;
+  }
+
+  .dept-name-cell {
+    font-weight: 600;
+    color: var(--erm-navy);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .action-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--erm-text-secondary);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+
+  .action-btn:hover {
+    background: #F1F5F9;
+    color: var(--erm-navy);
+  }
+
+  .action-btn.edit-btn:hover {
+    background: #EFF6FF;
+    color: var(--erm-blue);
+    border-color: #BFDBFE;
+  }
+
+  .action-btn.delete-btn:hover {
+    background: #FEF2F2;
+    color: var(--erm-danger);
+    border-color: #FECACA;
+  }
+
+  /* Modal Customizations */
+  .modal-content {
+    border-radius: 14px;
+    border: 1px solid var(--erm-border);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .modal-header {
+    background: #F8FAFC;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--erm-border);
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--erm-navy);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .modal-footer {
+    padding: 14px 24px;
+    background: #F8FAFC;
+    border-top: 1px solid var(--erm-border);
+  }
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+  }
+
+  .form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid var(--erm-border);
+    font-size: 13.5px;
+    padding: 8px 12px;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--erm-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .field-help {
+    font-size: 11.5px;
+    color: var(--erm-text-secondary);
+    margin-top: 4px;
+  }
+
+  .char-counter {
+    font-size: 11px;
+    color: #94A3B8;
+    float: right;
+  }
+
+  /* Empty State */
+  .empty-state-box {
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #F1F5F9;
+    color: #94A3B8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+  }
+</style>
+
+<div class="admin-page-container">
+  <!-- Header with Breadcrumb & Actions -->
+  <div class="admin-header">
+    <div>
+      <div class="admin-breadcrumb">
+        <i class="bi bi-gear-fill"></i> System Governance &bull; Administration
+      </div>
+      <h1 class="admin-title">
+        <i class="bi bi-building text-primary"></i> Department / Function Management
+      </h1>
+      <p class="admin-subtitle">
+        Configure operational departments, risk prefix short codes, and organizational structures.
+      </p>
+    </div>
+    <div class="admin-header-actions">
+      <button class="btn btn-erm-secondary" onclick="exportDepartmentsCSV()" title="Export departments to CSV">
+        <i class="bi bi-file-earmark-arrow-down"></i> Export
+      </button>
+      <button class="btn btn-erm-secondary" onclick="loadDepartment()" title="Refresh department list">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </button>
+      <button class="btn btn-erm-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()">
+        <i class="bi bi-plus-lg"></i> Add Department
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Stat Summary Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-blue">
+        <i class="bi bi-building-check"></i>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiTotalDept">0</div>
+        <div class="kpi-label">Total Departments</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-teal">
+        <i class="bi bi-upc-scan"></i>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiActiveCodes">0</div>
+        <div class="kpi-label">Active Prefix Codes</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-purple">
+        <i class="bi bi-shield-lock"></i>
+      </div>
+      <div>
+        <div class="kpi-value">System Active</div>
+        <div class="kpi-label">Governance Status</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Data Card -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <div class="d-flex align-items-center gap-2">
+        <h6 class="m-0 fw-bold" style="color: var(--erm-navy);">
+          <i class="bi bi-list-task me-1 text-primary"></i> Department Directory
+        </h6>
+        <span class="badge bg-light text-secondary border px-2 py-1" id="badgeDeptCount">0 Records</span>
+      </div>
+      <div class="search-input-group">
+        <i class="bi bi-search"></i>
+        <input type="text" id="deptSearchInput" class="form-control" placeholder="Search function, short code...">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="departmentstbl" class="table table-hover align-middle mb-0" style="width: 100%;">
+        <thead>
+          <tr class="tb-head">
+            <th scope="col" style="min-width: 200px;">Function / Department</th>
+            <th scope="col" style="width: 140px;">Short Code</th>
+            <th scope="col">Description</th>
+            <th scope="col" style="width: 100px; text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic Records -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add / Edit Department -->
 <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Add/Edit Function</h1>
+        <h5 class="modal-title" id="staticBackdropLabel">
+          <i class="bi bi-building-add text-primary" id="modalTitleIcon"></i> <span id="modalTitleText">Add New Department</span>
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body">
-       <div class="row">
+        <form id="deptForm" onsubmit="event.preventDefault(); saveDepartment();">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label for="departmentName" class="form-label">
+                Department / Function Name <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="departmentName" placeholder="e.g. Finance & Accounts" required autofocus>
+              <div class="field-help">Full official organizational name of the function.</div>
+            </div>
 
-      <div class="col-lg-6">
-    <div class="row mb-3">
-  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Function Name <span class="star">*</span></label>
-  <div class="col-sm-8">
-    <input type="text" class="form-control form-control-sm" id="departmentName" placeholder="Department Name">
-  </div>
-  </div>
-      </div>
+            <div class="col-md-4">
+              <label for="shortCode" class="form-label">
+                Short Code (Prefix) <span class="text-danger">*</span>
+                <span class="char-counter" id="codeCharCounter">0/10</span>
+              </label>
+              <input type="text" class="form-control text-uppercase" id="shortCode" placeholder="e.g. FIN" maxlength="10" required>
+              <div class="field-help">Prefix used for automated Risk IDs (e.g. FIN-0001).</div>
+            </div>
 
-      <div class="col-lg-6">
-    <div class="row mb-3">
-  <label for="colFormLabelSm" class="col-sm-4 col-form-label col-form-label-sm">Short Code <span class="star">*</span></label>
-  <div class="col-sm-8">
-    <input type="text" class="form-control form-control-sm" id="shortCode" placeholder="Short Code" maxlength="10" pattern="\d{10}">
-  </div>
-  </div>
-      </div>
-
-      <div class="col-lg-12">
-    <div class="row mb-3">
-  <label for="colFormLabelSm" class="col-sm-2 col-form-label col-form-label-sm">Description</label>
-  <div class="col-sm-10">
-  <textarea class="form-control form-control-sm" rows="3" id="Description" placeholder="Description"></textarea>
-  </div>
-  </div>
-      </div>
-
-
-      </div>
-
+            <div class="col-12">
+              <label for="Description" class="form-label">Function Description & Scope</label>
+              <textarea class="form-control" rows="3" id="Description" placeholder="Provide details on responsibilities and scope of this functional unit..."></textarea>
+              <div class="field-help">Optional governance context and functional overview.</div>
+            </div>
+          </div>
+        </form>
       </div>
 
       <div class="modal-footer">
-        
-          <button type="button" class="btn btn-primary text-white" onclick="saveDepartment()">Save</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-erm-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-erm-primary" id="btnSaveDept" onclick="saveDepartment()">
+          <i class="bi bi-check2-circle"></i> Save Department
+        </button>
       </div>
     </div>
   </div>
 </div>
 
-</div>
-          <!--end::Container-->
-<!-- Toast -->
-<div class="toast position-fixed top-0 end-0 p-3 mt-5" id="toastMsg" style="z-index:9999!important;">
-<div class="toast-body bg-success text-white"></div>
+<!-- Modal: Delete Confirmation -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center p-4">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background: #FEF2F2; color: #EF4444; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 16px;">
+          <i class="bi bi-exclamation-triangle"></i>
         </div>
+        <h6 class="fw-bold mb-2" style="color: var(--erm-navy);">Delete Department?</h6>
+        <p class="text-muted small mb-4">Are you sure you want to delete <strong id="deleteDeptName">this department</strong>? This action cannot be undone.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <button type="button" class="btn btn-erm-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm px-3" id="btnConfirmDelete" onclick="executeDeleteDepartment()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        </div>   
-        <!--end::App Content-->
-        
-<script src="{{ url_for('static', filename='cdn/jquery-3.6.0.min.js') }}"></script>
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+  <div id="toastMsg" class="toast align-items-center text-white border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center gap-2" id="toastMsgBody">
+        <i class="bi bi-check-circle-fill"></i> <span>Success message</span>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='cdn/jquery.dataTables.min.js') }}"></script>
 <script src="{{ url_for('static', filename='cdn/axios.min.js') }}"></script>
-<script>
-let table;
-let selectedRow = null;
-let selectedId = null;
 
-$(document).ready(function(){
+<script>
+let dataTableInstance = null;
+let selectedId = null;
+let pendingDeleteId = null;
+let rawDepartmentList = [];
+
+$(document).ready(function() {
   loadDepartment();
+
+  // Short code character counter & uppercase enforcement
+  $('#shortCode').on('input', function() {
+    this.value = this.value.toUpperCase();
+    $('#codeCharCounter').text(this.value.length + '/10');
+  });
+
+  // Client-side quick filter
+  $('#deptSearchInput').on('keyup', function() {
+    if (dataTableInstance) {
+      dataTableInstance.search(this.value).draw();
+    }
+  });
 });
 
 async function loadDepartment() {
   try {
     const response = await axios.get('/get_Department_all');
-    console.log("response get_Department_all", response);
+    console.log("response get_Department_all:", response);
 
-    if (response.data.Error.Error === false) {
-      var data = response.data.data;
-
-      $('#departmentstbl').DataTable({
-        destroy: true,
-        data: data,
-        columns: [
-          { data: "dept_name" },
-          { data: "dept_short_name" },
-          { data: "description" },
-         //{
-         //  data: "id",
-         //  render: function (data) {
-         //    return `
-         //      <a href="#"><i class="bi bi-pencil-square edit-icon-color"
-         //      data-bs-toggle="modal" title="Edit"
-         //      onclick="editDepartment(${data})"></i></a>
-         //      |
-         //      <a href="#"><i class="bi bi-trash delete-icon-color"
-         //      data-bs-toggle="tooltip" title="History" onclick="deleteDepartment(${data})"></i></a>
-         //    `;
-         //  }
-         //} 
-
-         {
-            data: "id",
-            render: function (data) {
-              return `
-                <a href="#"><i class="bi bi-pencil-square edit-icon-color"
-                data-bs-toggle="modal" title="Edit"
-                onclick="editDepartment(${data})"></i></a>
-                
-              `;
-            }
-          }
-        ]
-      });
-
-    } else {
-      showToast(response.data.Error.Error_message);
+    let data = [];
+    if (response.data && (response.data.Error === false || (response.data.Error && response.data.Error.Error === false) || response.data.data)) {
+      data = response.data.data || [];
+    } else if (Array.isArray(response.data)) {
+      data = response.data;
     }
 
+    rawDepartmentList = data;
+    updateKPIs(data);
+
+    if (dataTableInstance) {
+      dataTableInstance.destroy();
+    }
+
+    dataTableInstance = $('#departmentstbl').DataTable({
+      destroy: true,
+      data: data,
+      dom: 'rtip',
+      pageLength: 10,
+      order: [[0, 'asc']],
+      language: {
+        emptyTable: `
+          <div class="empty-state-box">
+            <div class="empty-state-icon"><i class="bi bi-building"></i></div>
+            <h6 class="fw-bold text-dark mb-1">No Departments Found</h6>
+            <p class="text-muted small mb-3">Add operational departments to manage risk prefixes and organizational alignment.</p>
+            <button class="btn btn-erm-primary btn-sm" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onclick="clearall()">
+              <i class="bi bi-plus-lg"></i> Add First Department
+            </button>
+          </div>
+        `
+      },
+      columns: [
+        {
+          data: "dept_name",
+          render: function(data, type, row) {
+            return `
+              <div class="dept-name-cell">
+                <span class="rounded-circle d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: #EFF6FF; color: #2563EB; font-size: 13px;">
+                  <i class="bi bi-building"></i>
+                </span>
+                <span>${escapeHtml(data || "Untitled Function")}</span>
+              </div>
+            `;
+          }
+        },
+        {
+          data: "dept_short_name",
+          render: function(data) {
+            if (!data) return '<span class="text-muted small">—</span>';
+            return `<span class="dept-code-badge">${escapeHtml(data)}</span>`;
+          }
+        },
+        {
+          data: "description",
+          render: function(data) {
+            if (!data || !data.trim()) return '<span class="text-muted small fst-italic">No description configured</span>';
+            return `<span class="text-secondary small">${escapeHtml(data)}</span>`;
+          }
+        },
+        {
+          data: "id",
+          orderable: false,
+          className: "text-center",
+          render: function(data, type, row) {
+            return `
+              <div class="action-btn-group justify-content-center">
+                <button type="button" class="action-btn edit-btn" onclick="editDepartment(${data})" title="Edit Department">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button type="button" class="action-btn delete-btn" onclick="confirmDeleteDepartment(${data}, '${escapeAttr(row.dept_name || '')}')" title="Delete Department">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ]
+    });
+
   } catch (error) {
-    showToast("Failed to load categories");
+    console.error("loadDepartment Error:", error);
+    showToast("Failed to load departments. Please try refreshing.", "bg-danger");
   }
 }
 
-function validate(){
-  if(!departmentName.value || !shortCode.value){
-    showToast("Fill required fields","bg-danger");
+function updateKPIs(data) {
+  const total = data.length;
+  const activeCodes = data.filter(d => d.dept_short_name && d.dept_short_name.trim().length > 0).length;
+
+  $('#kpiTotalDept').text(total);
+  $('#kpiActiveCodes').text(activeCodes);
+  $('#badgeDeptCount').text(`${total} Records`);
+}
+
+function validate() {
+  const nameVal = $('#departmentName').val().trim();
+  const codeVal = $('#shortCode').val().trim();
+
+  if (!nameVal || !codeVal) {
+    showToast("Please fill in all required fields marked with *", "bg-danger");
+    if (!nameVal) $('#departmentName').focus();
+    else $('#shortCode').focus();
     return false;
   }
 
-  if(shortCode.value.length > 10){
-    showToast("Short code must be maximum 10 characters","bg-danger");
+  if (codeVal.length > 10) {
+    showToast("Short Code prefix cannot exceed 10 characters", "bg-danger");
+    $('#shortCode').focus();
     return false;
   }
 
   return true;
 }
 
-async function saveDepartment(){
-  if(!validate()) return;
+async function saveDepartment() {
+  if (!validate()) return;
+
+  const btn = $('#btnSaveDept');
+  btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...');
 
   const data = {
-    dept_name:departmentName.value,
-    dept_short_name:shortCode.value,
-    description:Description.value,
+    dept_name: $('#departmentName').val().trim(),
+    dept_short_name: $('#shortCode').val().trim().toUpperCase(),
+    description: $('#Description').val().trim()
   };
 
-  if(selectedId){
-    await axios.put(`/department/update/${selectedId}`,data);
-    showToast("Department updated successfully");
-    
-    clearall();
-    
-  } else {
-    await axios.post('/department/create',data)
-    
-    //showToast("Department created successfully");
-    //clearall();
-    .then(response => {
-        if (response.data.Error.Error === false) 
-        {
-            var data = response.data.data;
-            showToast("Department created successfully");
-            clearall();
-          }
-          else {
-            //showToast(response.data.Error.Error_message);
-             showToast("Failed to create Department", "bg-danger");
-          }
-    })
+  try {
+    if (selectedId) {
+      await axios.put(`/department/update/${selectedId}`, data);
+      showToast("Department updated successfully!", "bg-success");
+      clearall();
+      bootstrap.Modal.getInstance(document.getElementById('staticBackdrop')).hide();
+      await loadDepartment();
+    } else {
+      const response = await axios.post('/department/create', data);
+      if (response.data && response.data.Error && response.data.Error.Error === true) {
+        showToast(response.data.Error.Error_message || "Failed to create Department", "bg-danger");
+      } else {
+        showToast("Department created successfully!", "bg-success");
+        clearall();
+        bootstrap.Modal.getInstance(document.getElementById('staticBackdrop')).hide();
+        await loadDepartment();
+      }
+    }
+  } catch (err) {
+    console.error("saveDepartment error:", err);
+    const msg = err.response?.data?.message || err.response?.data?.Error?.Error_message || "Failed to save department";
+    showToast(msg, "bg-danger");
+  } finally {
+    btn.prop('disabled', false).html('<i class="bi bi-check2-circle"></i> Save Department');
   }
-  loadDepartment();
-
-  bootstrap.Modal.getInstance(staticBackdrop).hide();
-  //loadDepartment();
 }
 
-async function editDepartment(id){
-  //alert("editt callhhh")
-  
-  const res = await axios.get(`/department/${id}`);
-  const u = res.data.data;
+async function editDepartment(id) {
+  try {
+    selectedId = id;
 
-  selectedId = u.id;
-  departmentName.value=u.dept_name;
-  shortCode.value=u.dept_short_name;
-  Description.value=u.description;
+    // Instant local cache check
+    let u = rawDepartmentList.find(x => x.id === id);
+    if (!u) {
+      const res = await axios.get(`/department/${id}`);
+      u = res.data.data;
+      if (Array.isArray(u)) u = u[0];
+    }
 
-  new bootstrap.Modal(staticBackdrop).show();
+    if (!u) {
+      showToast("Department record not found", "bg-danger");
+      return;
+    }
+
+    $('#modalTitleIcon').removeClass('bi-building-add').addClass('bi-pencil-square');
+    $('#modalTitleText').text('Edit Department');
+
+    $('#departmentName').val(u.dept_name || '');
+    $('#shortCode').val(u.dept_short_name || '');
+    $('#Description').val(u.description || '');
+    $('#codeCharCounter').text((u.dept_short_name || '').length + '/10');
+
+    const modalEl = document.getElementById('staticBackdrop');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  } catch (err) {
+    console.error("editDepartment error:", err);
+    showToast("Failed to fetch department details", "bg-danger");
+  }
 }
 
-function showToast(msg,cls="bg-success"){
-  let toastEl=document.getElementById('toastMsg');
-  toastEl.querySelector('.toast-body').innerText=msg;
-  toastEl.querySelector('.toast-body').className="toast-body text-white "+cls;
-  new bootstrap.Toast(toastEl).show();
+function confirmDeleteDepartment(id, name) {
+  pendingDeleteId = id;
+  $('#deleteDeptName').text(name ? `"${name}"` : "this department");
+  const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+  modal.show();
 }
 
-async function deleteDepartment(id){
-  if(!confirm("Are you sure you want to delete this department?")){
+async function executeDeleteDepartment() {
+  if (!pendingDeleteId) return;
+
+  const btn = $('#btnConfirmDelete');
+  btn.prop('disabled', true).text('Deleting...');
+
+  try {
+    await axios.delete(`/department/delete/${pendingDeleteId}`);
+    showToast("Department deleted successfully!", "bg-success");
+    bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+    await loadDepartment();
+  } catch (err) {
+    console.error("deleteDepartment error:", err);
+    showToast("Failed to delete department", "bg-danger");
+  } finally {
+    btn.prop('disabled', false).text('Delete');
+    pendingDeleteId = null;
+  }
+}
+
+function clearall() {
+  $('#departmentName').val("");
+  $('#shortCode').val("");
+  $('#Description').val("");
+  $('#codeCharCounter').text("0/10");
+  selectedId = null;
+  $('#modalTitleIcon').removeClass('bi-pencil-square').addClass('bi-building-add');
+  $('#modalTitleText').text('Add New Department');
+}
+
+function exportDepartmentsCSV() {
+  if (!rawDepartmentList || rawDepartmentList.length === 0) {
+    showToast("No department data available to export", "bg-warning");
     return;
   }
 
-  await axios.delete(`/department/delete/${id}`);
-  //showToast("Deleted");
-  showToast("Department deleted successfully");
-  loadDepartment();
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "ID,Department Name,Short Code,Description\n";
+
+  rawDepartmentList.forEach(dept => {
+    const row = [
+      dept.id || '',
+      `"${(dept.dept_name || '').replace(/"/g, '""')}"`,
+      `"${(dept.dept_short_name || '').replace(/"/g, '""')}"`,
+      `"${(dept.description || '').replace(/"/g, '""')}"`
+    ];
+    csvContent += row.join(",") + "\n";
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `ERM_Departments_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-function clearall()
-{
-   departmentName.value="";
-   shortCode.value="";
-   Description.value="";
-   selectedId = null;
+function showToast(msg, bgClass = "bg-success") {
+  const toastEl = document.getElementById('toastMsg');
+  const toastBody = document.getElementById('toastMsgBody');
+  
+  toastEl.className = `toast align-items-center text-white border-0 shadow-lg ${bgClass}`;
+  
+  let icon = "bi-check-circle-fill";
+  if (bgClass.includes('danger')) icon = "bi-exclamation-octagon-fill";
+  if (bgClass.includes('warning')) icon = "bi-exclamation-triangle-fill";
+  if (bgClass.includes('info')) icon = "bi-info-circle-fill";
+
+  toastBody.innerHTML = `<i class="bi ${icon} fs-5 me-2"></i><span>${escapeHtml(msg)}</span>`;
+  
+  const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+  toast.show();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/'/g, "\\'");
 }
 </script>
-    
 {% endblock %}

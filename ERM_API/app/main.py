@@ -43,6 +43,7 @@ from app.api.user_role_map import router as user_role_map_router
 from app.api.menu_mst import router as menu_map_router
 
 from app.api.email_job_api import router as email_job_router
+from app.api.home_api import router as home_router
 
 from app.api.financial_year import router as financial_year_router
 from dotenv import load_dotenv
@@ -73,6 +74,7 @@ app.include_router(user_type_router)
 
 # Full Risk Register APIs
 app.include_router(risk_router)
+app.include_router(home_router)
 
 # Dashboard
 app.include_router(risk_dashboard_router)
