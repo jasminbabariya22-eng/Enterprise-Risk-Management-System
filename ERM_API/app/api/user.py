@@ -256,7 +256,7 @@ def update_user(
         for key, value in update_data.items():
             setattr(user, key, value)
 
-        user.modified_by = (current_user.get("id") if isinstance(current_user, dict) else None) or 1
+        user.modified_by = current_user.get("id") if isinstance(current_user, dict) and current_user.get("id") else None
         user.modified_on = datetime.utcnow()
 
         db.commit()
