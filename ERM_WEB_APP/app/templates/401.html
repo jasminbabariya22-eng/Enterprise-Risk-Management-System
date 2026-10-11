@@ -1,58 +1,51 @@
-  
-       <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
-       <link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
+{% extends "base.html" %}
 
-       <!--begin::App Content Header-->
-        <div class="app-content-header">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <div class="col-sm-12">
-                  
-              </div>
-      
-            </div>
-            <!--end::Row-->
-          </div>
-          <!--end::Container-->
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-7 col-xl-6">
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden text-center p-4 p-md-5 bg-white">
+        <!-- Error Badge & Icon -->
+        <div class="mb-4 d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; border-radius: 50%; background: #EFF6FF; border: 2px solid #DBEAFE;">
+          <i class="bi bi-shield-lock text-primary" style="font-size: 38px;"></i>
         </div>
-        <!--end::App Content Header-->
-        <!--begin::App Content-->
-        <div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
 
-   <div class="row">
-<h5 style="float:left; margin-right:20px">..!</h5>
-</div>
-<!--End Right Panel-->
-   </div>
-</div>
+        <span class="badge rounded-pill bg-primary-subtle text-primary fw-semibold px-3 py-2 mb-3 mx-auto" style="font-size: 12px; letter-spacing: 0.5px;">
+          HTTP 401 &bull; UNAUTHORIZED
+        </span>
 
+        <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.3px;">Authentication Required</h3>
+        <p class="text-muted mb-4" style="font-size: 14.5px; line-height: 1.6;">
+          Your enterprise session has expired, or valid credentials are required to view this protected resource. Please sign in to re-authenticate.
+        </p>
 
-   <style>
-    
-    .tab-btn { color:#000;}
-
-    .tab-btn.active {
-      background: #007bff!important;
-      color: #fff!important;
-    }
-
-    .left-panel {
-  position: -webkit-sticky; 
-  position: sticky;
-  top: 0; 
-  height: 100vh; 
-  overflow-y: auto; 
-}
-
-.blankH{ height: 300px;}
-  </style>
-
-
+        <!-- Information Box -->
+        <div class="bg-light rounded-3 p-3 text-start mb-4 border" style="font-size: 13px;">
+          <div class="fw-semibold text-dark mb-2 d-flex align-items-center">
+            <i class="bi bi-info-circle-fill text-primary me-2"></i> Common Reasons:
           </div>
-
+          <ul class="text-muted mb-0 ps-3" style="line-height: 1.6;">
+            <li>Your authenticated session timed out due to inactivity.</li>
+            <li>You opened a direct bookmark without logging in first.</li>
+            <li>Your account was signed out in another browser tab.</li>
+          </ul>
         </div>
-       
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mb-3">
+          <a href="/login" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm d-inline-flex align-items-center justify-content-center" style="border-radius: 8px; font-size: 14px; background: #2563EB; border-color: #2563EB;">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Sign In to ERM
+          </a>
+          <a href="/help" class="btn btn-outline-secondary px-4 py-2 fw-semibold d-inline-flex align-items-center justify-content-center" style="border-radius: 8px; font-size: 14px;">
+            <i class="bi bi-question-circle me-2"></i> Visit Help Center
+          </a>
+        </div>
+
+        <div class="pt-3 border-top text-muted" style="font-size: 12px;">
+          Need assistance? Review our <a href="/help" class="text-primary text-decoration-none fw-semibold">User Access Guide</a> or contact your System Administrator.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

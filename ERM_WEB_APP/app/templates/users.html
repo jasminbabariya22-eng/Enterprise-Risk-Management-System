@@ -566,7 +566,7 @@
         <select id="filterStatus" class="form-select filter-select" onchange="applyUserFilters()">
           <option value="">All Statuses</option>
           <option value="Active">Active</option>
-          <option value="Unactive">Inactive</option>
+          <option value="Inactive">Inactive</option>
         </select>
         <div class="search-input-group">
           <i class="bi bi-search"></i>
@@ -977,7 +977,11 @@ function applyUserFilters() {
   const deptVal = $('#filterDept').val();
   const statusVal = $('#filterStatus').val();
 
-  userDataTable.column(2).search(deptVal ? `^${deptVal}$` : '', true, false);
+  const escapedDept = (deptVal && $.fn && $.fn.dataTable && $.fn.dataTable.util)
+    ? $.fn.dataTable.util.escapeRegex(deptVal)
+    : (deptVal || '');
+
+  userDataTable.column(2).search(escapedDept ? `^${escapedDept}$` : '', true, false);
   userDataTable.column(5).search(statusVal ? `^${statusVal}$` : '', true, false);
   userDataTable.draw();
 }
@@ -1265,8 +1269,15 @@ function escapeHtml(str) {
 }
 
 function escapeAttr(str) {
-  if (!str) return '';
-  return String(str).replace(/'/g, "\\'");
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 </script>
 {% endblock %}

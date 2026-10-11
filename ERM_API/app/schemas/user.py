@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional, Any
 from datetime import datetime
 
@@ -10,7 +10,7 @@ class UserCreate(BaseModel):
     password: str
     first_name: str
     last_name: str
-    email: Optional[str] = None
+    email: EmailStr
 
     photo: Optional[str] = None
     contact_no: Optional[str] = None

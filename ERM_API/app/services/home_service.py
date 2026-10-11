@@ -185,30 +185,36 @@ def get_home_workload_and_summary(db: Session, current_user: dict):
 
     elif is_functional_head:
         # Stage 1 approvals waiting for Functional Head in user's dept
-        dept_pending = db.query(func.count(RiskRegister.risk_register_id)).filter(
-            RiskRegister.is_deleted == 0,
-            RiskRegister.dept_id == dept_id,
-            RiskRegister.risk_function_head_approval_status.is_(None)
-        ).scalar() or 0 if dept_id else 0
+        if dept_id:
+            dept_pending = db.query(func.count(RiskRegister.risk_register_id)).filter(
+                RiskRegister.is_deleted == 0,
+                RiskRegister.dept_id == dept_id,
+                RiskRegister.risk_function_head_approval_status.is_(None)
+            ).scalar() or 0
 
-        dept_total = db.query(func.count(RiskRegister.risk_register_id)).filter(
-            RiskRegister.is_deleted == 0,
-            RiskRegister.dept_id == dept_id
-        ).scalar() or 0 if dept_id else 0
+            dept_total = db.query(func.count(RiskRegister.risk_register_id)).filter(
+                RiskRegister.is_deleted == 0,
+                RiskRegister.dept_id == dept_id
+            ).scalar() or 0
 
-        dept_approved = db.query(func.count(RiskRegister.risk_register_id)).filter(
-            RiskRegister.is_deleted == 0,
-            RiskRegister.dept_id == dept_id,
-            RiskRegister.risk_function_head_approval_status == 1
-        ).scalar() or 0 if dept_id else 0
+            dept_approved = db.query(func.count(RiskRegister.risk_register_id)).filter(
+                RiskRegister.is_deleted == 0,
+                RiskRegister.dept_id == dept_id,
+                RiskRegister.risk_function_head_approval_status == 1
+            ).scalar() or 0
 
-        dept_treatments = db.query(func.count(RiskTreatment.risk_treatment_id)).join(
-            RiskRegister, RiskTreatment.risk_register_id == RiskRegister.risk_register_id
-        ).filter(
-            RiskRegister.is_deleted == 0,
-            RiskRegister.dept_id == dept_id,
-            RiskTreatment.is_deleted == 0
-        ).scalar() or 0 if dept_id else 0
+            dept_treatments = db.query(func.count(RiskTreatment.risk_treatment_id)).join(
+                RiskRegister, RiskTreatment.risk_register_id == RiskRegister.risk_register_id
+            ).filter(
+                RiskRegister.is_deleted == 0,
+                RiskRegister.dept_id == dept_id,
+                RiskTreatment.is_deleted == 0
+            ).scalar() or 0
+        else:
+            dept_pending = 0
+            dept_total = 0
+            dept_approved = 0
+            dept_treatments = 0
 
         summary = {
             "card_1": {"label": "Dept Stage 1 Approvals", "value": dept_pending, "icon": "bi-hourglass-top", "color": "warning"},
@@ -239,9 +245,18 @@ def get_home_workload_and_summary(db: Session, current_user: dict):
                 RiskRegister.risk_manager_approval_status.is_(None),
                 RiskRegister.risk_head_approval_status.is_(None)
             ),
-            RiskRegister.risk_function_head_approval_status != -1,
-            RiskRegister.risk_manager_approval_status != -1,
-            RiskRegister.risk_head_approval_status != -1
+            or_(
+                RiskRegister.risk_function_head_approval_status.is_(None),
+                RiskRegister.risk_function_head_approval_status != -1
+            ),
+            or_(
+                RiskRegister.risk_manager_approval_status.is_(None),
+                RiskRegister.risk_manager_approval_status != -1
+            ),
+            or_(
+                RiskRegister.risk_head_approval_status.is_(None),
+                RiskRegister.risk_head_approval_status != -1
+            )
         ).scalar() or 0
 
         # My risks rejected/returned for revision

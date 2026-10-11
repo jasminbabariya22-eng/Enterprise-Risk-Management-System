@@ -862,7 +862,7 @@ async function loadrole() {
                 <button type="button" class="action-btn edit-btn" onclick="editusersrole(${data})" title="Edit Role & Permissions">
                   <i class="bi bi-pencil-square"></i>
                 </button>
-                <button type="button" class="action-btn delete-btn" onclick="confirmDeleteRole(${data}, '${escapeAttr(row.name || '')}')" title="Delete Role">
+                <button type="button" class="action-btn delete-btn" onclick="confirmDeleteRole(${Number(data)})" title="Delete Role">
                   <i class="bi bi-trash"></i>
                 </button>
               </div>
@@ -983,8 +983,10 @@ function setSelectedMenus(menuIds) {
   });
 }
 
-function confirmDeleteRole(id, name) {
-  pendingDeleteRoleId = id;
+function confirmDeleteRole(id) {
+  pendingDeleteRoleId = Number(id);
+  const role = (rawRoleList || []).find(r => Number(r.id) === Number(id));
+  const name = role ? role.name : '';
   $('#deleteRoleName').text(name ? `"${name}"` : "this role");
   const modal = new bootstrap.Modal(document.getElementById('deleteRoleModal'));
   modal.show();
@@ -1025,8 +1027,7 @@ function exportRolesCSV() {
     return;
   }
 
-  let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "ID,Role Name,Description,Assigned Menus\n";
+  let csvContent = "ID,Role Name,Description,Assigned Menus\n";
 
   rawRoleList.forEach(r => {
     const menuNames = (r.menuids || []).map(id => menuIdMap[id] || `#${id}`).join("; ");
@@ -1039,7 +1040,7 @@ function exportRolesCSV() {
     csvContent += row.join(",") + "\n";
   });
 
-  const encodedUri = encodeURI(csvContent);
+  const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
   link.setAttribute("download", `ERM_Roles_Permissions_${new Date().toISOString().split('T')[0]}.csv`);
@@ -1076,8 +1077,15 @@ function escapeHtml(str) {
 }
 
 function escapeAttr(str) {
-  if (!str) return '';
-  return String(str).replace(/'/g, "\\'");
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 </script>
 {% endblock %}

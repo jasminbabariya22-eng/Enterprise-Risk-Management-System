@@ -77,13 +77,9 @@ def create_user(
         if not user_data.get("status"):
             user_data["status"] = "Active"
 
-        # Auto-compute next ID if sequence is missing in postgres
-        next_id = (db.query(func.coalesce(func.max(User.id), 0)).scalar() or 0) + 1
-
         creator_id = (current_user.get("id") if isinstance(current_user, dict) else None) or 1
 
         db_user = User(
-            id=next_id,
             **user_data,
             created_by=creator_id,
             created_on=datetime.utcnow(),
@@ -260,7 +256,7 @@ def update_user(
         for key, value in update_data.items():
             setattr(user, key, value)
 
-        user.modified_by = current_user.get("id") if isinstance(current_user, dict) else 1
+        user.modified_by = (current_user.get("id") if isinstance(current_user, dict) else None) or 1
         user.modified_on = datetime.utcnow()
 
         db.commit()

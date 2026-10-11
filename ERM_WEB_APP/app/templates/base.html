@@ -58,14 +58,18 @@
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
  <!--begin::App Wrapper-->
 <div class="app-wrapper">
-{% include 'partials/header.html' %}
+{% if session.get('token') %}
+  {% include 'partials/header.html' %}
 
-{% if usertype|lower != 'action owner' %}
-    {% include 'partials/sidebar.html' %}
+  {% if usertype|lower != 'action owner' %}
+      {% include 'partials/sidebar.html' %}
+  {% endif %}
+{% else %}
+  {% include 'partials/public_header.html' %}
 {% endif %}
 
 <!--begin::App Main-->
-<main class="app-main">
+<main class="app-main {% if not session.get('token') %}w-100 ms-0{% endif %}">
 
 {% block content %}{% endblock %}
 

@@ -1128,18 +1128,24 @@ function renderTopRisksTable(risks) {
 
     const progressVal = parseInt(String(r.progress || "0").replace(/[^0-9]/g, '')) || 0;
 
+    const safeRiskId = escapeHtml(r.risk_id || '');
+    const safeRiskName = escapeHtml(r.risk_name || 'Untitled Risk');
+    const safeDept = escapeHtml(r.department || 'General');
+    const safeOwner = escapeHtml(r.risk_owner || 'Unassigned');
+    const safeStatus = escapeHtml(r.status || 'Open');
+
     html += `
       <tr>
         <td>
-          <a href="/riskRegister" class="risk-badge-id" title="View in Risk Register">${r.risk_id}</a>
+          <a href="/riskRegister" class="risk-badge-id" title="View in Risk Register">${safeRiskId}</a>
         </td>
         <td>
-          <div class="fw-bold text-dark" style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${r.risk_name}">
-            ${r.risk_name}
+          <div class="fw-bold text-dark" style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${safeRiskName}">
+            ${safeRiskName}
           </div>
         </td>
-        <td><span class="badge bg-light text-secondary border">${r.department || 'General'}</span></td>
-        <td><div class="text-muted" style="font-size: 12.5px;"><i class="bi bi-person me-1"></i>${r.risk_owner || 'Unassigned'}</div></td>
+        <td><span class="badge bg-light text-secondary border">${safeDept}</span></td>
+        <td><div class="text-muted" style="font-size: 12.5px;"><i class="bi bi-person me-1"></i>${safeOwner}</div></td>
         <td style="text-align: center;">
           <span class="badge rounded-pill" style="background: ${r.color || '#E2E8F0'}; color: #FFF; font-weight: 700; font-size: 12px; padding: 4px 9px;">
             ${score}
@@ -1160,7 +1166,7 @@ function renderTopRisksTable(risks) {
         </td>
         <td>
           <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size: 11px; font-weight: 600;">
-            ${r.status || 'Open'}
+            ${safeStatus}
           </span>
         </td>
       </tr>
@@ -1168,6 +1174,16 @@ function renderTopRisksTable(risks) {
   });
 
   tbody.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 </script>
 

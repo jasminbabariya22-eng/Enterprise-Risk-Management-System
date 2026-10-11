@@ -815,9 +815,8 @@
           showToast(res.Error.Error_message || "Failed", "bg-danger");
         }
       } else {
-        showSuccessBanner({ message: "Risk spreadsheet processed successfully." });
-        showToast("Risk spreadsheet processed successfully.", "bg-success");
-        cancelUpload(false);
+        showErrorBanner({ message: (res && res.message) || "Unrecognized server response format. Please verify your upload." });
+        showToast((res && res.message) || "Unrecognized upload response shape.", "bg-danger");
       }
     } catch (error) {
       console.error("Upload error:", error);

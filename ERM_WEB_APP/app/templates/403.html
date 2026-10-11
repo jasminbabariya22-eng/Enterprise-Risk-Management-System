@@ -1,58 +1,63 @@
-  
-       <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
-       <link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
+{% extends "base.html" %}
 
-       <!--begin::App Content Header-->
-        <div class="app-content-header">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <div class="col-sm-12">
-                  
-              </div>
-      
-            </div>
-            <!--end::Row-->
-          </div>
-          <!--end::Container-->
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-7 col-xl-6">
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden text-center p-4 p-md-5 bg-white">
+        <!-- Error Badge & Icon -->
+        <div class="mb-4 d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px; border-radius: 50%; background: #FEF2F2; border: 2px solid #FEE2E2;">
+          <i class="bi bi-shield-x text-danger" style="font-size: 38px;"></i>
         </div>
-        <!--end::App Content Header-->
-        <!--begin::App Content-->
-        <div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
 
-   <div class="row">
-<h5 style="float:left; margin-right:20px">Permission not granted!</h5>
-</div>
-<!--End Right Panel-->
-   </div>
-</div>
+        <span class="badge rounded-pill bg-danger-subtle text-danger fw-semibold px-3 py-2 mb-3 mx-auto" style="font-size: 12px; letter-spacing: 0.5px;">
+          HTTP 403 &bull; ACCESS FORBIDDEN
+        </span>
 
+        <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.3px;">Access Denied</h3>
+        <p class="text-muted mb-3" style="font-size: 14.5px; line-height: 1.6;">
+          You do not have the required role authorizations to view or perform operations on this resource.
+        </p>
 
-   <style>
-    
-    .tab-btn { color:#000;}
-
-    .tab-btn.active {
-      background: #007bff!important;
-      color: #fff!important;
-    }
-
-    .left-panel {
-  position: -webkit-sticky; 
-  position: sticky;
-  top: 0; 
-  height: 100vh; 
-  overflow-y: auto; 
-}
-
-.blankH{ height: 300px;}
-  </style>
-
-
-          </div>
-
+        <!-- Current Role Indicator (if signed in) -->
+        {% if usertype %}
+        <div class="mb-4">
+          <span class="badge bg-light text-dark border px-3 py-2 fw-medium" style="font-size: 13px;">
+            Current Active Role: <span class="fw-bold text-primary">{{ usertype }}</span>
+          </span>
         </div>
-       
+        {% endif %}
+
+        <!-- Information Box -->
+        <div class="bg-light rounded-3 p-3 text-start mb-4 border" style="font-size: 13px;">
+          <div class="fw-semibold text-dark mb-2 d-flex align-items-center">
+            <i class="bi bi-shield-lock-fill text-danger me-2"></i> Role Governance Scope:
+          </div>
+          <ul class="text-muted mb-0 ps-3" style="line-height: 1.6;">
+            <li><strong>Risk Dashboard:</strong> Restricted to Admin, Risk Manager, and Risk Head roles.</li>
+            <li><strong>User & Role Management:</strong> Restricted to System Administrators.</li>
+            <li><strong>Approvals & Register:</strong> Department and ownership access is strictly enforced.</li>
+          </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mb-3">
+          <a href="/home" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm d-inline-flex align-items-center justify-content-center" style="border-radius: 8px; font-size: 14px; background: #2563EB; border-color: #2563EB;">
+            <i class="bi bi-house-door-fill me-2"></i> Return to Home
+          </a>
+          <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold d-inline-flex align-items-center justify-content-center" style="border-radius: 8px; font-size: 14px;" onclick="window.history.back()">
+            <i class="bi bi-arrow-left me-2"></i> Go Back
+          </button>
+          <a href="/help" class="btn btn-light border px-4 py-2 fw-semibold d-inline-flex align-items-center justify-content-center" style="border-radius: 8px; font-size: 14px;">
+            <i class="bi bi-question-circle me-2"></i> Help Center
+          </a>
+        </div>
+
+        <div class="pt-3 border-top text-muted" style="font-size: 12px;">
+          If your job responsibilities require elevated authorizations, please request role adjustment from your designated <strong>System Administrator</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

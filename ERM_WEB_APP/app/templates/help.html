@@ -1,271 +1,743 @@
-  
-       <link href="{{ url_for('static', filename='cdn/bootstrap.min.css') }}" rel="stylesheet">
-       <link href="{{ url_for('static', filename='cdn/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
+{% extends "base.html" %}
 
-       <!--begin::App Content Header-->
-        <div class="app-content-header">
-          <!--begin::Container-->
-          <div class="container-fluid">
-            <!--begin::Row-->
-            <div class="row">
-              <div class="col-sm-12">
-                  <h5 style="float:left; margin-right:20px">Help</h5>
-              </div>
-      
-            </div>
-            <!--end::Row-->
+{% block content %}
+<div class="erm-help-container py-4 px-3 px-md-4" style="background-color: #F8FAFC; min-height: calc(100vh - 56px);">
+  <!-- Hero Header -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #020264 0%, #1E3A8A 60%, #2563EB 100%);">
+    <div class="card-body p-4 p-md-5 position-relative">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-15 text-white mb-3" style="font-size: 12.5px; backdrop-filter: blur(4px);">
+            <i class="bi bi-shield-check text-info"></i>
+            <span class="fw-semibold">Enterprise Risk Management System</span>
           </div>
-          <!--end::Container-->
+          <h1 class="display-6 fw-bold mb-2 tracking-tight" style="letter-spacing: -0.5px;">ERM Knowledge & Help Center</h1>
+          <p class="text-white-50 lead mb-0" style="font-size: 15px; max-width: 650px; line-height: 1.6;">
+            Operational guides, risk scoring matrices, governance approval workflows, and troubleshooting references for enterprise risk stakeholders.
+          </p>
         </div>
-        <!--end::App Content Header-->
-        <!--begin::App Content-->
-        <div class="app-content">
-          <!--begin::Container-->
-          <div class="container-fluid">
+        <div class="col-lg-4">
+          <!-- Live Interactive Search Box -->
+          <div class="bg-white p-2 rounded-4 shadow-sm">
+            <div class="input-group">
+              <span class="input-group-text bg-transparent border-0 pe-1 text-muted">
+                <i class="bi bi-search fs-6"></i>
+              </span>
+              <input type="text" id="helpSearchInput" class="form-control border-0 shadow-none text-dark" placeholder="Search guides, matrices, workflows..." style="font-size: 13.5px;" aria-label="Search help topics">
+              <button class="btn btn-sm btn-link text-muted text-decoration-none d-none" type="button" id="helpSearchClearBtn" title="Clear search">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+            </div>
+          </div>
+          <div class="text-white-50 small mt-2 ps-2" style="font-size: 11.5px;">
+            Suggested: <a href="javascript:void(0)" onclick="quickSearch('matrix')" class="text-white text-decoration-underline">Matrix</a>, <a href="javascript:void(0)" onclick="quickSearch('approval')" class="text-white text-decoration-underline">Approval</a>, <a href="javascript:void(0)" onclick="quickSearch('treatment')" class="text-white text-decoration-underline">Treatment</a>, <a href="javascript:void(0)" onclick="quickSearch('roles')" class="text-white text-decoration-underline">Roles</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-   <div class="row">
-<!--Start Left Panel-->
-<div class="col-lg-2">
-  <div class="left-panel">
-  <ul class="nav">
-              <li class="nav-item">
-                <a href="#RiskGrid" class="nav-link tab-btn">
-                  <p>Risk Grid</p>
-                </a>
-              </li>
-              <li class="nav-item border-top">
-                <a href="#Impact" class="nav-link tab-btn">
-                  <p>Impact (I) Descriptors & Indices</p>
-                </a>
-              </li>
-              <li class="nav-item border-top">
-                <a href="#Likelihood" class="nav-link tab-btn">
-                  <p>Likelihood (L) Descriptors & Indices</p>
-                </a>
-              </li>
-  </ul>
+  <!-- Search Result Banner -->
+  <div id="searchResultNotice" class="alert alert-info border-0 shadow-sm rounded-3 py-2 px-3 mb-4 d-none d-flex justify-content-between align-items-center" style="font-size: 13px;">
+    <span><i class="bi bi-funnel-fill me-1"></i> <span id="searchResultCount">0</span> help topics match your search query.</span>
+    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 11.5px;" onclick="clearHelpSearch()">Reset Filter</button>
+  </div>
+
+  <!-- Main Content Layout -->
+  <div class="row g-4">
+    <!-- Sticky Sidebar Quick Navigation -->
+    <div class="col-lg-3 col-xl-2">
+      <div class="card border-0 shadow-sm rounded-4 sticky-top p-3 bg-white" style="top: 20px; z-index: 10;">
+        <div class="fw-bold text-dark mb-2 px-2 pb-2 border-bottom" style="font-size: 13px;">
+          <i class="bi bi-compass me-1 text-primary"></i> Guide Index
+        </div>
+        <nav class="nav nav-pills flex-column gap-1" id="helpNavPills">
+          <a class="nav-link help-nav-link active" href="#section-matrix"><i class="bi bi-grid-3x3 me-2"></i>Risk 5x5 Matrix</a>
+          <a class="nav-link help-nav-link" href="#section-register"><i class="bi bi-shield-plus me-2"></i>Risk Register</a>
+          <a class="nav-link help-nav-link" href="#section-approvals"><i class="bi bi-check2-circle me-2"></i>3-Stage Approvals</a>
+          <a class="nav-link help-nav-link" href="#section-treatment"><i class="bi bi-tools me-2"></i>Action Plans</a>
+          <a class="nav-link help-nav-link" href="#section-roles"><i class="bi bi-people me-2"></i>Roles & Scope</a>
+          <a class="nav-link help-nav-link" href="#section-faq"><i class="bi bi-chat-left-text me-2"></i>Common FAQs</a>
+        </nav>
+
+        <div class="mt-4 pt-3 border-top px-2">
+          <div class="text-muted small fw-semibold mb-2" style="font-size: 11px;">QUICK SHORTCUTS</div>
+          <div class="d-flex flex-column gap-1">
+            <a href="/riskRegister" class="text-decoration-none text-muted small py-1 hover-primary"><i class="bi bi-arrow-right me-1 text-primary"></i>Risk Register</a>
+            <a href="/home" class="text-decoration-none text-muted small py-1 hover-primary"><i class="bi bi-arrow-right me-1 text-primary"></i>Home Dashboard</a>
+            {% if usertype in privileged_roles %}
+            <a href="/dashboard" class="text-decoration-none text-muted small py-1 hover-primary"><i class="bi bi-arrow-right me-1 text-primary"></i>Analytics</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Topics Content Area -->
+    <div class="col-lg-9 col-xl-10" id="helpContentArea">
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 1: 5x5 RISK MATRIX, IMPACT & LIKELIHOOD CRITERIA (PRESERVED & MODERNIZED) -->
+      <!-- ========================================================================= -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white help-topic-card" id="section-matrix" data-keywords="risk grid impact likelihood matrix 5x5 consequence severity score cash flow health safety environment compliance business partners media">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-2 bg-primary bg-opacity-10 text-primary">
+              <i class="bi bi-grid-3x3 fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold text-dark mb-0" style="letter-spacing: -0.3px;">5&times;5 Enterprise Risk Matrix</h4>
+              <small class="text-muted">Standardized Impact &amp; Likelihood Assessment Framework</small>
+            </div>
+          </div>
+          <span class="badge bg-light text-primary border fw-semibold px-2 py-1" style="font-size: 11.5px;">Core Standard</span>
+        </div>
+
+        <p class="text-muted" style="font-size: 13.5px; line-height: 1.6;">
+          In the Enterprise Risk Management (ERM) system, every risk is evaluated on a calibrated <strong>5&times;5 Matrix</strong> where <strong>Risk Severity Score = Likelihood (L) &times; Impact (I)</strong>. Both inherent (pre-control) and current (post-control) scores are computed using these unified corporate thresholds:
+        </p>
+
+        <!-- Severity Rating Pill Badges -->
+        <div class="row g-2 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 text-center border" style="background-color: #ECFDF5; border-color: #A7F3D0 !important;">
+              <span class="badge bg-success mb-1">1 &ndash; 4</span>
+              <div class="fw-bold text-success" style="font-size: 13px;">Low Severity</div>
+              <small class="text-muted" style="font-size: 11px;">Manage by routine controls</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 text-center border" style="background-color: #FFFBEB; border-color: #FDE68A !important;">
+              <span class="badge bg-warning text-dark mb-1">5 &ndash; 9</span>
+              <div class="fw-bold text-warning" style="font-size: 13px;">Medium Severity</div>
+              <small class="text-muted" style="font-size: 11px;">Functional review required</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 text-center border" style="background-color: #FFF7ED; border-color: #FED7AA !important;">
+              <span class="badge bg-danger mb-1" style="background-color: #F97316 !important;">10 &ndash; 16</span>
+              <div class="fw-bold" style="color: #EA580C; font-size: 13px;">High Severity</div>
+              <small class="text-muted" style="font-size: 11px;">Active treatment plan</small>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3 text-center border" style="background-color: #FEF2F2; border-color: #FECACA !important;">
+              <span class="badge bg-danger mb-1">20 &ndash; 25</span>
+              <div class="fw-bold text-danger" style="font-size: 13px;">Critical Severity</div>
+              <small class="text-muted" style="font-size: 11px;">Executive governance review</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impact Criteria Table -->
+        <h5 class="fw-bold text-dark mt-2 mb-3" style="font-size: 15px;">
+          <i class="bi bi-table text-primary me-2"></i>Impact (I) Descriptors &amp; Indices
+        </h5>
+        <div class="table-responsive rounded-3 border mb-4">
+          <table class="table table-hover table-striped mb-0 align-middle" style="font-size: 12px;">
+            <thead class="table-light text-center border-bottom">
+              <tr>
+                <th class="text-start" style="width: 20%;">Consequence Area</th>
+                <th style="width: 16%;">1 &bull; Negligible</th>
+                <th style="width: 16%;">2 &bull; Minor</th>
+                <th style="width: 16%;">3 &bull; Moderate</th>
+                <th style="width: 16%;">4 &bull; Major</th>
+                <th style="width: 16%;">5 &bull; Extreme</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-bold text-dark">Cash Flow at Risk</td>
+                <td>Up to 2.5%</td>
+                <td>2.5% &ndash; 5%</td>
+                <td>5% &ndash; 10%</td>
+                <td>10% &ndash; 20%</td>
+                <td>&gt; 20%</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">Health &amp; Safety</td>
+                <td>First-aid treatment</td>
+                <td>Minor injury; minimal lost work time</td>
+                <td>Moderate injury (fracture, LTI)</td>
+                <td>Permanent disability or loss of limb</td>
+                <td>Fatality of one or more individuals</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">Operational Interruption</td>
+                <td>Normal routine absorption; zero downtime</td>
+                <td>Minor recovery actions (days)</td>
+                <td>Significant operational disruption (weeks)</td>
+                <td>Critical disruption to multi-unit facilities</td>
+                <td>Facility shutdown / structural disruption (years)</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">Environment</td>
+                <td>Localized non-sensitive exposure</td>
+                <td>Non-sensitive restored within 7 days</td>
+                <td>Sensitive area restored within 30 days</td>
+                <td>Sensitive area requiring external containment</td>
+                <td>Widespread irreversible environmental degradation</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">Compliance &amp; Legal</td>
+                <td>Administrative infraction; no penalty</td>
+                <td>Accidental breach; formal warning</td>
+                <td>Regulatory notice without stoppage</td>
+                <td>Public regulatory sanction / inquiry</td>
+                <td>Criminal investigation; facility closure</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">Business Partners</td>
+                <td>&lt; 1% client volume impacted</td>
+                <td>1% &ndash; 5% partner volume impacted</td>
+                <td>5% &ndash; 10% volume; temporary strain</td>
+                <td>10% &ndash; 30% volume; litigation risk</td>
+                <td>&gt; 30% client loss; contract cancellation</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">People &amp; Staffing</td>
+                <td>Negligible impact on personnel</td>
+                <td>Minor turnover; routine backfill</td>
+                <td>Loss of key specialists / elevated attrition</td>
+                <td>Loss of core leadership across units</td>
+                <td>Widespread critical leadership attrition</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark">Media &amp; Public Relations</td>
+                <td>Zero external media exposure</td>
+                <td>Isolated local / regional coverage</td>
+                <td>Regional adverse news reports</td>
+                <td>National multi-channel media coverage</td>
+                <td>Sustained international investigative coverage</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Likelihood Criteria Table -->
+        <h5 class="fw-bold text-dark mt-2 mb-3" style="font-size: 15px;">
+          <i class="bi bi-clock-history text-primary me-2"></i>Likelihood (L) Descriptors &amp; Probability
+        </h5>
+        <div class="table-responsive rounded-3 border">
+          <table class="table table-hover table-striped mb-0 align-middle text-center" style="font-size: 12.5px;">
+            <thead class="table-light border-bottom">
+              <tr>
+                <th class="text-start" style="width: 45%;">Descriptor Criteria</th>
+                <th style="width: 15%;">Score</th>
+                <th style="width: 20%;">Probability</th>
+                <th style="width: 20%;">Classification</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-start fw-medium">Risk has manifested at enterprise/industry at least once per year</td>
+                <td><span class="badge bg-danger rounded-pill px-2">5</span></td>
+                <td>&gt; 90%</td>
+                <td class="fw-bold text-danger">Expected</td>
+              </tr>
+              <tr>
+                <td class="text-start fw-medium">Manifested in enterprise/industry once in the last 2 years</td>
+                <td><span class="badge bg-warning text-dark rounded-pill px-2">4</span></td>
+                <td>65% &ndash; 90%</td>
+                <td class="fw-bold text-warning">Probable</td>
+              </tr>
+              <tr>
+                <td class="text-start fw-medium">Manifested in enterprise/industry once in 2 to 5 years</td>
+                <td><span class="badge bg-warning text-dark rounded-pill px-2">3</span></td>
+                <td>35% &ndash; 65%</td>
+                <td class="fw-bold" style="color: #D97706;">Possible</td>
+              </tr>
+              <tr>
+                <td class="text-start fw-medium">Never occurred in facility; isolated instances in industry (5 to 20 years)</td>
+                <td><span class="badge bg-info text-dark rounded-pill px-2">2</span></td>
+                <td>10% &ndash; 35%</td>
+                <td class="fw-bold text-info">Unlikely</td>
+              </tr>
+              <tr>
+                <td class="text-start fw-medium">Very few instances in industry (&gt; 20 years or unprecedented)</td>
+                <td><span class="badge bg-success rounded-pill px-2">1</span></td>
+                <td>&lt; 10%</td>
+                <td class="fw-bold text-success">Remote</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 2: RISK REGISTRATION & BULK IMPORT WORKFLOWS -->
+      <!-- ========================================================================= -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white help-topic-card" id="section-register" data-keywords="risk register registration new risk import upload excel bulk format department owner co-owner validation">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-2 bg-success bg-opacity-10 text-success">
+              <i class="bi bi-shield-plus fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold text-dark mb-0" style="letter-spacing: -0.3px;">Risk Registration &amp; Bulk Import</h4>
+              <small class="text-muted">Registering individual risks and importing bulk inventories</small>
+            </div>
+          </div>
+          <a href="/riskRegister" class="btn btn-sm btn-outline-primary fw-semibold" style="font-size: 12px;">Open Register &rarr;</a>
+        </div>
+
+        <div class="row g-4 mb-3">
+          <div class="col-md-6">
+            <div class="border rounded-3 p-3 h-100 bg-light bg-opacity-50">
+              <h6 class="fw-bold text-dark mb-2"><i class="bi bi-1-circle-fill text-primary me-2"></i>Single Risk Registration</h6>
+              <ol class="text-muted ps-3 mb-0" style="font-size: 13px; line-height: 1.6;">
+                <li>Navigate to <a href="/riskRegister" class="text-primary fw-semibold text-decoration-none">Risk Register</a> and click <strong>Create Risk</strong>.</li>
+                <li>Enter the primary <strong>Risk Name</strong>, Description, and select your <strong>Functional Department</strong>.</li>
+                <li>Assign the primary <strong>Risk Owner</strong> (and optional Co-Owner) responsible for governance.</li>
+                <li>Score both <strong>Inherent Risk</strong> (initial severity) and <strong>Current Risk</strong> (residual severity after existing controls).</li>
+                <li>Submit the risk. It will enter the <strong>3-Stage Approval Pipeline</strong> starting at Stage 1.</li>
+              </ol>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="border rounded-3 p-3 h-100 bg-light bg-opacity-50">
+              <h6 class="fw-bold text-dark mb-2"><i class="bi bi-file-earmark-spreadsheet-fill text-success me-2"></i>Bulk Excel Import</h6>
+              <ol class="text-muted ps-3 mb-0" style="font-size: 13px; line-height: 1.6;">
+                <li>Open the <a href="/importRisk" class="text-primary fw-semibold text-decoration-none">Import Risk</a> or <a href="/uploadRisk" class="text-primary fw-semibold text-decoration-none">Upload Data</a> page.</li>
+                <li>Download the authorized ERM Excel template containing validated column headers.</li>
+                <li>Populate rows with mandatory fields: <code>Department</code>, <code>Risk Name</code>, <code>Inherent Likelihood</code>, <code>Inherent Impact</code>.</li>
+                <li>Upload the <code>.xlsx</code> file. The parser runs validation checks on row integrity and scoring ranges.</li>
+                <li>Review the preview table, confirm verification, and commit to the enterprise database.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-warning border-0 rounded-3 py-2 px-3 mb-0 d-flex align-items-center gap-2" style="font-size: 12.5px;">
+          <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+          <div>
+            <strong>Validation Rule:</strong> Likelihood and Impact scores must be integers between <code>1</code> and <code>5</code>. Unknown department names in uploaded spreadsheets will trigger row validation errors.
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 3: 3-STAGE GOVERNANCE & APPROVAL WORKFLOW -->
+      <!-- ========================================================================= -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white help-topic-card" id="section-approvals" data-keywords="approvals workflow stage 1 stage 2 stage 3 functional head risk manager risk head rejection revision review action center">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-2 bg-info bg-opacity-10 text-info">
+              <i class="bi bi-check2-circle fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold text-dark mb-0" style="letter-spacing: -0.3px;">3-Stage Governance Approval Workflow</h4>
+              <small class="text-muted">Rigorous three-tier review and sign-off procedure</small>
+            </div>
+          </div>
+          <span class="badge bg-primary rounded-pill px-3 py-1" style="font-size: 11.5px;">Sequential Process</span>
+        </div>
+
+        <p class="text-muted" style="font-size: 13.5px; line-height: 1.6;">
+          All newly created or amended enterprise risks undergo a strict 3-tier sequential review before activation:
+        </p>
+
+        <!-- Visual Stage Sequence -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card border rounded-3 p-3 h-100 bg-white">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-warning text-dark fw-bold">Stage 1</span>
+                <small class="text-muted">Department Scope</small>
+              </div>
+              <h6 class="fw-bold text-dark mb-1">Functional Head Review</h6>
+              <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.5;">
+                Departmental head verifies operational accuracy, ownership assignment, and control feasibility. Can <strong>Approve</strong> to advance or <strong>Return for Revision</strong>.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border rounded-3 p-3 h-100 bg-white">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-info text-dark fw-bold">Stage 2</span>
+                <small class="text-muted">Enterprise Scope</small>
+              </div>
+              <h6 class="fw-bold text-dark mb-1">Risk Manager Verification</h6>
+              <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.5;">
+                Central Risk Management verifies cross-functional consistency, matrix calibration, and mitigation alignment across departments.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border rounded-3 p-3 h-100 bg-white">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-primary fw-bold">Stage 3</span>
+                <small class="text-muted">Executive Sign-Off</small>
+              </div>
+              <h6 class="fw-bold text-dark mb-1">Risk Head Final Approval</h6>
+              <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.5;">
+                Executive Risk Head conducts final governance review and signs off. Once signed off, the risk becomes <strong>Approved &amp; Active</strong> in executive dashboards.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-light rounded-3 p-3 border" style="font-size: 13px;">
+          <h6 class="fw-bold text-dark mb-1"><i class="bi bi-arrow-return-left text-danger me-1"></i> What happens if a risk is returned/rejected?</h6>
+          <p class="text-muted mb-0" style="line-height: 1.6;">
+            If an approver returns a risk at any stage with remarks, its status transitions to <strong>Needs Revision / Returned</strong>. It immediately appears in the primary Risk Owner's <strong>Action Center</strong> queue with the action label <code>Update & Resubmit</code>. After updating details on <a href="/riskDetails" class="text-primary fw-semibold text-decoration-none">Risk Details</a>, resubmission restarts the review pipeline.
+          </p>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 4: RISK TREATMENT & ACTION PLANS -->
+      <!-- ========================================================================= -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white help-topic-card" id="section-treatment" data-keywords="treatment action plan mitigation progress target date in progress complete update follow-up">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-2 bg-warning bg-opacity-10 text-warning">
+              <i class="bi bi-tools fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold text-dark mb-0" style="letter-spacing: -0.3px;">Risk Treatment &amp; Action Plans</h4>
+              <small class="text-muted">Formulating mitigation measures and tracking completion milestones</small>
+            </div>
+          </div>
+          <span class="badge bg-light text-dark border fw-semibold px-2 py-1" style="font-size: 11.5px;">Mitigation Execution</span>
+        </div>
+
+        <p class="text-muted" style="font-size: 13.5px; line-height: 1.6;">
+          For Medium, High, and Critical risks, risk owners establish actionable mitigation measures called <strong>Risk Treatment Action Plans</strong> to reduce residual impact:
+        </p>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="border rounded-3 p-3 bg-light bg-opacity-50 h-100">
+              <div class="fw-bold text-dark mb-1" style="font-size: 13px;">1. Task Definition</div>
+              <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.5;">
+                Specify the exact action plan description, deliverables, required resources, and designated <strong>Action Owner</strong>.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="border rounded-3 p-3 bg-light bg-opacity-50 h-100">
+              <div class="fw-bold text-dark mb-1" style="font-size: 13px;">2. Target Milestone</div>
+              <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.5;">
+                Establish a hard target completion date. Approaching and overdue target dates trigger high-priority alerts in the Action Center.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="border rounded-3 p-3 bg-light bg-opacity-50 h-100">
+              <div class="fw-bold text-dark mb-1" style="font-size: 13px;">3. Progress Updates</div>
+              <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.5;">
+                Action Owners update status on the Action Plan portal (<code>Assigned</code>, <code>In Progress</code>, or <code>Completed</code>) with evidentiary notes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-muted small mb-0" style="font-size: 12px;">
+          <i class="bi bi-info-circle text-primary me-1"></i> Once an action plan is marked complete, the residual risk score should be reassessed to verify reduction in current likelihood or impact.
+        </p>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 5: ROLES & PERMISSIONS GOVERNANCE MATRIX -->
+      <!-- ========================================================================= -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white help-topic-card" id="section-roles" data-keywords="roles permissions rbac admin risk head risk manager functional head risk owner action owner viewer access denied 403">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-2 bg-secondary bg-opacity-10 text-secondary">
+              <i class="bi bi-people fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold text-dark mb-0" style="letter-spacing: -0.3px;">User Roles &amp; Authorization Matrix</h4>
+              <small class="text-muted">Strict role-based access control (RBAC) boundaries</small>
+            </div>
+          </div>
+          <span class="badge bg-light text-secondary border fw-semibold px-2 py-1" style="font-size: 11.5px;">Security Policy</span>
+        </div>
+
+        <div class="table-responsive rounded-3 border mb-3">
+          <table class="table table-hover table-striped mb-0 align-middle" style="font-size: 12px;">
+            <thead class="table-light border-bottom text-center">
+              <tr>
+                <th class="text-start" style="width: 22%;">Role Title</th>
+                <th style="width: 20%;">Scope Boundary</th>
+                <th style="width: 28%;">Primary Permissions</th>
+                <th style="width: 15%;">Dashboard Access</th>
+                <th style="width: 15%;">Approval Stage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-bold text-dark text-start">System Administrator</td>
+                <td>Enterprise-Wide</td>
+                <td>Full user management, department setup, audit logs, risk register</td>
+                <td><i class="bi bi-check-circle-fill text-success fs-6"></i> Authorized</td>
+                <td>All Governance</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark text-start">Risk Head</td>
+                <td>Enterprise-Wide</td>
+                <td>Executive sign-off, corporate risk dashboard, strategic oversight</td>
+                <td><i class="bi bi-check-circle-fill text-success fs-6"></i> Authorized</td>
+                <td>Stage 3 Sign-Off</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark text-start">Risk Manager</td>
+                <td>Enterprise-Wide</td>
+                <td>Cross-department verification, matrix calibration, mitigation reviews</td>
+                <td><i class="bi bi-check-circle-fill text-success fs-6"></i> Authorized</td>
+                <td>Stage 2 Review</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark text-start">Functional Head</td>
+                <td>Own Department Only</td>
+                <td>Department risk creation, Stage 1 functional approval, action review</td>
+                <td><i class="bi bi-dash-circle text-muted fs-6"></i> Dept View</td>
+                <td>Stage 1 Review</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark text-start">Risk Owner</td>
+                <td>Owned / Co-Owned Risks</td>
+                <td>Risk drafting, control definition, resubmission on revision</td>
+                <td><i class="bi bi-dash-circle text-muted fs-6"></i> Dept View</td>
+                <td>Draft / Resubmit</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark text-start">Action Owner</td>
+                <td>Assigned Action Plans</td>
+                <td>Task milestone tracking, treatment progress reporting</td>
+                <td><i class="bi bi-x-circle text-danger fs-6"></i> Restricted</td>
+                <td>Task Execution</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark text-start">Viewer</td>
+                <td>Authorized Read-Only</td>
+                <td>View active approved risk register items without mutation rights</td>
+                <td><i class="bi bi-x-circle text-danger fs-6"></i> Restricted</td>
+                <td>None</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-muted small mb-0" style="font-size: 12px;">
+          <i class="bi bi-shield-exclamation text-warning me-1"></i> If you attempt to access an administrative page (such as <code>/dashboard</code> or <code>/users</code>) without the required role, the application will display a <strong>403 Access Denied</strong> page.
+        </p>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- SECTION 6: COMMON FAQS & TROUBLESHOOTING -->
+      <!-- ========================================================================= -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white help-topic-card" id="section-faq" data-keywords="faq questions error troubleshooting session expired 401 403 excel file upload download filter financial year">
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-2 bg-primary bg-opacity-10 text-primary">
+              <i class="bi bi-chat-left-text fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold text-dark mb-0" style="letter-spacing: -0.3px;">Frequently Asked Questions (FAQ)</h4>
+              <small class="text-muted">Resolutions for common questions and validation errors</small>
+            </div>
+          </div>
+          <span class="badge bg-light text-primary border fw-semibold px-2 py-1" style="font-size: 11.5px;">FAQ Library</span>
+        </div>
+
+        <div class="accordion accordion-flush" id="helpAccordion">
+          <!-- FAQ 1 -->
+          <div class="accordion-item border-bottom py-2">
+            <h2 class="accordion-header" id="faqHeading1">
+              <button class="accordion-button collapsed fw-semibold text-dark px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1" aria-expanded="false" aria-controls="faqCollapse1" style="font-size: 14px;">
+                <i class="bi bi-question-circle text-primary me-2"></i> What is the difference between Inherent Risk and Current Risk?
+              </button>
+            </h2>
+            <div id="faqCollapse1" class="accordion-collapse collapse" aria-labelledby="faqHeading1" data-bs-parent="#helpAccordion">
+              <div class="accordion-body px-0 text-muted" style="font-size: 13px; line-height: 1.6;">
+                <strong>Inherent Risk</strong> represents the natural level of risk existing in the absence of any controls or mitigations. <strong>Current Risk</strong> (Residual Risk) is the actual remaining exposure assessed after taking into consideration all existing controls and risk treatment measures currently in place.
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 2 -->
+          <div class="accordion-item border-bottom py-2">
+            <h2 class="accordion-header" id="faqHeading2">
+              <button class="accordion-button collapsed fw-semibold text-dark px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2" aria-expanded="false" aria-controls="faqCollapse2" style="font-size: 14px;">
+                <i class="bi bi-question-circle text-primary me-2"></i> Why did I receive a 401 Unauthorized error?
+              </button>
+            </h2>
+            <div id="faqCollapse2" class="accordion-collapse collapse" aria-labelledby="faqHeading2" data-bs-parent="#helpAccordion">
+              <div class="accordion-body px-0 text-muted" style="font-size: 13px; line-height: 1.6;">
+                A <strong>401 Unauthorized</strong> error occurs when your session token expires after a period of inactivity, or if you opened a direct URL bookmark without signing in. To recover, simply click the <strong>Sign In</strong> button on the 401 page to re-authenticate.
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 3 -->
+          <div class="accordion-item border-bottom py-2">
+            <h2 class="accordion-header" id="faqHeading3">
+              <button class="accordion-button collapsed fw-semibold text-dark px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3" aria-expanded="false" aria-controls="faqCollapse3" style="font-size: 14px;">
+                <i class="bi bi-question-circle text-primary me-2"></i> Why did I receive a 403 Forbidden error?
+              </button>
+            </h2>
+            <div id="faqCollapse3" class="accordion-collapse collapse" aria-labelledby="faqHeading3" data-bs-parent="#helpAccordion">
+              <div class="accordion-body px-0 text-muted" style="font-size: 13px; line-height: 1.6;">
+                A <strong>403 Access Denied</strong> error indicates that your user credentials are valid, but your current assigned role lacks authorization for the specific feature (for instance, only Admin, Risk Manager, and Risk Head roles may access the Executive Dashboard). If you need access, contact your System Administrator to evaluate your role scope.
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 4 -->
+          <div class="accordion-item border-bottom py-2">
+            <h2 class="accordion-header" id="faqHeading4">
+              <button class="accordion-button collapsed fw-semibold text-dark px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse4" aria-expanded="false" aria-controls="faqCollapse4" style="font-size: 14px;">
+                <i class="bi bi-question-circle text-primary me-2"></i> How does the Action Center notification badge work?
+              </button>
+            </h2>
+            <div id="faqCollapse4" class="accordion-collapse collapse" aria-labelledby="faqHeading4" data-bs-parent="#helpAccordion">
+              <div class="accordion-body px-0 text-muted" style="font-size: 13px; line-height: 1.6;">
+                The red bell badge in the top navigation represents your <strong>Unread Action Items</strong>. Items remain in your queue until the action is completed in the workflow (e.g. approved or updated), but viewing an item or clicking the checkmark toggles it as <em>Read</em>, decrementing the badge count.
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ 5 -->
+          <div class="accordion-item py-2">
+            <h2 class="accordion-header" id="faqHeading5">
+              <button class="accordion-button collapsed fw-semibold text-dark px-0 bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse5" aria-expanded="false" aria-controls="faqCollapse5" style="font-size: 14px;">
+                <i class="bi bi-question-circle text-primary me-2"></i> What should I check if my Excel upload fails?
+              </button>
+            </h2>
+            <div id="faqCollapse5" class="accordion-collapse collapse" aria-labelledby="faqHeading5" data-bs-parent="#helpAccordion">
+              <div class="accordion-body px-0 text-muted" style="font-size: 13px; line-height: 1.6;">
+                Verify that: (1) You are using the standard ERM template from the <em>Upload Data</em> page; (2) All likelihood and impact values are numeric integers between <code>1</code> and <code>5</code>; (3) The department name exactly matches an active registered department; and (4) The file size does not exceed 10 MB.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty Search Fallback State -->
+      <div id="helpEmptySearchState" class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white d-none">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #F1F5F9; color: #64748B; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px;">
+          <i class="bi bi-search"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-1">No Matching Help Guides Found</h5>
+        <p class="text-muted small mb-3" style="max-width: 400px; margin: 0 auto;">
+          We couldn't find any help sections or FAQs matching your query. Try searching for broad terms like "matrix", "approval", "treatment", or "roles".
+        </p>
+        <div>
+          <button type="button" class="btn btn-sm btn-primary px-3 fw-semibold" onclick="clearHelpSearch()">Reset Search</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
-</div>
- <!--End Left Panel-->
- 
-<!--Start Right Panel-->
-<div class="col-lg-10">
-<div class="col-lg-12">
-  <div class="bd-example m-0 border-0 tab-content" id="RiskGrid"> 
-  <h3>Risk Grid</h3>
 
-  <img src="{{ url_for('static', filename='assets/img/riskDetailGraph.jpg') }}"  alt="" class="img-fluid">
-</div>
-</div>
+<style>
+  .help-nav-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569 !important;
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: all 0.15s ease;
+  }
+  .help-nav-link:hover {
+    background-color: #F1F5F9;
+    color: #0F172A !important;
+  }
+  .help-nav-link.active {
+    background-color: #EFF6FF !important;
+    color: #2563EB !important;
+    font-weight: 600;
+  }
+  .hover-primary:hover {
+    color: #2563EB !important;
+  }
+</style>
 
-<!-- Start Impact -->
-<div class="col-lg-12">
-  <div class="bd-example m-0 border-0 tab-content" id="Impact">
-  <h3>Impact (I) Descriptors & Indices</h3>
-<div class="bd-example-snippet bd-code-snippet"> 
-<div class="bd-example m-0 border-0 table-responsive"> 
-<table class="table table-striped table-hover table-bordered" width="100%">
-  <thead>
-    <tr class="tb-head text-center">
-      <th scope="col" rowspan="3">Consequence Indices</th>
-      <th scope="col" colspan="5">
-        <span><img src="{{ url_for('static', filename='assets/img/straight-long-arrow.png') }}"  alt="" class="img-fluid"></span><br>
-        Increasing Impact</th>
-      <!-- <th scope="col">bb</th>
-      <th scope="col">cc</th>
-      <th scope="col">dd</th>
-      <th scope="col">ee</th> -->
-    </tr>
+<script>
+  // Live Client-Side Help Search & Filtering
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("helpSearchInput");
+    const clearBtn = document.getElementById("helpSearchClearBtn");
 
-    <tr class="tb-head text-center">
-      <!-- <th scope="col">Consequence Indices</th> -->
-      <th scope="col">1</th>
-      <th scope="col">2</th>
-      <th scope="col">3</th>
-      <th scope="col">4</th>
-      <th scope="col">5</th>
-    </tr>
-
-    <tr class="tb-head text-center">
-      <!-- <th scope="col">Consequence Indices</th> -->
-      <th scope="col">Negligible</th>
-      <th scope="col">Minor</th>
-      <th scope="col">Moderate</th>
-      <th scope="col">Major</th>
-      <th scope="col">Extreme</th>
-    </tr>
-
-  </thead>
-  <tbody>
-    <tr>
-      <td><b>Cash Flow at Risk</b></td>
-      <td>Upto 2.5%</td>
-      <td>2.5-5%</td>
-      <td>5-10%</td>
-      <td>10-20%</td>
-      <td>> 20%</td>
-    </tr>
-    <tr>
-      <td><b>Healthy & Safety</b></td>
-      <td>Incident requiring first-aid</td>
-      <td>Minorinjury with minimum medical attention without loss of work day (eg. Stitches)</td>
-      <td>One ormore cases of moderate injury (eg. Bone fracture) leading to LTI</td>
-      <td>One or more cases of permanent disability (eg. Loss of limb)</td>
-      <td>Death of one or more individual</td>
-    </tr>
-   <tr>
-      <td><b>Operational / Business Interruption</b></td>
-      <td>Impact can be absorbed through normalactivity and resouce levels; no down/recovery time'</td>
-      <td>Impact requires actions greater than normal activity; recovery time short (eg. Days)</td>
-      <td>A significant event that disrupts operations and requires some additional management time/focus; recovery time significant (eg. weeks) </td>
-      <td>A critical event that disrupts multiple key projects/ processes, stretches plans, and requires considerable management efforts to endure; recovery time</td>
-      <td>Adisaster with the potentialto lead to the collapse of IP; dedicated management and Board time required; recovery time lengthy (eg. Years)</td>
-    </tr>
-    <tr>
-      <td><b>Environment</b></td>
-      <td>Localized exposure in a nonsensitive area which canbe restored in few days</td>
-      <td>Localized exposure in a non sensitive environmentrestored in a week</td>
-      <td>Expos ure in a sensitive environment which cantake upto a month to be restored</td>
-      <td>Exposure in a sensitive environment requiring containment with outside support</td>
-      <td>Widespread and irreversible degradation in habitat/ environment media</td>
-    </tr>
-    <tr>
-      <td><b>Compliance</b></td>
-      <td>Compliance failure with no specific penalty</td>
-      <td>Accidental breach, easily remedied, potential for warning</td>
-      <td>Notification from regulators without impacting opera bility (Legal notice/demand/ wa rning) </td>
-      <td>Publiccomments/ criticism by regulators, inquiry/ investigationon PIL (operations slightly to be disrupted)</td>
-      <td>Major regulatory, criminal investigation, potential imprisonment of management or directors or closure of operations likely</td>
-    </tr>
-    <tr>
-      <td><b>Business Partners</b></td>
-      <td>Few, if any clients/ customers (<1% volume) impacted </td>
-      <td>Small number of clients/ customers impacted (1-5% volume)</td>
-      <td>Large number of clients/ customers impa cted (5-10% vol.); nega tive client/customer reaction but temporary</td>
-      <td>Many clients/ customers impacted (10-30% of volume); high likelihood of adverse client/ customer reaction (eg. Lawsuits); may lose some clients/ customers permanently; some disruption of ope rations/</td>
-      <td>Large number of clients/ customers impacted (>30% volume); a dverse client/customers reaction (eg. Lawsuits); perma nent loss of multiple clients/ customers; wider disruption of operations/ projects</td>
-    </tr>
-    <tr>
-      <td><b>People</b></td>
-      <td>Negligible impact on staff</td>
-      <td>Minor attrition canbema naged through normal back-filling</td>
-      <td>Loss of few key/ criticalstaff, temporary increase in staff turnover</td>
-      <td>Loss of multiple key/critical staff, sustained increase in staff turnover across several locations</td>
-      <td>Widespread loss of key/ critical staff, sizeable sustained increase in staff turnover across all locations</td>
-    </tr>
-    <tr>
-      <td><b>Media / General Public</b></td>
-      <td>No media coverage or interest restrictedto internal communication</td>
-      <td>Brief and isolated a dverse local or regional coverage</td>
-      <td>Adverse regional coverage, one or more media types</td>
-      <td>National/ international coverage, multiple media</td>
-      <td>Sustained lead story in national/ international, multiple media</td>
-    </tr>
-  </tbody>
-</table> 
-</div>  
-</div>
-
-</div>
-</div>
-<!-- End Impact -->
-
-<!-- Start Likelihood -->
-<div class="col-lg-12">
-   <div class="bd-example m-0 border-0 tab-content" id="Likelihood">
-  <h3>Likelihood (L) Descriptors & Indices</h3>
-<div class="bd-example-snippet bd-code-snippet"> 
-<div class="bd-example m-0 border-0 table-responsive"> 
-<table class="table table-striped table-hover table-bordered" width="100%">
-  <thead>
-    <tr class="tb-head text-center">
-      <th scope="col" colspan="5">
-        Likelihood Descriptors & Index</th>
-    </tr>
-
-    <tr class="tb-head text-center">
-      <th scope="col">Descriptors</th>
-      <th scope="col">Probability</th>
-      <th scope="col" colspan="3">Indices</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><b>Risk has manifested at PIL/ industry atleast once per year</b></td>
-      <td>>90%</td>
-      <td>5</td>
-      <td>Expected</td>
-      <td rowspan="5" width="100" style="writing-mode: vertical-rl;
-  text-orientation: mixed;"><span><img src="{{ url_for('static', filename='assets/img/up-arrow.png') }}" alt="" class="img-fluid"></span><br> <b>Increasiing Likelihood</b></td>
-    </tr>
-    <tr>
-      <td><b>Manifested in PIL/industry once in last 2 years</b></td>
-      <td>65-90%</td>
-      <td>4</td>
-      <td>Probable</td>
-      <!-- <td>aa</td> -->
-    </tr>
-   <tr>
-      <td><b>Manifested in PIL/industry once in last 2-5 years</b></td>
-      <td>35-65%</td>
-      <td>3</td>
-      <td>Possible</td>
-      <!-- <td>aa</td> -->
-    </tr>
-    <tr>
-      <td><b>Never happended in PIL; few instances in the industry (5-20 years)</b></td>
-      <td>10-35%</td>
-      <td>2</td>
-      <td>Unlikely</td>
-      <!-- <td>aa</td> -->
-    </tr>
-    <tr>
-      <td><b>Very few instances in industry (Once in 20 years or more)</b></td>
-      <td> <10% </td>
-      <td>1</td>
-      <td>Remote</td>
-      <!-- <td>aa</td> -->
-    </tr>
-    
-  </tbody>
-</table> 
-</div>  
-</div>
-
-</div>
-</div>
-<!-- End Likelihood -->
-
-<div class="blankH"></div>
-
-</div>
-<!--End Right Panel-->
-   </div>
-
-
-
-   <style>
-    
-    .tab-btn { color:#000;}
-
-    .tab-btn.active {
-      background: #007bff!important;
-      color: #fff!important;
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        handleHelpSearch(this.value.trim().toLowerCase());
+      });
     }
 
-    .left-panel {
-  position: -webkit-sticky; 
-  position: sticky;
-  top: 0; 
-  height: 100vh; 
-  overflow-y: auto; 
-}
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        clearHelpSearch();
+      });
+    }
 
-.blankH{ height: 300px;}
-  </style>
+    // Smooth scroll for nav links
+    document.querySelectorAll(".help-nav-link").forEach(link => {
+      link.addEventListener("click", function (e) {
+        document.querySelectorAll(".help-nav-link").forEach(l => l.classList.remove("active"));
+        this.classList.add("active");
+      });
+    });
+  });
 
+  function quickSearch(term) {
+    const searchInput = document.getElementById("helpSearchInput");
+    if (searchInput) {
+      searchInput.value = term;
+      handleHelpSearch(term.toLowerCase());
+      searchInput.focus();
+    }
+  }
 
-          </div>
+  function handleHelpSearch(query) {
+    const clearBtn = document.getElementById("helpSearchClearBtn");
+    const notice = document.getElementById("searchResultNotice");
+    const countEl = document.getElementById("searchResultCount");
+    const emptyState = document.getElementById("helpEmptySearchState");
+    const cards = document.querySelectorAll(".help-topic-card");
 
-        </div>
-       
+    if (clearBtn) {
+      if (query.length > 0) clearBtn.classList.remove("d-none");
+      else clearBtn.classList.add("d-none");
+    }
+
+    if (!query) {
+      cards.forEach(c => c.classList.remove("d-none"));
+      if (notice) notice.classList.add("d-none");
+      if (emptyState) emptyState.classList.add("d-none");
+      return;
+    }
+
+    let matchCount = 0;
+    cards.forEach(card => {
+      const keywords = (card.getAttribute("data-keywords") || "").toLowerCase();
+      const content = card.innerText.toLowerCase();
+      if (keywords.includes(query) || content.includes(query)) {
+        card.classList.remove("d-none");
+        matchCount++;
+      } else {
+        card.classList.add("d-none");
+      }
+    });
+
+    if (notice && countEl) {
+      countEl.innerText = matchCount;
+      notice.classList.remove("d-none");
+    }
+
+    if (emptyState) {
+      if (matchCount === 0) emptyState.classList.remove("d-none");
+      else emptyState.classList.add("d-none");
+    }
+  }
+
+  function clearHelpSearch() {
+    const searchInput = document.getElementById("helpSearchInput");
+    if (searchInput) searchInput.value = "";
+    handleHelpSearch("");
+  }
+</script>
+{% endblock %}

@@ -67,6 +67,6 @@ def test_dashboard_summary_service_calculations():
     assert summary["open_risks"] == 20   # 10 Draft + 10 Submitted
     assert summary["in_progress"] == 15  # 15 Function Head Approved
     assert summary["completed"] == 8    # 8 Completed
-    assert summary["approved"] == 30    # 15 FH + 10 RM + 5 RH
+    assert summary["approved"] == 15    # 10 RM + 5 RH (FH approved counted in in_progress)
     assert summary["rejected"] == 2    # 2 Rejected
 

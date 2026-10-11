@@ -365,7 +365,7 @@ def riskActionPlan():
 
 @auth_bp.route("/help")
 def help():
-    return render_template("help.html")
+    return render_template("help.html", session_data=session.get("login_data", {}))
 
 @auth_bp.route("/risk_register/<function_code>")
 def risk_register(function_code):
@@ -471,7 +471,7 @@ def redirect_after_login():
 @auth_bp.route("/login", methods=["GET", "POST"])
 def ERM():
 
-    session.permanent = True
+    session.permanent = False
 
     # ==========================================================
     # ONELOGIN MODE
@@ -576,6 +576,7 @@ def ERM():
 
                 data_res = response.json()
 
+                session.permanent = bool(request.form.get("remember"))
                 create_login_session(data_res)
 
                 return redirect_after_login()
@@ -1591,12 +1592,24 @@ def downloadReffile():
 
 @auth_bp.errorhandler(403)
 def forbidden(e):
-    return render_template("403.html",session_data=session["login_data"])
+    if request.path.startswith("/api/") or request.is_json:
+        return jsonify({"status": "error", "message": "Forbidden: You do not have permission to access this resource."}), 403
+    return render_template("403.html", session_data=session.get("login_data", {})), 403
 
 @auth_bp.errorhandler(401)
 def unauthorized(e):
+    if request.path.startswith("/api/") or request.is_json:
+        return jsonify({"status": "error", "message": "Unauthorized: Session expired or authentication required."}), 401
     session.clear()
-    return render_template("401.html")
+    return render_template("401.html", session_data={}), 401
+
+@auth_bp.route("/403")
+def forbidden_view():
+    return render_template("403.html", session_data=session.get("login_data", {})), 403
+
+@auth_bp.route("/401")
+def unauthorized_view():
+    return render_template("401.html", session_data={}), 401
 
 # =========================================================================
 # DASHBOARD API PROXY ENDPOINTS (Protected with RBAC for Admin, Risk Manager, Risk Head)

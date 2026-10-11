@@ -103,7 +103,6 @@ def get_dashboard_summary_service(
     )
 
     approved_count = (
-        counts.get("function head approved", 0) + 
         counts.get("risk manager approved", 0) + 
         counts.get("risk head approved (final)", 0) + 
         counts.get("approved", 0)

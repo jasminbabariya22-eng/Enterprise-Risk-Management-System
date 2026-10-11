@@ -405,6 +405,12 @@
 
     if (paramTreatmentId && paramTreatmentId !== "0") {
       sessionStorage.setItem("risk_treatment_id", paramTreatmentId);
+      if (!paramDescId || paramDescId === "0") {
+        sessionStorage.removeItem("risk_description_id");
+      }
+      if (!paramRiskId || paramRiskId === "0") {
+        sessionStorage.removeItem("risk_register_id");
+      }
     }
     if (paramDescId && paramDescId !== "0") {
       sessionStorage.setItem("risk_description_id", paramDescId);

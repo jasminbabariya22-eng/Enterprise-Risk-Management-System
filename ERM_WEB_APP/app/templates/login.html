@@ -705,10 +705,12 @@
           <img src="{{ url_for('static', filename='assets/img/erm_logo.svg') }}" width="32" height="32" alt="ERM Logo">
           <strong style="font-size: 14px; color: var(--erm-slate-900);">Enterprise Risk Management</strong>
         </div>
+        {% if request.is_secure %}
         <div class="security-badge ms-auto">
           <i class="bi bi-lock-fill"></i>
           <span>TLS 256-Bit Encrypted</span>
         </div>
+        {% endif %}
       </div>
 
       <!-- Main Login Card & Form -->
