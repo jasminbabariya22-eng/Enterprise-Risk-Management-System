@@ -443,19 +443,24 @@
       const cRating = String(d.current_risk_rating || '').trim();
       const curVal = [cCode, cRating].filter(Boolean).join(' ');
 
-      // Normalize codes beginning with 4 or 5 as high severity, even alongside a rating
+      // Look up mappedSeverity from riskCodeSeverity first to preserve mapped Low/Medium (e.g. 4A, 5A, 4B, 5B)
+      const mappedSeverity = riskCodeSeverity[cCode] || riskCodeSeverity[curVal.slice(0, 2).toUpperCase()];
+      if (mappedSeverity) {
+        if (mappedSeverity === 'High' || mappedSeverity === 'Critical') {
+          return true;
+        }
+        if (mappedSeverity === 'Low' || mappedSeverity === 'Medium') {
+          return false;
+        }
+      }
+
+      // Apply the 4/5 high-severity fallback only when the code is absent from the map
       if (cCode.startsWith('4') || cCode.startsWith('5') || curVal.startsWith('4') || curVal.startsWith('5') || /\b[45][A-E]?\b/i.test(curVal)) {
         return true;
       }
 
-      // Map supported risk codes to severity levels: ensure MEDIUM is classified as medium and does not inflate High/Critical
-      const mappedSeverity = riskCodeSeverity[cCode];
-      if (mappedSeverity === 'Medium' || cCode === '1D' || cCode === '2D' || curVal.toUpperCase().includes('MEDIUM')) {
+      if (curVal.toUpperCase().includes('MEDIUM') || curVal.toUpperCase().includes('LOW') || cCode === '1D' || cCode === '2D') {
         return false;
-      }
-
-      if (mappedSeverity === 'High' || mappedSeverity === 'Critical') {
-        return true;
       }
 
       return cStr.includes('red') || cStr.includes('#ff') || cStr.includes('#dc') || 
