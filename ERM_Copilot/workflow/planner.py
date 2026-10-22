@@ -75,6 +75,9 @@ class BoundedPlanner:
         "approval": "agent_approval_langgraph_v1",
         "approval_agent": "agent_approval_langgraph_v1",
         "agent_approval_langgraph_v1": "agent_approval_langgraph_v1",
+        "approval_workflow": "agent_approval_workflow",
+        "approval_workflow_agent": "agent_approval_workflow",
+        "agent_approval_workflow": "agent_approval_workflow",
         "orchestrator": "erm_copilot_agent",
         "erm_copilot_agent": "erm_copilot_agent",
     }

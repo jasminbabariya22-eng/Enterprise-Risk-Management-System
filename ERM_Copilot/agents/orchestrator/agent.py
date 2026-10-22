@@ -23,6 +23,7 @@ from ERM_Copilot.agents.base import BaseAgent
 from ERM_Copilot.agents.risk_creation import risk_creation_agent, RiskCreationAgent
 from ERM_Copilot.agents.treatment import treatment_management_agent, TreatmentManagementAgent
 from ERM_Copilot.agents.approval import approval_agent, ApprovalWorkflowAgent
+from ERM_Copilot.agents.approval_workflow import approval_workflow_agent, ApprovalWorkflowAgent as GoalDrivenApprovalAgent
 from ERM_Copilot.agents.orchestrator.suggestions import get_role_suggestions
 from ERM_Copilot.agents.orchestrator.prompts import ERM_SYSTEM_PROMPT
 from ERM_Copilot.models.contracts import AgentRequest, AgentResponse, RequestContext
@@ -71,8 +72,9 @@ class ERMCopilotAgent(BaseAgent):
         raw_user_id = getattr(request, "user_id", None)
         if raw_user_id is None:
             raw_user_id = params.get("user_id")
+        raw_sess_id = getattr(request, "session_id", None) or params.get("session_id")
+        session_key = f"{raw_user_id}::{raw_sess_id}" if (raw_user_id and raw_sess_id) else (str(raw_user_id).strip() if raw_user_id else "")
         user_id = raw_user_id
-        session_key = str(raw_user_id).strip() if raw_user_id else ""
 
         # --- 1. QUERY TRANSFORMATION ENGINE (Expand shorthands & acronyms) ---
         raw_msg = request.message or ""
@@ -122,14 +124,30 @@ class ERMCopilotAgent(BaseAgent):
                 erm_response_cache.invalidate_all()
             return resp
 
-        # --- 2.2 DELEGATION TO LANGGRAPH APPROVAL AGENT ---
-        is_approval_active = (
-            approval_agent.is_session_active(session_key)
-            or approval_agent.is_approval_trigger(msg)
-            or (approval_agent.is_cancellation(msg) and approval_agent.is_session_active(session_key))
-        )
-        if is_approval_active:
+        # --- 2.2 DELEGATION TO GOAL-DRIVEN APPROVAL WORKFLOW AGENT & APPROVAL AGENT ---
+        # 1. If legacy approval session is active, continue with it
+        if approval_agent.is_session_active(session_key) or (approval_agent.is_cancellation(msg) and approval_agent.is_session_active(session_key)):
             resp = approval_agent.process(request)
+            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
+                erm_response_cache.invalidate_all()
+            return resp
+
+        # 2. If new goal-driven workflow session is active, continue with it
+        if approval_workflow_agent.is_session_active(session_key) or (approval_workflow_agent.is_cancellation(msg) and approval_workflow_agent.is_session_active(session_key)):
+            resp = approval_workflow_agent.process(request)
+            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
+                erm_response_cache.invalidate_all()
+            return resp
+
+        # 3. New approval trigger: route to approval_agent if legacy trigger, else approval_workflow_agent
+        if approval_agent.is_approval_trigger(msg):
+            resp = approval_agent.process(request)
+            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
+                erm_response_cache.invalidate_all()
+            return resp
+
+        if approval_workflow_agent.is_approval_trigger(msg):
+            resp = approval_workflow_agent.process(request)
             if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
                 erm_response_cache.invalidate_all()
             return resp

@@ -32,6 +32,18 @@ class TestLangGraphApprovalWorkflow(unittest.TestCase):
 
     def setUp(self):
         self.agent = ApprovalWorkflowAgent()
+        self.agent._sessions.clear()
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer
+            for s_id in ["test_sess_1", "test_sess_2", "test_sess_3", "test_sess_4", "test_sess_5",
+                         "test_sess_6", "test_sess_7", "test_sess_8", "test_sess_9", "test_sess_10",
+                         "test_sess_11", "test_sess_12", "test_sess_13", "copilot_test_sess", "test_sess_conv_1", "test_sess_integ", "10"]:
+                for key in (f"10::{s_id}", s_id):
+                    wf = workflow_checkpointer.load_active_for_session(key)
+                    if wf:
+                        workflow_checkpointer.delete(wf.workflow_id)
+        except Exception:
+            pass
 
     # ---------------- TEST 1: Approve with Remark Included ----------------
     def test_approve_with_remark_included(self):

@@ -20,12 +20,21 @@ from ERM_Copilot.agents.orchestrator import (
     ROLE_SUGGESTIONS
 )
 
-# 2. Approval Sub-Agent (LangGraph)
+# 2. Approval Sub-Agent (LangGraph Legacy)
 from ERM_Copilot.agents.approval import (
     approval_agent,
     ApprovalWorkflowAgent,
     ApprovalState,
     approve_or_reject_risk
+)
+
+# 2b. Upgraded Goal-Driven Approval Workflow Agent
+from ERM_Copilot.agents.approval_workflow import (
+    approval_workflow_agent,
+    ApprovalWorkflowAgent as GoalDrivenApprovalWorkflowAgent,
+    ApprovalWorkflowSession,
+    ApprovalWorkflowState,
+    ApprovalGoal,
 )
 
 # 3. Risk Creation Sub-Agent
@@ -61,6 +70,11 @@ __all__ = [
     "ApprovalWorkflowAgent",
     "ApprovalState",
     "approve_or_reject_risk",
+    "approval_workflow_agent",
+    "GoalDrivenApprovalWorkflowAgent",
+    "ApprovalWorkflowSession",
+    "ApprovalWorkflowState",
+    "ApprovalGoal",
     # Risk Creation
     "risk_creation_agent",
     "RiskCreationAgent",

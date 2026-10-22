@@ -136,6 +136,14 @@ class ERMDatabaseService:
             logger.error(f"Error searching risks: {e}")
             return []
 
+    def get_approval_queues(self, approver_role: str = "all", dept_id: Optional[int] = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """Alias for get_pending_approvals to support tool registry and role queries."""
+        return self.get_pending_approvals(stage=approver_role, dept_id=dept_id, limit=limit)
+
+    def get_risk_by_code(self, risk_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve authoritative full details for a risk record by identifier or register ID."""
+        return self.get_risk_audit_trail(risk_id)
+
     def get_pending_approvals(self, stage: str = "all", dept_id: Optional[int] = None, limit: int = 15) -> List[Dict[str, Any]]:
         """
         Fetch risks pending approvals at specific governance tiers.
