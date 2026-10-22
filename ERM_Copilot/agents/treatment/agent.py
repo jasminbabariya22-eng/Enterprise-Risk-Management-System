@@ -1,19 +1,15 @@
 """
-Enterprise Risk Management (ERM) - Conversational Treatment & Action Plan Management Agent.
-
-Dedicated agent for multi-turn ISO-31000 compliant Risk Treatment / Action Plan lifecycle:
-1. Add Treatment / Action Plan to existing risk
-2. Update Progress Percentage & Status (0-100%, Draft / In Progress / Completed)
-3. Reassign Department Action Owner
-4. List & View Action Plans for any Risk or Department
+Enterprise Risk Management (ERM) - Goal-Driven Treatment Management Agent.
+A state-driven, adaptive, tool-using conversational agent coordinating ISO-31000 risk treatments,
+mitigation action plans, progress updates, owner reassignments, and audit inspections.
 """
 from __future__ import annotations
 
 import logging
 import re
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 try:
     import logfire
@@ -26,67 +22,109 @@ except ImportError:
     logfire = DummyLogfire()
 
 from ERM_Copilot.agents.base import BaseAgent
-from ERM_Copilot.agents.treatment.state import (
-    TreatmentSession,
-    TreatmentState,
-    parse_date_string,
-    parse_progress_percentage,
-    extract_risk_identifier,
-    extract_treatment_id
+from ERM_Copilot.services.db_service import erm_db
+from ERM_Copilot.agents.treatment.execution import (
+    bind_pending_confirmation,
+    execute_confirmed_treatment_decision,
+)
+from ERM_Copilot.agents.treatment.extraction import (
+    extract_treatment_inputs,
+    is_add_treatment_trigger,
+    is_cancellation,
+    is_list_treatments_trigger,
+    is_reassign_owner_trigger,
+    is_show_details_trigger,
+    is_update_progress_trigger,
+    is_user_cancelling,
+    is_user_confirming,
+)
+from ERM_Copilot.agents.treatment.merge import (
+    apply_documented_treatment_defaults,
+    merge_treatment_inputs,
+)
+from ERM_Copilot.agents.treatment.planner import (
+    TreatmentActionType,
+    TreatmentPlanDecision,
+    TreatmentWorkflowPlanner,
 )
 from ERM_Copilot.agents.treatment.prompts import (
-    prompt_risk_selection,
-    prompt_action_plan_step,
-    prompt_action_owner_step,
-    prompt_target_date_step,
-    prompt_progress_step,
-    build_treatment_preview
+    format_add_treatment_preview,
+    format_add_treatment_success,
+    format_cancellation_response,
+    format_list_treatments_response,
+    format_missing_action_owner_prompt,
+    format_missing_action_plan_prompt,
+    format_missing_new_owner_prompt,
+    format_missing_progress_prompt,
+    format_missing_risk_prompt,
+    format_missing_treatment_id_prompt,
+    format_policy_block_response,
+    format_reassign_owner_preview,
+    format_reassign_owner_success,
+    format_treatment_details_response,
+    format_update_progress_preview,
+    format_update_progress_success,
+)
+from ERM_Copilot.agents.treatment.state import (
+    TreatmentGoal,
+    TreatmentSession,
+    TreatmentState,
+    TreatmentWorkflowState,
+    extract_risk_identifier,
+    extract_treatment_id,
+    parse_date_string,
+    parse_progress_percentage,
 )
 from ERM_Copilot.agents.treatment.tools import (
-    update_treatment_progress_tool,
-    reassign_treatment_owner_tool,
-    add_risk_treatment_tool,
-    get_treatments_for_risk_tool
+    fetch_eligible_action_owners,
+    fetch_risk_info,
+    fetch_treatment_details,
+    fetch_treatments_for_risk,
 )
 from ERM_Copilot.models.contracts import AgentRequest, AgentResponse, RequestContext
-from ERM_Copilot.services.db_service import erm_db
 
 logger = logging.getLogger("ERM_Copilot.agents.treatment.agent")
 
 
 class TreatmentManagementAgent(BaseAgent):
     """
-    Dedicated Conversational Agent for Enterprise Risk Treatment / Action Plan Management.
-    Handles multi-turn addition of action plans, progress updates, owner reassignment, and listings.
+    Goal-driven, adaptive agent for Enterprise Risk Treatment / Action Plan Management.
+    Handles formulation, tracking, milestone progress updates, owner reassignment, and listings.
     """
+
+    MAX_ITERATIONS = 4
 
     def __init__(self):
         super().__init__(
             agent_id="treatment_management_agent",
             name="ERM Treatment Management Agent",
-            description="Agent for multi-turn ISO-31000 Risk Treatment & Action Plan formulation, tracking, and reassignment.",
+            description="Goal-driven agent for multi-turn ISO-31000 Risk Treatment & Action Plan formulation, tracking, and reassignment.",
             capabilities=[
                 "add_action_plan",
                 "update_treatment_progress",
                 "reassign_action_owner",
-                "list_risk_treatments"
+                "list_risk_treatments",
+                "get_treatment_details",
             ]
         )
         self.sessions: Dict[str, TreatmentSession] = {}
+        self.planner = TreatmentWorkflowPlanner()
 
     def execute(self, request: AgentRequest, context: RequestContext) -> Any:
         return self.process(request)
 
     # -----------------------------------------------------------------
-    # Session Management
+    # Session Management & Checkpointing
     # -----------------------------------------------------------------
 
     def get_session_key(self, request: AgentRequest) -> str:
-        user_id = str(getattr(request, "user_id", None) or "5").strip()
-        sess_id = str(getattr(request, "session_id", None) or "").strip()
+        """Derive isolated session key bound to authenticated user and session."""
+        user_id = str(getattr(request, "user_id", None) or (request.metadata or {}).get("user_id") or "").strip()
+        sess_id = str(getattr(request, "session_id", None) or (request.metadata or {}).get("session_id") or "").strip()
         return f"{user_id}::{sess_id}" if sess_id else user_id
 
     def get_session(self, session_key: str) -> Optional[TreatmentSession]:
+        """Retrieve active in-memory session or restore from PostgreSQL checkpoint."""
         if session_key in self.sessions:
             return self.sessions[session_key]
         try:
@@ -101,409 +139,396 @@ class TreatmentManagementAgent(BaseAgent):
         return None
 
     def is_session_active(self, session_key: str) -> bool:
-        if session_key in self.sessions:
-            return True
-        return self.get_session(session_key) is not None
+        """Check if an active, non-terminal session exists."""
+        sess = self.get_session(session_key)
+        return sess is not None and not sess.is_terminal
 
     def clear_session(self, session_key: str) -> None:
+        """Cancel and purge in-memory session and mark checkpoint cancelled."""
         if session_key in self.sessions:
             del self.sessions[session_key]
         try:
             from ERM_Copilot.workflow import workflow_checkpointer, WorkflowStatus
             active_wf = workflow_checkpointer.load_active_for_session(session_key)
-            if active_wf:
+            if active_wf and not active_wf.is_terminal:
                 active_wf.transition_to(WorkflowStatus.CANCELLED, reason="Session cleared")
                 workflow_checkpointer.save(active_wf)
-        except Exception:
-            pass
-
+        except Exception as e:
+            logger.debug(f"[CHECKPOINT_CANCEL_ERROR] {e}")
 
     # -----------------------------------------------------------------
-    # Intent Detection
+    # Trigger & Intent Detection Helpers (Backward Compatible)
     # -----------------------------------------------------------------
 
     @staticmethod
     def is_cancellation(msg: str) -> bool:
-        lower = msg.strip().lower()
-        return lower in ["cancel", "exit", "quit", "stop", "abort", "discard", "cancel action", "cancel treatment"]
+        return is_user_cancelling(msg)
 
     @staticmethod
     def is_add_treatment_trigger(msg: str) -> bool:
-        lower = msg.lower()
-        return (
-            any(w in lower for w in [
-                "add action", "new action", "add treatment", "new treatment", "create action",
-                "attach action", "add plan", "create treatment", "action plan to risk",
-                "action plan for risk", "add action plan", "attach plan", "add mitigation to risk"
-            ])
-            and not any(w in lower for w in ["show", "list", "view", "audit", "search"])
-        )
+        return is_add_treatment_trigger(msg)
 
     @staticmethod
     def is_update_progress_trigger(msg: str) -> bool:
-        lower = msg.lower()
-        return (
-            any(w in lower for w in ["update progress", "change progress", "set progress", "progress to", "progress of", "mark progress", "update action progress"])
-            or (any(w in lower for w in ["progress", "completed", "complete"]) and any(w in lower for w in ["treatment", "action plan", "action"]) and any(w in lower for w in ["to", "set", "%", "update"]))
-        )
+        return is_update_progress_trigger(msg)
 
     @staticmethod
     def is_reassign_owner_trigger(msg: str) -> bool:
-        lower = msg.lower()
-        return (
-            any(w in lower for w in ["reassign action", "change action owner", "reassign owner", "reassign treatment", "assign action owner to"])
-        )
+        return is_reassign_owner_trigger(msg)
 
     @staticmethod
     def is_list_treatments_trigger(msg: str) -> bool:
-        lower = msg.lower()
+        return is_list_treatments_trigger(msg)
+
+    def is_treatment_trigger(self, msg: str) -> bool:
+        """Unified check whether a message is meant for the treatment management agent."""
+        if not msg:
+            return False
         return (
-            any(w in lower for w in ["show treatment", "list treatment", "show action plan", "list action plan", "view treatment", "view action plan", "what are the treatments", "what are the action plans"])
+            is_add_treatment_trigger(msg)
+            or is_update_progress_trigger(msg)
+            or is_reassign_owner_trigger(msg)
+            or is_list_treatments_trigger(msg)
+            or is_show_details_trigger(msg)
         )
 
     # -----------------------------------------------------------------
-    # Main Workflow Processor
+    # Main Goal-Driven Process Loop
     # -----------------------------------------------------------------
 
     def process(self, request: AgentRequest) -> AgentResponse:
-        params = getattr(request, "metadata", {}) or getattr(request, "parameters", {}) or {}
-        user_role = str(params.get("role") or getattr(request, "user_role", None) or "Risk Owner").strip()
-        dept_id = params.get("dept_id")
-        dept_name = params.get("dept_name")
-        raw_user_id = getattr(request, "user_id", None) or params.get("user_id") or 8
+        """
+        Execute goal-driven turn: extract goal, select tools dynamically,
+        evaluate results, and decide next action.
+        """
+        req_id = getattr(request, "request_id", None) or str(uuid.uuid4())
         session_key = self.get_session_key(request)
-
         msg = (request.message or "").strip()
-        lower_msg = msg.lower()
 
-        # Handle Cancellation
-        if self.is_cancellation(msg):
-            if session_key in self.sessions:
-                self.clear_session(session_key)
-                return self._make_response(request, "❌ **Treatment Workflow Cancelled.** Draft action plan discarded.\n\nHow else may I assist you?", "TREATMENT_CANCELLED")
+        # 1. Strict Authentication & Role Check - Fail Closed
+        auth_uid = getattr(request, "user_id", None) or (request.metadata or {}).get("user_id")
+        if not auth_uid or not str(auth_uid).strip():
+            return AgentResponse(
+                request_id=req_id,
+                agent_id=self.agent_id,
+                status="error",
+                success=False,
+                response="❌ **Authentication Failure:** No authenticated user detected. Treatment management actions require user identity.",
+                metadata={"intent": "AUTH_FAILURE"}
+            )
 
-        # Intent 1: LIST / SHOW TREATMENTS
-        if self.is_list_treatments_trigger(msg) and not self.is_session_active(session_key):
-            target_risk_ident = extract_risk_identifier(msg)
-            return self._handle_list_treatments(request, target_risk_ident, dept_id, dept_name)
+        raw_role = getattr(request, "user_role", None) or (request.metadata or {}).get("role")
+        if not raw_role or not str(raw_role).strip():
+            return AgentResponse(
+                request_id=req_id,
+                agent_id=self.agent_id,
+                status="error",
+                success=False,
+                response="❌ **Authorization Failure:** No authenticated role detected. Treatment management actions require a valid assigned role.",
+                metadata={"intent": "ROLE_MISSING"}
+            )
 
-        # Intent 2: UPDATE PROGRESS QUICK-PATH
-        if self.is_update_progress_trigger(msg) and not self.is_session_active(session_key):
-            t_id = extract_treatment_id(msg)
-            target_risk_ident = extract_risk_identifier(msg)
-            if not t_id and target_risk_ident:
-                # Find treatments for this risk
-                found_treatments = get_treatments_for_risk_tool(target_risk_ident, dept_id=dept_id)
-                if found_treatments:
-                    t_id = found_treatments[-1].get("risk_treatment_id") or found_treatments[-1].get("id")
+        user_role = str(raw_role).strip()
+        dept_id = (request.metadata or {}).get("dept_id") or getattr(request, "dept_id", None)
+        dept_name = (request.metadata or {}).get("dept_name") or getattr(request, "dept_name", None)
 
-            new_pct = parse_progress_percentage(msg)
-            if t_id and new_pct is not None:
-                res = update_treatment_progress_tool(treatment_id=t_id, progress=new_pct, modified_by=int(raw_user_id or 1))
-                if res.get("status") == "success":
-                    status_lbl = res.get("status_label", "In Progress")
-                    r_code = res.get('risk_id') or target_risk_ident or 'risk'
-                    return self._make_response(
-                        request,
-                        f"### ✅ Action Plan Progress Updated\n\n"
-                        f"| Field | Updated Value |\n"
-                        f"| :--- | :--- |\n"
-                        f"| **Treatment ID** | `#{res['risk_treatment_id']}` |\n"
-                        f"| **Risk Identifier** | `{r_code}` |\n"
-                        f"| **Action Plan** | {res['action_plan']} |\n"
-                        f"| **Progress** | **`{new_pct}%`** |\n"
-                        f"| **Status** | `{status_lbl}` |\n\n"
-                        f"The action plan progress has been recorded in the database.\n\n"
-                        f"👉 **Next Action:**\n\n"
-                        f"[btn-confirm:🚀 Resubmit to FH|Resubmit risk {r_code}] [btn:➕ Add Action Plan|Add action plan to risk {r_code}] [btn:📜 Audit Trail|Show audit trail for {r_code}]",
-                        "PROGRESS_UPDATED"
-                    )
-                else:
-                    return self._make_response(request, f"⚠️ Failed to update progress: {res.get('message')}", "ERROR")
+        # 2. Session Loading or Initialization
+        session = self.get_session(session_key)
+        extracted = extract_treatment_inputs(msg, current_goal=session.goal if session else None)
 
-        # Intent 3: REASSIGN OWNER QUICK-PATH
-        if self.is_reassign_owner_trigger(msg) and not self.is_session_active(session_key):
-            t_id = extract_treatment_id(msg)
-            target_risk_ident = extract_risk_identifier(msg)
-            if not t_id and target_risk_ident:
-                found_treatments = get_treatments_for_risk_tool(target_risk_ident, dept_id=dept_id)
-                if found_treatments:
-                    t_id = found_treatments[-1].get("risk_treatment_id") or found_treatments[-1].get("id")
+        # Reset session if starting a brand new goal or on explicit action switch
+        is_action_switch = bool(
+            session and extracted.goal and extracted.goal != TreatmentGoal.UNKNOWN and session.goal != extracted.goal
+        )
+        is_new_target = bool(
+            session and extracted.target_risk_id and session.target_risk_id and extracted.target_risk_id != session.target_risk_id
+        )
+        is_new_trigger = bool(
+            session and (is_add_treatment_trigger(msg) or is_update_progress_trigger(msg) or is_reassign_owner_trigger(msg))
+        )
 
-            name_term = re.sub(r'^(?:reassign|change|set)?\s*(?:action\s*owner|owner|treatment)?\s*(?:#?\d+)?\s*(?:to|for|is)?\s*', '', msg, flags=re.IGNORECASE).strip()
-            if t_id and name_term:
-                resolved_user = erm_db.resolve_user_by_name_or_role(name_term, dept_id=dept_id)
-                if resolved_user:
-                    res = reassign_treatment_owner_tool(treatment_id=t_id, new_action_owner_id=resolved_user["user_id"], modified_by=int(raw_user_id or 1))
-                    if res.get("status") == "success":
-                        r_code = res.get('risk_id') or target_risk_ident or 'risk'
-                        return self._make_response(
-                            request,
-                            f"### ✅ Action Owner Reassigned\n\n"
-                            f"| Field | Updated Value |\n"
-                            f"| :--- | :--- |\n"
-                            f"| **Treatment ID** | `#{res['risk_treatment_id']}` |\n"
-                            f"| **Risk Identifier** | `{r_code}` |\n"
-                            f"| **Action Plan** | {res['action_plan']} |\n"
-                            f"| **New Action Owner** | **{res['action_owner_name']}** (ID: `{resolved_user['user_id']}`) |\n\n"
-                            f"The responsibility has been reassigned in the database.\n\n"
-                            f"👉 **Next Action:**\n\n"
-                            f"[btn-confirm:🚀 Resubmit to FH|Resubmit risk {r_code}] [btn:📜 Audit Trail|Show audit trail for {r_code}]",
-                            "OWNER_REASSIGNED"
-                        )
-
-        # Intent 4: START ADD TREATMENT CONVERSATIONAL WIZARD
-        if self.is_add_treatment_trigger(msg) and not self.is_session_active(session_key):
+        if not session or session.is_terminal or is_action_switch or is_new_target or is_new_trigger:
             session = TreatmentSession(
-                session_id=str(uuid.uuid4()),
-                user_id=raw_user_id or 8,
+                session_id=session_key,
+                user_id=str(auth_uid),
                 user_role=user_role,
                 dept_id=dept_id,
                 dept_name=dept_name,
-                mode="ADD"
+                goal=extracted.goal or TreatmentGoal.UNKNOWN,
+                state=TreatmentWorkflowState.INITIATION,
+                last_user_message=msg,
             )
             self.sessions[session_key] = session
+        else:
+            session.user_id = str(auth_uid)
+            session.user_role = user_role
+            if dept_id is not None:
+                session.dept_id = dept_id
+            if dept_name is not None:
+                session.dept_name = dept_name
+            session.last_user_message = msg
 
-            target_risk_ident = extract_risk_identifier(msg)
-            if target_risk_ident:
-                risk_rows = erm_db.search_risks(keyword=target_risk_ident, department=dept_name, limit=1)
-                if risk_rows:
-                    r_match = risk_rows[0]
-                    session.target_risk_register_id = r_match["id"]
-                    session.target_risk_id = r_match.get("risk_id")
-                    session.target_risk_name = r_match.get("risk_title")
-                    answer = prompt_action_plan_step(session)
-                    return self._make_response(request, answer, "STEP_ACTION_PLAN")
+        # Unconditionally merge extracted inputs with full provenance tracking
+        merge_treatment_inputs(session, extracted, raw_message=msg)
 
-            answer = prompt_risk_selection(session)
-            return self._make_response(request, answer, "STEP_SELECT_RISK")
+        session.step_count += 1
 
-        # Multi-turn State Machine
-        session = self.get_session(session_key)
-        if not session:
-            return self._make_response(
-                request,
-                "ℹ️ **Action Plan & Treatment Management**\n\nYou can perform any of the following actions:\n"
-                "- ➕ *\"Add action plan to risk RSK-GAS-049\"*\n"
-                "- 📊 *\"Update progress of treatment #12 to 75%\"*\n"
-                "- 👤 *\"Reassign treatment #12 to Deepak Chauhan\"*\n"
-                "- 📋 *\"Show action plans for RSK-GAS-049\"*",
-                "TREATMENT_HELP"
+        # 3. Dynamic Bounded Execution Loop (max 4 tool iterations per turn)
+        final_response_text = ""
+        final_intent = "TREATMENT_PROCESSING"
+        is_success = True
+
+        for iteration in range(self.MAX_ITERATIONS):
+            plan = self.planner.plan(
+                session=session,
+                is_confirmation=extracted.is_confirmation,
+                is_cancellation=extracted.is_cancellation,
             )
 
-        # Step 1: Select Risk
-        if session.state == TreatmentState.AWAITING_RISK_SELECTION:
-            target_risk_ident = extract_risk_identifier(msg) or msg.strip()
-            risk_rows = erm_db.search_risks(keyword=target_risk_ident, department=session.dept_name, limit=3)
-            if not risk_rows and target_risk_ident.isdigit():
-                risk_rows = erm_db.search_risks(keyword=target_risk_ident, limit=1)
+            # --- A. CANCEL SESSION ---
+            if plan.action_type == TreatmentActionType.CANCEL_SESSION:
+                if session.pending_confirmation:
+                    session.pending_confirmation["status"] = "CANCELLED"
+                session.state = TreatmentWorkflowState.CANCELLED
+                final_response_text = format_cancellation_response(session.target_risk_id or f"#{session.treatment_id}")
+                final_intent = "TREATMENT_CANCELLED"
+                self.clear_session(session_key)
+                break
 
-            if risk_rows:
-                r_match = risk_rows[0]
-                session.target_risk_register_id = r_match["id"]
-                session.target_risk_id = r_match.get("risk_id")
-                session.target_risk_name = r_match.get("risk_title")
-                answer = prompt_action_plan_step(session)
-                return self._make_response(request, answer, "STEP_ACTION_PLAN")
-            else:
-                return self._make_response(
-                    request,
-                    f"⚠️ Could not locate a risk matching **`{target_risk_ident}`** in your department. Please select from the dropdown or type the Risk ID (e.g. `RSK-GAS-049`):",
-                    "RISK_NOT_FOUND"
-                )
+            # --- B. REQUEST MISSING INPUT ---
+            elif plan.action_type == TreatmentActionType.REQUEST_MISSING_INPUT:
+                if plan.missing_field == "target_risk_id":
+                    # Load candidate risks for dropdown
+                    session.available_risks = fetch_risk_info(session, "") or []
+                    final_response_text = format_missing_risk_prompt(session)
+                    final_intent = "AWAITING_RISK_ID"
+                    session.state = TreatmentWorkflowState.COLLECTING_INFO
+                elif plan.missing_field == "action_plan":
+                    final_response_text = format_missing_action_plan_prompt(session)
+                    final_intent = "AWAITING_ACTION_PLAN"
+                    session.state = TreatmentWorkflowState.COLLECTING_INFO
+                elif plan.missing_field == "action_owner_id":
+                    final_response_text = format_missing_action_owner_prompt(session)
+                    final_intent = "AWAITING_ACTION_OWNER"
+                    session.state = TreatmentWorkflowState.COLLECTING_INFO
+                elif plan.missing_field == "treatment_id":
+                    final_response_text = format_missing_treatment_id_prompt(session)
+                    final_intent = "AWAITING_TREATMENT_ID"
+                    session.state = TreatmentWorkflowState.COLLECTING_INFO
+                elif plan.missing_field == "progress":
+                    final_response_text = format_missing_progress_prompt(session)
+                    final_intent = "AWAITING_PROGRESS"
+                    session.state = TreatmentWorkflowState.COLLECTING_INFO
+                elif plan.missing_field == "new_action_owner_id":
+                    final_response_text = format_missing_new_owner_prompt(session)
+                    final_intent = "AWAITING_NEW_OWNER"
+                    session.state = TreatmentWorkflowState.COLLECTING_INFO
+                else:
+                    final_response_text = "How can I assist with your risk treatment plans today?"
+                    final_intent = "TREATMENT_HELP"
+                break
 
-        # Step 2: Action Plan Text / Suggestion
-        elif session.state == TreatmentState.AWAITING_ACTION_PLAN:
-            opts = session.action_plan_suggestions
-            if any(w in lower_msg for w in ["option 1", "1"]) and len(opts) >= 1:
-                session.action_plan = opts[0]
-            elif any(w in lower_msg for w in ["option 2", "2"]) and len(opts) >= 2:
-                session.action_plan = opts[1]
-            elif any(w in lower_msg for w in ["option 3", "3"]) and len(opts) >= 3:
-                session.action_plan = opts[2]
-            else:
-                session.action_plan = msg.strip()
-
-            answer = prompt_action_owner_step(session)
-            return self._make_response(request, answer, "STEP_ACTION_OWNER")
-
-        # Step 3: Action Owner
-        elif session.state == TreatmentState.AWAITING_ACTION_OWNER:
-            matched_ao = None
-            for u in session.available_action_owners:
-                uname = (u.get("full_name") or "").lower()
-                ulog = (u.get("log_id") or "").lower()
-                uid = str(u.get("user_id") or "")
-                if uname in lower_msg or ulog in lower_msg or f"id {uid}" in lower_msg or uid == lower_msg:
-                    matched_ao = u
+            # --- C. FETCH RISK INFO ---
+            elif plan.action_type == TreatmentActionType.FETCH_RISK_INFO:
+                risk = fetch_risk_info(session, session.target_risk_id or "")
+                if not risk:
+                    final_response_text = f"❌ Target risk **{session.target_risk_id}** was not found in the Enterprise Risk Register."
+                    final_intent = "RISK_NOT_FOUND"
+                    session.state = TreatmentWorkflowState.FAILED
+                    is_success = False
                     break
+                session.risk_data = risk
+                session.target_risk_register_id = risk.get("risk_register_id") or risk.get("id")
+                session.target_risk_name = risk.get("risk_name") or risk.get("risk_title")
+                continue
 
-            if not matched_ao:
-                cleaned_name = lower_msg.replace("assign action owner", "").replace("action owner", "").strip()
-                if cleaned_name:
-                    resolved = erm_db.resolve_user_by_name_or_role(cleaned_name, dept_id=session.dept_id)
-                    if resolved:
-                        matched_ao = {
-                            "user_id": resolved.get("user_id"),
-                            "full_name": resolved.get("full_name") or resolved.get("log_id")
+            # --- D. FETCH TREATMENT DETAILS ---
+            elif plan.action_type == TreatmentActionType.FETCH_TREATMENT_DETAILS:
+                t = fetch_treatment_details(session, int(session.treatment_id))
+                if not t:
+                    final_response_text = f"❌ Treatment **#{session.treatment_id}** was not found in the database."
+                    final_intent = "TREATMENT_NOT_FOUND"
+                    session.state = TreatmentWorkflowState.FAILED
+                    is_success = False
+                    break
+                session.action_plan = t.get("action_plan")
+                session.target_risk_id = t.get("risk_id")
+                session.target_risk_name = t.get("risk_name")
+                session.action_owner_id = t.get("action_owner_id")
+                session.action_owner_name = t.get("action_owner_name")
+                session.target_date = t.get("target_date")
+                session.api_result = t
+                continue
+
+            # --- E. FETCH ELIGIBLE OWNERS ---
+            elif plan.action_type == TreatmentActionType.FETCH_ELIGIBLE_OWNERS:
+                owners = fetch_eligible_action_owners(session)
+                session.available_action_owners = owners
+                continue
+
+            # --- F. FETCH TREATMENTS LIST ---
+            elif plan.action_type == TreatmentActionType.FETCH_TREATMENTS_LIST:
+                t_list = fetch_treatments_for_risk(session, session.target_risk_id or "")
+                session.available_treatments = t_list
+                continue
+
+            # --- G. REPORT POLICY BLOCK ---
+            elif plan.action_type == TreatmentActionType.REPORT_POLICY_BLOCK:
+                session.state = TreatmentWorkflowState.POLICY_BLOCKED
+                session.policy_block_reason = plan.policy_reason
+                final_response_text = format_policy_block_response(plan.policy_reason or "Governance policy violation.", session.target_risk_id)
+                final_intent = "TREATMENT_POLICY_BLOCKED"
+                is_success = False
+                break
+
+            # --- H. VALIDATE AND PREVIEW (AWAITING CONFIRMATION) ---
+            elif plan.action_type == TreatmentActionType.VALIDATE_AND_PREVIEW:
+                goal = session.goal
+                if goal == TreatmentGoal.ADD_TREATMENT:
+                    bind_pending_confirmation(
+                        session=session,
+                        action=goal.value,
+                        target_id=session.target_risk_id,
+                        arguments={
+                            "risk_register_id": session.target_risk_register_id,
+                            "action_plan": session.action_plan,
+                            "action_owner_id": session.action_owner_id,
+                            "target_date": session.target_date,
+                            "progress": session.progress,
+                            "action_status_id": session.action_status_id,
                         }
+                    )
+                    final_response_text = format_add_treatment_preview(session)
+                    final_intent = "AWAITING_CONFIRMATION"
 
-            if matched_ao:
-                session.action_owner_id = matched_ao.get("user_id")
-                session.action_owner_name = matched_ao.get("full_name", "Action Owner")
-            else:
-                session.action_owner_id = session.user_id
-                session.action_owner_name = msg.strip()
+                elif goal == TreatmentGoal.UPDATE_PROGRESS:
+                    current_prog = int((session.api_result or {}).get("progress", 0)) if session.api_result else None
+                    bind_pending_confirmation(
+                        session=session,
+                        action=goal.value,
+                        target_id=session.treatment_id,
+                        arguments={
+                            "treatment_id": session.treatment_id,
+                            "progress": session.progress,
+                            "remarks": session.remarks,
+                        }
+                    )
+                    final_response_text = format_update_progress_preview(session, current_progress=current_prog)
+                    final_intent = "AWAITING_CONFIRMATION"
 
-            answer = prompt_target_date_step(session)
-            return self._make_response(request, answer, "STEP_TARGET_DATE")
+                elif goal == TreatmentGoal.REASSIGN_OWNER:
+                    current_ao = (session.api_result or {}).get("action_owner_name")
+                    bind_pending_confirmation(
+                        session=session,
+                        action=goal.value,
+                        target_id=session.treatment_id,
+                        arguments={
+                            "treatment_id": session.treatment_id,
+                            "new_action_owner_id": session.new_action_owner_id,
+                        }
+                    )
+                    final_response_text = format_reassign_owner_preview(session, current_owner=current_ao)
+                    final_intent = "AWAITING_CONFIRMATION"
+                break
 
-        # Step 4: Target Date
-        elif session.state == TreatmentState.AWAITING_TARGET_DATE:
-            parsed_dt = parse_date_string(msg)
-            if not parsed_dt:
-                parsed_dt = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%d")
-            session.target_date = parsed_dt
+            # --- I. EXECUTE MUTATION ---
+            elif plan.action_type == TreatmentActionType.EXECUTE_MUTATION:
+                success, result_dict, err = execute_confirmed_treatment_decision(session)
+                session.api_result = result_dict
+                if success:
+                    session.state = TreatmentWorkflowState.COMPLETED
+                    if session.goal == TreatmentGoal.ADD_TREATMENT:
+                        final_response_text = format_add_treatment_success(result_dict)
+                        final_intent = "TREATMENT_ADDED"
+                    elif session.goal == TreatmentGoal.UPDATE_PROGRESS:
+                        final_response_text = format_update_progress_success(result_dict)
+                        final_intent = "PROGRESS_UPDATED"
+                    elif session.goal == TreatmentGoal.REASSIGN_OWNER:
+                        final_response_text = format_reassign_owner_success(result_dict)
+                        final_intent = "OWNER_REASSIGNED"
+                    self.clear_session(session_key)
+                else:
+                    session.state = TreatmentWorkflowState.FAILED
+                    final_response_text = f"❌ **Treatment Execution Failed:** {err}"
+                    final_intent = "TREATMENT_FAILED"
+                    is_success = False
+                break
 
-            answer = prompt_progress_step(session)
-            return self._make_response(request, answer, "STEP_PROGRESS")
+            # --- J. RESPOND AND COMPLETE (READ-ONLY) ---
+            elif plan.action_type == TreatmentActionType.RESPOND_AND_COMPLETE:
+                if session.goal == TreatmentGoal.LIST_TREATMENTS:
+                    final_response_text = format_list_treatments_response(
+                        session.available_treatments or [],
+                        session.target_risk_id,
+                    )
+                    final_intent = "TREATMENTS_LISTED"
+                elif session.goal == TreatmentGoal.SHOW_TREATMENT_DETAILS:
+                    final_response_text = format_treatment_details_response(session.api_result or {})
+                    final_intent = "TREATMENT_DETAILS_SHOWN"
 
-        # Step 5: Progress & Initial Status -> Preview
-        elif session.state == TreatmentState.AWAITING_PROGRESS:
-            pct = parse_progress_percentage(msg)
-            session.progress = pct if pct is not None else 0
-            session.action_status_id = 8 if session.progress >= 100 else (7 if session.progress > 0 else 1)
-
-            session.state = TreatmentState.AWAITING_CONFIRMATION
-            preview_text = build_treatment_preview(session)
-            return self._make_response(request, preview_text, "AWAITING_CONFIRMATION")
-
-        # Step 6: Confirmation -> Persist to Database
-        elif session.state == TreatmentState.AWAITING_CONFIRMATION:
-            if any(w in lower_msg for w in ["confirm", "yes", "save", "submit", "proceed", "ok", "confirm and save"]):
-                res = add_risk_treatment_tool(
-                    risk_register_id=session.target_risk_register_id or 1,
-                    action_plan=session.action_plan or "Operational Risk Mitigation Treatment",
-                    action_owner_id=session.action_owner_id or session.user_id,
-                    target_date=session.target_date,
-                    progress=session.progress,
-                    action_status_id=session.action_status_id,
-                    created_by=session.user_id
-                )
-
-                if res.get("status") == "error":
-                    return self._make_response(request, f"❌ **Failed to Save Treatment:** {res.get('message')}\n\nPlease try confirming again or cancel.", "SAVE_FAILED")
-
-                t_id = res.get("risk_treatment_id")
-                r_id = res.get("risk_id")
+                session.state = TreatmentWorkflowState.COMPLETED
                 self.clear_session(session_key)
+                break
 
-                success_msg = (
-                    f"### ✅ Action Plan Added Successfully\n\n"
-                    f"New treatment record **`#{t_id}`** has been attached to risk **`{r_id}`** in the database.\n\n"
-                    f"| Field | Value |\n"
-                    f"| :--- | :--- |\n"
-                    f"| **Treatment ID** | `#{t_id}` |\n"
-                    f"| **Target Risk** | `{session.target_risk_name}` (`{r_id}`) |\n"
-                    f"| **Action Plan** | {session.action_plan} |\n"
-                    f"| **Action Owner** | **{session.action_owner_name}** |\n"
-                    f"| **Target Date** | `{session.target_date}` |\n"
-                    f"| **Initial Progress** | `{session.progress}%` |\n\n"
-                    f"The action owner will receive tasks in their department queue.\n\n"
-                    f"👉 **Next Action:**\n\n"
-                    f"[btn-confirm:🚀 Resubmit to FH|Resubmit risk {r_id}] [btn:➕ Add Another Action Plan|Add action plan to risk {r_id}] [btn:📜 Audit Trail|Show audit trail for {r_id}]"
-                )
-                return self._make_response(request, success_msg, "TREATMENT_CREATED")
-            else:
-                self.clear_session(session_key)
-                return self._make_response(request, "❌ **Treatment Addition Cancelled.** Draft discarded.", "TREATMENT_CANCELLED")
+            # --- K. FAIL SAFELY ---
+            elif plan.action_type == TreatmentActionType.FAIL_SAFELY:
+                session.state = TreatmentWorkflowState.FAILED
+                final_response_text = f"⚠️ {plan.policy_reason or 'Execution stopped safely.'}"
+                final_intent = "EXECUTION_HALTED"
+                is_success = False
+                break
 
-        return self._make_response(request, "Unexpected state in Treatment Management workflow.", "ERROR")
-
-    def _handle_list_treatments(self, request: AgentRequest, target_risk_ident: Optional[str], dept_id: Optional[int], dept_name: Optional[str]) -> AgentResponse:
-        treatments = get_treatments_for_risk_tool(target_risk_ident or "", dept_id=dept_id) if target_risk_ident else []
-        if not treatments and dept_id:
-            treatments = erm_db.get_historical_treatments(dept_id=dept_id, limit=8)
-
-        if not treatments:
-            return self._make_response(
-                request,
-                f"ℹ️ No active action plans found for **`{target_risk_ident or dept_name or 'Department'}`**.\n\n"
-                f"Would you like to add one? Type: *\"Add action plan to {target_risk_ident or 'risk'}\"*.",
-                "TREATMENTS_EMPTY"
-            )
-
-        rows = []
-        for idx, t in enumerate(treatments, 1):
-            t_id = t.get("risk_treatment_id") or t.get("id")
-            r_id = t.get("risk_id", "N/A")
-            r_name = t.get("risk_name", "Risk")
-            act = t.get("action_plan", "Action Plan")
-            ao = t.get("action_owner_name") or t.get("action_owner", "Unassigned")
-            t_dt = str(t.get("target_date") or "N/A")[:10]
-            prog = t.get("progress", "0")
-            st = t.get("action_status_name") or t.get("status", "In Progress")
-            rows.append(f"| `#{t_id}` | `{r_id}` | **{act}** | {ao} | `{t_dt}` | **{prog}%** | `{st}` |")
-
-        table_str = "\n".join(rows)
-
-        resp_text = (
-            f"### 📋 Action Plans & Risk Treatments\n\n"
-            f"| # ID | Risk Code | Action Plan Description | Action Owner | Target Date | Progress | Status |\n"
-            f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
-            f"{table_str}\n\n"
-            f"💡 *To update progress, type e.g. `Update progress of treatment #{treatments[0].get('risk_treatment_id') or 1} to 80%`.*"
-        )
-        return self._make_response(request, resp_text, "TREATMENTS_LISTED")
-
-    def _make_response(self, request: AgentRequest, answer_text: str, intent_code: str) -> AgentResponse:
-        req_id = getattr(request, "request_id", None) or str(uuid.uuid4())
-        created_dt = getattr(request, "created_at", None)
-        timestamp_str = created_dt.isoformat() if created_dt else datetime.now(timezone.utc).isoformat()
-
-        # Persist checkpoint
+        # 4. PostgreSQL Checkpoint Persistence
         try:
             from ERM_Copilot.workflow import workflow_checkpointer, AgentWorkflowState, WorkflowStatus, WorkflowType
-            session_key = self.get_session_key(request)
-            sess = self.get_session(session_key)
-            if sess:
-                active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if session.is_terminal:
+                if active_wf and not active_wf.is_terminal:
+                    status = WorkflowStatus.COMPLETED if session.state == TreatmentWorkflowState.COMPLETED else WorkflowStatus.CANCELLED
+                    active_wf.transition_to(status, step=session.state.value)
+                    workflow_checkpointer.save(active_wf)
+            else:
                 if not active_wf:
                     active_wf = AgentWorkflowState(
                         session_id=session_key,
                         workflow_type=WorkflowType.TREATMENT_MANAGEMENT,
-                        owner_user_id=str(sess.user_id),
-                        owner_role=str(sess.user_role),
-                        dept_id=sess.dept_id,
-                        dept_name=sess.dept_name,
+                        owner_user_id=str(auth_uid),
+                        owner_role=user_role,
+                        dept_id=dept_id,
+                        dept_name=dept_name,
                         current_agent=self.agent_id,
-                        current_step=sess.state,
-                        collected_fields=sess.to_dict(),
+                        current_step=session.state.value,
+                        risk_id=session.target_risk_id,
+                        collected_fields=session.to_dict(),
                     )
                 else:
-                    active_wf.current_step = sess.state
-                    active_wf.collected_fields = sess.to_dict()
+                    active_wf.current_step = session.state.value
+                    active_wf.risk_id = session.target_risk_id or active_wf.risk_id
+                    active_wf.collected_fields = session.to_dict()
                     active_wf.step_count += 1
-                    if intent_code in ["TREATMENT_CREATED", "PROGRESS_UPDATED", "OWNER_REASSIGNED"]:
-                        active_wf.transition_to(WorkflowStatus.COMPLETED, step=intent_code)
-                    elif sess.state == "AWAITING_CONFIRMATION":
-                        active_wf.transition_to(WorkflowStatus.WAITING_FOR_CONFIRMATION, step=sess.state)
+                    if session.state == TreatmentWorkflowState.AWAITING_CONFIRMATION:
+                        active_wf.transition_to(WorkflowStatus.WAITING_FOR_CONFIRMATION, step="AWAITING_CONFIRMATION")
                 workflow_checkpointer.save(active_wf)
-        except Exception as e:
-            logger.debug(f"[CHECKPOINT_SAVE_ERROR] in TreatmentManagementAgent: {e}")
+        except Exception as cp_err:
+            logger.debug(f"[CHECKPOINT_SAVE_ERROR] in TreatmentManagementAgent: {cp_err}")
 
         return AgentResponse(
             request_id=req_id,
             agent_id=self.agent_id,
-            status="success",
-            success=True,
-            response=answer_text.strip(),
+            status="success" if is_success else "error",
+            success=is_success,
+            response=final_response_text or "Treatment processing update.",
             metadata={
-                "intent": intent_code,
-                "timestamp": timestamp_str
+                "intent": final_intent,
+                "goal": session.goal.value if isinstance(session.goal, TreatmentGoal) else str(session.goal),
+                "state": session.state.value if isinstance(session.state, TreatmentWorkflowState) else str(session.state),
+                "risk_id": session.target_risk_id,
+                "treatment_id": session.treatment_id,
+                "progress": session.progress,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
 
-
+# Singleton instance
 treatment_management_agent = TreatmentManagementAgent()

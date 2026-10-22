@@ -63,8 +63,9 @@ def execute_harness_tool(
 
 def fetch_pending_approvals(session: ApprovalWorkflowSession, limit: int = 50) -> List[Dict[str, Any]]:
     """Fetch pending approvals for the caller's role and department scope."""
-    # Determine approver_role from session.user_role
-    role = session.user_role or "Functional Head"
+    role = session.user_role
+    if not role:
+        raise PermissionError("Authenticated role is missing from session context.")
     res = execute_harness_tool(
         tool_name="get_pending_approvals",
         arguments={

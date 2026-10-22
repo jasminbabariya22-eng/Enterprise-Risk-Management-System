@@ -83,9 +83,11 @@ class ApprovalWorkflowAgent(BaseAgent):
 
     def get_session_key(self, request: AgentRequest) -> str:
         """Resolve isolated session key from user_id and session_id."""
-        user_id = str(getattr(request, "user_id", None) or (request.metadata or {}).get("user_id") or "5").strip()
+        user_id = str(getattr(request, "user_id", None) or (request.metadata or {}).get("user_id") or "").strip()
         sess_id = str(getattr(request, "session_id", None) or (request.metadata or {}).get("session_id") or "").strip()
-        return f"{user_id}::{sess_id}" if sess_id else user_id
+        if user_id and sess_id:
+            return f"{user_id}::{sess_id}"
+        return user_id or sess_id or "anonymous"
 
     def get_session(self, session_key: str) -> Optional[ApprovalWorkflowSession]:
         """Load session from memory or PostgreSQL checkpointer."""
@@ -204,7 +206,7 @@ class ApprovalWorkflowAgent(BaseAgent):
         session_key = self.get_session_key(request)
         msg = (request.message or "").strip()
 
-        # 1. Strict Authentication Check
+        # 1. Strict Authentication & Role Check - Fail Closed
         auth_uid = getattr(request, "user_id", None) or (request.metadata or {}).get("user_id")
         if not auth_uid or not str(auth_uid).strip():
             return AgentResponse(
@@ -216,7 +218,17 @@ class ApprovalWorkflowAgent(BaseAgent):
                 metadata={"intent": "AUTH_FAILURE"}
             )
 
-        user_role = str(getattr(request, "user_role", None) or (request.metadata or {}).get("role") or "Functional Head").strip()
+        raw_role = getattr(request, "user_role", None) or (request.metadata or {}).get("role")
+        if not raw_role or not str(raw_role).strip():
+            return AgentResponse(
+                request_id=req_id,
+                agent_id=self.agent_id,
+                status="error",
+                success=False,
+                response="❌ **Authorization Failure:** No authenticated role detected. Governance actions require a valid assigned role.",
+                metadata={"intent": "ROLE_MISSING"}
+            )
+        user_role = str(raw_role).strip()
         dept_id = (request.metadata or {}).get("dept_id")
         dept_name = (request.metadata or {}).get("dept_name")
 
@@ -224,8 +236,8 @@ class ApprovalWorkflowAgent(BaseAgent):
         session = self.get_session(session_key)
         extracted = extract_goal_and_inputs(msg, current_goal=session.goal if session else None)
 
-        # Check if user is starting a brand new command with a new risk_id while previous was terminal
-        if not session or session.is_terminal or (extracted.risk_id and session.risk_id and extracted.risk_id != session.risk_id):
+        # Check if user is starting a brand new command with a new risk_id, new action, or while previous was terminal
+        if not session or session.is_terminal or (extracted.risk_id and session.risk_id and extracted.risk_id != session.risk_id) or (extracted.action and session.action and extracted.action != session.action):
             session = ApprovalWorkflowSession(
                 session_id=session_key,
                 user_id=str(auth_uid),

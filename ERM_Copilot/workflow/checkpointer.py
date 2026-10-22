@@ -210,11 +210,12 @@ class PostgreSQLWorkflowCheckpointer(BaseWorkflowCheckpointer):
             type_val = state.workflow_type.value if hasattr(state.workflow_type, "value") else str(state.workflow_type)
 
             if expected_version is not None:
-                # Check optimistic lock
-                cur.execute(f"SELECT state_version FROM {self.full_table} WHERE workflow_id = %s", (wid,))
+                # Check optimistic lock with row-level lock across workers
+                cur.execute(f"SELECT state_version FROM {self.full_table} WHERE workflow_id = %s FOR UPDATE", (wid,))
                 row = cur.fetchone()
                 if row and row[0] != expected_version:
                     actual_v = row[0]
+                    conn.rollback()
                     cur.close()
                     conn.close()
                     raise ConcurrencyConflictError(wid, expected_version, actual_v)

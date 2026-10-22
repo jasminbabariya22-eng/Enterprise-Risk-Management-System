@@ -40,14 +40,38 @@ def test_orchestrator_delegates_to_approval_workflow(fh_context):
         session_id=fh_context.session_id,
         metadata={"role": "Functional Head", "dept_id": 2, "user_id": "201"}
     )
-    with patch("ERM_Copilot.agents.approval.graph.approval_agent.process") as mock_appr:
+    with patch("ERM_Copilot.agents.approval_workflow.agent.approval_workflow_agent.process") as mock_appr:
         mock_appr.return_value = AgentResponse(
             request_id="req-2",
-            agent_id="approval_agent",
+            agent_id="agent_approval_workflow",
             status="success",
             response="Please provide your approval remark.",
             metadata={"intent": "AWAITING_REMARK"}
         )
         resp = agent.process(req)
-        assert resp.agent_id == "approval_agent"
+        assert resp.agent_id == "agent_approval_workflow"
         mock_appr.assert_called_once()
+
+
+@pytest.mark.agent
+def test_orchestrator_delegates_to_treatment_management(ro_context):
+    agent = ERMCopilotAgent()
+    req = AgentRequest(
+        message="Add action plan for RSK-GAS-049",
+        user_id=ro_context.user_id,
+        user_role=ro_context.user_role,
+        session_id=ro_context.session_id,
+        metadata={"role": "Risk Owner", "dept_id": 2, "user_id": "101"}
+    )
+    with patch("ERM_Copilot.agents.treatment.agent.treatment_management_agent.process") as mock_trt:
+        mock_trt.return_value = AgentResponse(
+            request_id="req-3",
+            agent_id="treatment_management_agent",
+            status="success",
+            response="Please provide the action plan description.",
+            metadata={"intent": "REQUEST_ACTION_PLAN"}
+        )
+        resp = agent.process(req)
+        assert resp.agent_id == "treatment_management_agent"
+        mock_trt.assert_called_once()
+

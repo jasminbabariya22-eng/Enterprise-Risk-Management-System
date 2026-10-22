@@ -41,3 +41,7 @@ Thumbs.db
 *.zip
 *.tar.gz
 nssm.exe
+node_modules/
+playwright-report/
+test-results/
+package-lock.json

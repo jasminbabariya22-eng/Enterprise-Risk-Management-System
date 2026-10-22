@@ -116,9 +116,9 @@ class RiskCreationAgent(BaseAgent):
 
     def get_session_key(self, request: AgentRequest) -> str:
         """Derive an isolated session key from user_id and session_id."""
-        user_id = str(getattr(request, "user_id", None) or "5").strip()
-        sess_id = str(getattr(request, "session_id", None) or "").strip()
-        return f"{user_id}::{sess_id}" if sess_id else user_id
+        user_id = str(getattr(request, "user_id", None) or (request.metadata or {}).get("user_id") or "").strip()
+        sess_id = str(getattr(request, "session_id", None) or (request.metadata or {}).get("session_id") or "").strip()
+        return f"{user_id}::{sess_id}" if (user_id and sess_id) else (user_id or sess_id or "anonymous")
 
     def get_session(self, session_key: str) -> Optional[RiskCreationSession]:
         if session_key in self.sessions:
@@ -456,14 +456,30 @@ class RiskCreationAgent(BaseAgent):
     def process(self, request: AgentRequest) -> AgentResponse:
         """Execute the conversational Risk Creation state machine."""
         params = getattr(request, "metadata", {}) or getattr(request, "parameters", {}) or {}
-        user_role = str(params.get("role") or getattr(request, "user_role", None) or "Risk Owner").strip()
+        raw_user_id = getattr(request, "user_id", None)
+        if raw_user_id is None:
+            raw_user_id = params.get("user_id")
+        user_role = str(getattr(request, "user_role", None) or params.get("role") or "").strip()
         dept_id = params.get("dept_id")
         dept_name = params.get("dept_name")
-        raw_user_id = getattr(request, "user_id", None) or params.get("user_id")
         session_key = self.get_session_key(request)
 
         msg = (request.message or "").strip()
         lower_msg = msg.lower()
+
+        # 0. Fail closed on missing identity or role
+        if not raw_user_id or str(raw_user_id).strip() in ("", "None"):
+            return self._make_response(
+                request,
+                "🚫 **Authentication Required:** Trusted user identity was not provided in server context.",
+                "AUTH_FAILURE"
+            )
+        if not user_role or user_role in ("", "None"):
+            return self._make_response(
+                request,
+                "🚫 **Role Required:** Authenticated user role was not provided in server context.",
+                "ROLE_MISSING"
+            )
 
         # 1. Check RBAC Authorization
         authorized, auth_msg = self.check_authorization(user_role)

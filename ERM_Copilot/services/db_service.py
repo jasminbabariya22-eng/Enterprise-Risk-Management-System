@@ -213,6 +213,7 @@ class ERMDatabaseService:
                     r.risk_register_id,
                     r.risk_id,
                     r.risk_name,
+                    r.dept_id,
                     COALESCE(d.dept_name, 'Enterprise') as department,
                     r.financial_year,
                     r.risk_status,
@@ -1462,8 +1463,25 @@ class ERMDatabaseService:
                     conn.close()
                     return {"success": False, "message": f"Risk '{r_id_code}' has already been fully approved at all governance stages."}
 
-            # 7. Strict Governance Sequence Enforcement
+            # 7. Strict Governance Sequence & Department Isolation Enforcement
             if approval_level == 1:
+                # Department Isolation for Functional Head (Fail Closed)
+                u_dept = user_row.get("dept_id")
+                r_dept = risk_row.get("dept_id")
+                if u_dept is None or r_dept is None:
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": f"Department isolation check failed: Missing department identifier for user or risk record '{r_id_code}'."}
+                try:
+                    if int(u_dept) != int(r_dept):
+                        cur.close()
+                        conn.close()
+                        return {"success": False, "message": f"Department access restriction: User department ({u_dept}) does not match risk department ({r_dept}). Functional Head review is restricted to own department."}
+                except (ValueError, TypeError):
+                    cur.close()
+                    conn.close()
+                    return {"success": False, "message": "Department access restriction: Invalid department identifier format."}
+
                 if fh_done and not (rm_done or rh_done):
                     cur.close()
                     conn.close()
@@ -1636,7 +1654,9 @@ class ERMDatabaseService:
             cur.close()
             conn.close()
 
-            # 12. Trigger Email Events if available (non-blocking)
+            # 12. Trigger Email Events if available (non-blocking post-commit)
+            notification_status = "SENT"
+            notification_error = None
             try:
                 from ERM_API.app.core.database import SessionLocal
                 from ERM_API.app.services.email_event_service import (
@@ -1658,7 +1678,9 @@ class ERMDatabaseService:
                             remark=remark_str
                         )
             except Exception as mail_err:
-                logger.debug(f"Email notification dispatch skipped or completed: {mail_err}")
+                notification_status = "FAILED_OR_PENDING"
+                notification_error = str(mail_err)
+                logger.warning(f"Email notification dispatch skipped or encountered non-fatal error: {mail_err}")
 
             return {
                 "success": True,
@@ -1672,7 +1694,9 @@ class ERMDatabaseService:
                 "approver_role": role_title,
                 "next_queue": next_queue,
                 "timestamp": now_str,
-                "remark": remark_str
+                "remark": remark_str,
+                "notification_status": notification_status,
+                "notification_error": notification_error,
             }
         except Exception as e:
             logger.error(f"Error executing approve_or_reject_risk: {e}", exc_info=True)

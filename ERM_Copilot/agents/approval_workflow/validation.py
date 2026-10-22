@@ -123,10 +123,26 @@ def validate_approval_preconditions(
             policy_block_reason=f"Risk '{risk_code}' has already been fully approved at all governance stages."
         )
 
-    # 5. Department Isolation for Functional Head
+    # 5. Department Isolation for Functional Head (Fail Closed)
     risk_dept_id = risk_data.get("dept_id") or risk_data.get("department_id")
     is_enterprise_role = tier in (2, 3, 4)
-    if tier == 1 and user_dept_id is not None and risk_dept_id is not None:
+    if tier == 1:
+        if user_dept_id is None:
+            return ApprovalValidationResult(
+                is_valid=False,
+                policy_block_reason=(
+                    f"Department access restriction: Authenticated Functional Head user context is missing assigned department ID. "
+                    f"Functional Head review must fail closed when department information is unavailable."
+                )
+            )
+        if risk_dept_id is None:
+            return ApprovalValidationResult(
+                is_valid=False,
+                policy_block_reason=(
+                    f"Department access restriction: Risk '{risk_code}' is missing department association. "
+                    f"Functional Head review requires verified department alignment."
+                )
+            )
         try:
             if int(user_dept_id) != int(risk_dept_id):
                 return ApprovalValidationResult(
@@ -138,7 +154,10 @@ def validate_approval_preconditions(
                     )
                 )
         except (ValueError, TypeError):
-            pass
+            return ApprovalValidationResult(
+                is_valid=False,
+                policy_block_reason="Department access restriction: Department identifier cannot be verified (invalid numeric format)."
+            )
 
     # 6. Admin active stage determination
     effective_tier = tier

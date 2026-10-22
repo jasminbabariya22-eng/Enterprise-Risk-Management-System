@@ -154,13 +154,13 @@ class ApprovalWorkflowPlanner:
                 reasoning="Status and approval eligibility evaluated."
             )
 
-        # 9. Handle missing remark check
-        if goal in (ApprovalGoal.APPROVE_RISK, ApprovalGoal.REJECT_RISK):
-            if "remark" in missing:
+        # 9. Handle missing remark check (mandatory for rejection)
+        if goal == ApprovalGoal.REJECT_RISK:
+            if "remark" in missing or not session.remark or not str(session.remark).strip():
                 return ApprovalPlanDecision(
                     action_type=ApprovalActionType.REQUEST_MISSING_INPUT,
                     missing_field="remark",
-                    reasoning=f"Remark is required for {goal.value}."
+                    reasoning="A rejection remark/reason is mandatory when returning or rejecting a risk."
                 )
 
         # 10. Handle GOAL: APPROVE_RISK or REJECT_RISK

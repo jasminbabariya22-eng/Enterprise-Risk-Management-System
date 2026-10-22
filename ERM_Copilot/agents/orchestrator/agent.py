@@ -7,7 +7,7 @@ import json
 import re
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 try:
     import logfire
@@ -63,10 +63,150 @@ class ERMCopilotAgent(BaseAgent):
     def execute(self, request: AgentRequest, context: RequestContext) -> Any:
         return self.process(request)
 
+    # -----------------------------------------------------------------
+    # Active Workflow Resolution & State Coordination
+    # -----------------------------------------------------------------
+
+    def resolve_active_workflow(self, session_key: str) -> Optional[Tuple[str, BaseAgent]]:
+        """
+        Authoritatively identify active, non-terminal workflow session.
+        Checks specialized agents and PostgreSQL checkpointer.
+        Returns tuple of (workflow_type_name, agent_instance) or None.
+        """
+        if not session_key:
+            return None
+
+        # 1. Goal-Driven Approval Workflow Agent
+        if approval_workflow_agent.is_session_active(session_key):
+            return ("APPROVAL", approval_workflow_agent)
+
+        # 2. Legacy Approval Agent (backward compatibility)
+        if approval_agent.is_session_active(session_key):
+            return ("LEGACY_APPROVAL", approval_agent)
+
+        # 3. Treatment Management Agent
+        if treatment_management_agent.is_session_active(session_key):
+            return ("TREATMENT", treatment_management_agent)
+
+        # 4. Risk Creation Agent
+        if risk_creation_agent.is_session_active(session_key):
+            return ("RISK_CREATION", risk_creation_agent)
+
+        # 5. Check authoritative PostgreSQL checkpointer
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowType
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if active_wf and not active_wf.is_terminal:
+                if active_wf.workflow_type == WorkflowType.APPROVAL_GOVERNANCE.value:
+                    return ("APPROVAL", approval_workflow_agent)
+                elif active_wf.workflow_type == WorkflowType.TREATMENT_MANAGEMENT.value:
+                    return ("TREATMENT", treatment_management_agent)
+                elif active_wf.workflow_type == WorkflowType.RISK_CREATION.value:
+                    return ("RISK_CREATION", risk_creation_agent)
+        except Exception as e:
+            logger.debug(f"[CHECKPOINTER_RESOLVE] Error resolving active workflow: {e}")
+
+        return None
+
+    def _suspend_active_workflow(self, wf_type: str, agent: Any, session_key: str, reason: str = "Intent switch") -> None:
+        """
+        Safely pause active workflow checkpoint and invalidate pending confirmation
+        so cross-agent messages cannot trigger accidental mutations or lose drafts.
+        """
+        try:
+            sess = agent.get_session(session_key)
+            if sess:
+                if hasattr(sess, "pending_confirmation"):
+                    sess.pending_confirmation = None
+        except Exception as e:
+            logger.debug(f"[SUSPEND_SESSION_MUTATION] {e}")
+
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowStatus
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if active_wf and not active_wf.is_terminal:
+                active_wf.transition_to(WorkflowStatus.PAUSED, reason=reason)
+                workflow_checkpointer.save(active_wf)
+        except Exception as e:
+            logger.debug(f"[SUSPEND_CHECKPOINT_ERROR] {e}")
+
+    def _cancel_active_workflow(self, wf_type: str, agent: Any, session_key: str) -> None:
+        """Cancel active workflow session and update checkpoint to CANCELLED."""
+        try:
+            agent.clear_session(session_key)
+        except Exception as e:
+            logger.debug(f"[CANCEL_ACTIVE_WORKFLOW_ERROR] {e}")
+        try:
+            from ERM_Copilot.workflow import workflow_checkpointer, WorkflowStatus
+            active_wf = workflow_checkpointer.load_active_for_session(session_key)
+            if active_wf and not active_wf.is_terminal:
+                active_wf.transition_to(WorkflowStatus.CANCELLED, reason="User cancelled workflow")
+                workflow_checkpointer.save(active_wf)
+        except Exception as e:
+            logger.debug(f"[CANCEL_CHECKPOINT_ERROR] {e}")
+
+    @staticmethod
+    def _is_cancellation(msg: str) -> bool:
+        lower = msg.strip().lower()
+        return lower in [
+            "cancel", "exit", "quit", "stop", "abort", "reset", "start over",
+            "cancel workflow", "cancel session", "discard draft", "discard"
+        ]
+
+    @staticmethod
+    def _is_approval_trigger(msg: str) -> bool:
+        return approval_workflow_agent.is_approval_trigger(msg) or approval_agent.is_approval_trigger(msg)
+
+    @staticmethod
+    def _is_treatment_trigger(msg: str) -> bool:
+        return (
+            treatment_management_agent.is_treatment_trigger(msg)
+            or treatment_management_agent.is_add_treatment_trigger(msg)
+            or treatment_management_agent.is_update_progress_trigger(msg)
+            or treatment_management_agent.is_reassign_owner_trigger(msg)
+            or treatment_management_agent.is_list_treatments_trigger(msg)
+        )
+
+    @staticmethod
+    def _is_risk_creation_trigger(msg: str) -> bool:
+        return risk_creation_agent.is_start_trigger(msg)
+
+    def _is_read_only_query(self, lower_msg: str, msg: str) -> bool:
+        """Determine if query is an informational/read-only request."""
+        # 1. Daily briefing
+        if any(w in lower_msg for w in ["briefing", "morning briefing", "my pending", "my tasks", "what's pending for me", "my daily update", "overview for me", "need my action", "needs my action", "need action"]):
+            return True
+        # 2. Heatmap
+        if any(w in lower_msg for w in ["heatmap", "5x5", "heat map", "risk matrix", "matrix heatmap", "distribution"]):
+            return True
+        # 3. Audit trail
+        if any(w in lower_msg for w in ["audit", "history", "timeline", "trail", "who approved", "evidence", "traceability"]):
+            return True
+        # 4. Scoring
+        if any(w in lower_msg for w in ["calculate score", "assess risk", "inherent score"]) or (
+            any(w in lower_msg for w in ["likelihood", "impact", "risk score"]) and not any(w in lower_msg for w in ["create", "mitigation", "progress", "action"])
+        ):
+            return True
+        # 5. Overdue actions
+        if any(w in lower_msg for w in ["overdue", "follow up", "followup", "pending action"]):
+            return True
+        # 6. Department summary
+        if any(w in lower_msg for w in ["department summary", "dept summary", "profile", "distribution", "overall risk status", "overall status", "risks by department"]):
+            return True
+        # 7. Greetings & help
+        clean_prompt = " ".join(re.findall(r'[a-zA-Z0-9]+', lower_msg))
+        if clean_prompt in ["hi", "hello", "hey", "help", "menu", "who are you", "what can you do"]:
+            return True
+        # 8. Fleet search
+        if any(w in lower_msg for w in ["show risks", "list risks", "all risks", "risk register", "search risk", "open risks", "critical risks"]):
+            return True
+        return False
+
     def process(self, request: AgentRequest) -> AgentResponse:
         """Process user query dynamically tailored to the user's role and RBAC scope."""
+        # --- 0. TRUSTED IDENTITY & FAIL-CLOSED AUTHENTICATION ENFORCEMENT ---
         params = getattr(request, "metadata", {}) or getattr(request, "parameters", {}) or {}
-        user_role = str(params.get("role") or getattr(request, "user_role", None) or "").strip()
+        user_role = str(getattr(request, "user_role", None) or params.get("role") or "").strip()
         dept_id = params.get("dept_id")
         dept_name = params.get("dept_name")
         raw_user_id = getattr(request, "user_id", None)
@@ -75,6 +215,19 @@ class ERMCopilotAgent(BaseAgent):
         raw_sess_id = getattr(request, "session_id", None) or params.get("session_id")
         session_key = f"{raw_user_id}::{raw_sess_id}" if (raw_user_id and raw_sess_id) else (str(raw_user_id).strip() if raw_user_id else "")
         user_id = raw_user_id
+
+        if not raw_user_id or str(raw_user_id).strip() in ("", "None"):
+            return self._make_response(
+                request,
+                "🚫 **Authentication Required:** Trusted user identity was not provided in server context.",
+                "AUTH_FAILURE"
+            )
+        if not user_role or user_role in ("", "None"):
+            return self._make_response(
+                request,
+                "🚫 **Role Required:** Authenticated user role was not provided in server context.",
+                "ROLE_MISSING"
+            )
 
         # --- 1. QUERY TRANSFORMATION ENGINE (Expand shorthands & acronyms) ---
         raw_msg = request.message or ""
@@ -97,71 +250,141 @@ class ERMCopilotAgent(BaseAgent):
         
         logfire.info(f"[ERMCopilotAgent] Role='{user_role}', Dept='{dept_name}' (ID: {dept_id}) | Query: '{msg}'")
 
-        # --- 2. DELEGATION TO TREATMENT MANAGEMENT AGENT ---
-        is_treatment_active = (
-            treatment_management_agent.is_session_active(session_key)
-            or treatment_management_agent.is_add_treatment_trigger(msg)
-            or treatment_management_agent.is_update_progress_trigger(msg)
-            or treatment_management_agent.is_reassign_owner_trigger(msg)
-            or treatment_management_agent.is_list_treatments_trigger(msg)
-            or (treatment_management_agent.is_cancellation(msg) and treatment_management_agent.is_session_active(session_key))
-        )
-        if is_treatment_active:
+        # --- 3. ACTIVE WORKFLOW RESOLUTION & ROUTING PRECEDENCE ---
+        active_wf_info = self.resolve_active_workflow(session_key)
+
+        # 3A. Active Workflow Exists
+        if active_wf_info:
+            active_wf_type, active_agent = active_wf_info
+            wf_label = {
+                "RISK_CREATION": "Risk Creation",
+                "TREATMENT": "Treatment Management",
+                "APPROVAL": "Approval Workflow",
+                "LEGACY_APPROVAL": "Approval Workflow"
+            }.get(active_wf_type, "Workflow")
+
+            # Check for cancellation
+            if self._is_cancellation(msg):
+                self._cancel_active_workflow(active_wf_type, active_agent, session_key)
+                erm_response_cache.invalidate_all()
+                return self._make_response(
+                    request,
+                    f"❌ **{wf_label} Cancelled.** Your active session and draft have been safely discarded.\n\nHow else may I assist you with Enterprise Risk Management?",
+                    "WORKFLOW_CANCELLED"
+                )
+
+            # Check for explicit intent switch to a different specialized agent
+            is_switch = False
+            target_agent = None
+            target_label = ""
+
+            if active_wf_type in ("RISK_CREATION", "TREATMENT") and self._is_approval_trigger(msg):
+                is_switch = True
+                target_agent = approval_workflow_agent
+                target_label = "Approval Governance"
+            elif active_wf_type in ("RISK_CREATION", "APPROVAL", "LEGACY_APPROVAL") and self._is_treatment_trigger(msg):
+                is_switch = True
+                target_agent = treatment_management_agent
+                target_label = "Treatment Management"
+            elif active_wf_type in ("TREATMENT", "APPROVAL", "LEGACY_APPROVAL") and self._is_risk_creation_trigger(msg):
+                is_switch = True
+                target_agent = risk_creation_agent
+                target_label = "Risk Creation"
+
+            if is_switch and target_agent:
+                self._suspend_active_workflow(active_wf_type, active_agent, session_key, reason=f"Switch to {target_label}")
+                resp = target_agent.process(request)
+                if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED", "TREATMENT_CREATED", "PROGRESS_UPDATED", "OWNER_REASSIGNED"] or resp.metadata.get("wizard_step") == "WIZARD_COMPLETED":
+                    erm_response_cache.invalidate_all()
+                resp.response = f"⏸️ *Your active {wf_label} draft has been safely paused in the background.*\n\n" + resp.response
+                resp.metadata["suspended_workflow"] = active_wf_type
+                return resp
+
+            # Check for read-only interruption during active workflow
+            if self._is_read_only_query(lower_msg, msg):
+                dir_resp = self._handle_direct_queries(
+                    request, msg, lower_msg, user_role, dept_name,
+                    filter_dept_id, filter_dept_name, is_enterprise_role, user_id
+                )
+                if dir_resp:
+                    dir_resp.response += f"\n\n📌 *Draft Saved: You have an active {wf_label} session in progress. Reply to continue your workflow, or type 'cancel' to discard it.*"
+                    dir_resp.metadata["active_workflow_preserved"] = active_wf_type
+                    return dir_resp
+
+            # Valid continuation: Delegate to the active agent
+            resp = active_agent.process(request)
+            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED", "TREATMENT_CREATED", "PROGRESS_UPDATED", "OWNER_REASSIGNED"] or resp.metadata.get("wizard_step") == "WIZARD_COMPLETED":
+                erm_response_cache.invalidate_all()
+            return resp
+
+        # 3B. No Active Workflow — Apply Strict Precedence Order for New Requests
+        # 1. Approval Workflow (Highest governance priority)
+        if self._is_approval_trigger(msg):
+            resp = approval_workflow_agent.process(request)
+            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
+                erm_response_cache.invalidate_all()
+            return resp
+
+        # 2. Treatment Management
+        if self._is_treatment_trigger(msg):
             resp = treatment_management_agent.process(request)
             if resp.metadata.get("intent") in ["TREATMENT_CREATED", "PROGRESS_UPDATED", "OWNER_REASSIGNED"]:
                 erm_response_cache.invalidate_all()
             return resp
 
-        # --- 2.1 DELEGATION TO RISK CREATION AGENT ---
-        is_risk_creation_active = (
-            risk_creation_agent.is_session_active(session_key)
-            or risk_creation_agent.is_start_trigger(msg)
-            or (risk_creation_agent.is_cancellation(msg) and risk_creation_agent.is_session_active(session_key))
-        )
-        if is_risk_creation_active:
+        # 3. Risk Creation
+        if self._is_risk_creation_trigger(msg):
             resp = risk_creation_agent.process(request)
             if resp.metadata.get("wizard_step") == "WIZARD_COMPLETED":
                 erm_response_cache.invalidate_all()
             return resp
 
-        # --- 2.2 DELEGATION TO GOAL-DRIVEN APPROVAL WORKFLOW AGENT & APPROVAL AGENT ---
-        # 1. If legacy approval session is active, continue with it
-        if approval_agent.is_session_active(session_key) or (approval_agent.is_cancellation(msg) and approval_agent.is_session_active(session_key)):
-            resp = approval_agent.process(request)
-            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
-                erm_response_cache.invalidate_all()
-            return resp
+        # 4. Cancellation when idle
+        if self._is_cancellation(msg):
+            return self._make_response(
+                request,
+                "ℹ️ No active workflow or draft session in progress to cancel. How may I assist you with the Risk Register?",
+                "NO_ACTIVE_WORKFLOW"
+            )
 
-        # 2. If new goal-driven workflow session is active, continue with it
-        if approval_workflow_agent.is_session_active(session_key) or (approval_workflow_agent.is_cancellation(msg) and approval_workflow_agent.is_session_active(session_key)):
-            resp = approval_workflow_agent.process(request)
-            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
-                erm_response_cache.invalidate_all()
-            return resp
-
-        # 3. New approval trigger: route to approval_agent if legacy trigger, else approval_workflow_agent
-        if approval_agent.is_approval_trigger(msg):
-            resp = approval_agent.process(request)
-            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
-                erm_response_cache.invalidate_all()
-            return resp
-
-        if approval_workflow_agent.is_approval_trigger(msg):
-            resp = approval_workflow_agent.process(request)
-            if resp.metadata.get("intent") in ["APPROVAL_EXECUTED", "REJECTION_EXECUTED"]:
-                erm_response_cache.invalidate_all()
-            return resp
-
-        # --- 3. HIGH-SPEED RESPONSE CACHE LOOKUP ---
+        # 5. High-speed response cache lookup
         cached_resp = erm_response_cache.get(msg, user_role, filter_dept_id)
         if cached_resp:
             cached_text = cached_resp.response if hasattr(cached_resp, "response") else str(cached_resp)
             return self._make_response(request, cached_text, "CACHE_HIT")
 
-        # 1. INTENT DETECTION & DIRECT QUERIES
+        # 6. Direct queries & advisory intelligence
+        dir_resp = self._handle_direct_queries(
+            request, msg, lower_msg, user_role, dept_name,
+            filter_dept_id, filter_dept_name, is_enterprise_role, user_id
+        )
+        if dir_resp:
+            return dir_resp
+
+        # 7. Fallback: Search risks and suggestions
+        user_scope = "Enterprise-Wide" if is_enterprise_role else f"Department: {dept_name or 'Assigned Unit'}"
+        clean_kw = QueryTransformer.extract_search_keyword(msg)
+        raw_data = erm_db.search_risks(keyword=clean_kw, department=filter_dept_name, limit=10)
+        if not raw_data and filter_dept_name and clean_kw:
+            raw_data = erm_db.search_risks(keyword=clean_kw, department=None, limit=10)
+        answer_text = self._format_structured_output("SEARCH_RISK", raw_data, user_scope, msg, user_role)
+        return self._make_response(request, answer_text, "SEARCH_RISK")
+
+    def _handle_direct_queries(
+        self,
+        request: AgentRequest,
+        msg: str,
+        lower_msg: str,
+        user_role: str,
+        dept_name: Optional[str],
+        filter_dept_id: Optional[int],
+        filter_dept_name: Optional[str],
+        is_enterprise_role: bool,
+        user_id: Any,
+    ) -> Optional[AgentResponse]:
+        """Execute deterministic and read-only informational ERM intelligence queries."""
         intent = "GENERAL_RISK_QUERY"
         raw_data = None
-        db_context = ""
 
         # 0b. PROACTIVE MORNING BRIEFING & MY PENDING TASKS
         if any(w in lower_msg for w in ["briefing", "morning briefing", "my pending", "my tasks", "what's pending for me", "my daily update", "overview for me", "need my action", "needs my action", "need action", "show risks that need my action"]):
@@ -303,17 +526,26 @@ class ERMCopilotAgent(BaseAgent):
             raw_data = {"historical_treatments": hist_data, "available_department_personnel": dept_users}
 
         # SEARCH RISKS & HIGH SEVERITY LISTINGS
-        else:
+        elif any(w in lower_msg for w in [
+            "critical risk", "critical risks", "view critical", "critical plant", "critical hazards",
+            "high and critical", "high & critical", "high-severity", "high severity", "high risk", "high risks", "view high",
+            "top open", "top risk", "top risks", "top high",
+            "active risk register", "enterprise risk fleet", "risk register", "all risks",
+            "list risks", "show risks", "view risks", "risk fleet", "active risks",
+            "show all risks", "list all risks", "enterprise risks", "get all risks",
+            "plant hazards", "fleet", "risk list", "department risks", "department risk register",
+            "show active risks in my department", "show active risk register",
+            "open risks", "my open risks", "show my open risks", "show open risks",
+            "my risks", "show my risks", "open risk", "my active risks", "show active risks",
+            "assigned risks", "show my assigned risks"
+        ]):
             intent = "SEARCH_RISK"
-            
-            # Check if query is asking for high-severity or critical risks
             is_critical = any(w in lower_msg for w in ["critical risk", "critical risks", "view critical", "critical plant", "critical hazards"])
             is_high_sev = is_critical or any(w in lower_msg for w in [
                 "high and critical", "high & critical", "high and critical risks", "high-severity", "high severity", "high risk", "high risks", "view high",
                 "top open", "top risk", "top risks", "top high", "critical plant hazards",
                 "top open high-severity risks in the plant", "top open high-severity risks"
             ])
-            
             generic_fleet_triggers = [
                 "active risk register", "enterprise risk fleet", "risk register", "all risks",
                 "list risks", "show risks", "view risks", "risk fleet", "active risks",
@@ -332,15 +564,14 @@ class ERMCopilotAgent(BaseAgent):
             elif any(trig in lower_msg for trig in generic_fleet_triggers) or len(lower_msg.strip()) <= 3:
                 raw_data = erm_db.search_risks(department=filter_dept_name, limit=10)
             else:
-                # Extract clean topic/keyword using intelligent QueryTransformer
                 clean_kw = QueryTransformer.extract_search_keyword(msg)
                 raw_data = erm_db.search_risks(keyword=clean_kw, department=filter_dept_name, limit=10)
-                # If no results found in user's specific department, search across all departments
                 if not raw_data and filter_dept_name and clean_kw:
                     raw_data = erm_db.search_risks(keyword=clean_kw, department=None, limit=10)
+        else:
+            return None
 
         user_scope = "Enterprise-Wide" if is_enterprise_role else f"Department: {dept_name or 'Assigned Unit'}"
-
         answer_text = self._format_structured_output(intent, raw_data, user_scope, msg, user_role)
 
         if answer_text:
@@ -376,7 +607,6 @@ class ERMCopilotAgent(BaseAgent):
             }
         )
 
-        # Cache read-only response for subsequent high-speed sub-millisecond retrieval
         if answer_text:
             erm_response_cache.set(msg, resp_obj, user_role, filter_dept_id)
 

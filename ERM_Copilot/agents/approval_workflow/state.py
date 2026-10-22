@@ -129,7 +129,7 @@ class ApprovalWorkflowSession:
         return cls(
             session_id=str(data.get("session_id", "")),
             user_id=str(data.get("user_id", "")),
-            user_role=str(data.get("user_role", "Functional Head")),
+            user_role=str(data.get("user_role", "")),
             dept_id=data.get("dept_id"),
             dept_name=data.get("dept_name"),
             goal=goal_enum,

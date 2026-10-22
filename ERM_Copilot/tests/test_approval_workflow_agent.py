@@ -489,6 +489,7 @@ class TestGoalDrivenApprovalWorkflowAgent(unittest.TestCase):
             session_id="sess_idempotent",
             user_id="10",
             user_role="Functional Head",
+            dept_id=1,
             risk_id="RSK-IDEM-01",
             action="approve",
             remark="verified"
@@ -496,12 +497,21 @@ class TestGoalDrivenApprovalWorkflowAgent(unittest.TestCase):
         bind_pending_confirmation(sess, "approve", "RSK-IDEM-01", "verified")
 
         mock_exec.side_effect = TimeoutError("Network timeout during email notification dispatch.")
-        # DB shows FH status was updated to 1
-        mock_fetch.return_value = {
+        # Pre-state: pending Stage 1; Post-state: DB committed by user 10
+        pre_state = {
             "risk_id": "RSK-IDEM-01",
+            "dept_id": 1,
+            "risk_status": 2,
+            "fh_status": 0,
+        }
+        post_state = {
+            "risk_id": "RSK-IDEM-01",
+            "dept_id": 1,
             "risk_status": 3,
             "fh_status": 1,
+            "risk_function_head_approval_by": "10",
         }
+        mock_fetch.side_effect = [pre_state, post_state]
 
         success, res, err = execute_confirmed_decision(sess)
         self.assertTrue(success)

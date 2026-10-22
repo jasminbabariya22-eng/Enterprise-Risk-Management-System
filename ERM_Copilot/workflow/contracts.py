@@ -54,6 +54,7 @@ LEGAL_TRANSITIONS: Dict[WorkflowStatus, Set[WorkflowStatus]] = {
         WorkflowStatus.COMPLETED,
         WorkflowStatus.FAILED,
         WorkflowStatus.CANCELLED,
+        WorkflowStatus.EXPIRED,
     },
     WorkflowStatus.WAITING_FOR_INPUT: {
         WorkflowStatus.RUNNING,
@@ -64,18 +65,22 @@ LEGAL_TRANSITIONS: Dict[WorkflowStatus, Set[WorkflowStatus]] = {
     },
     WorkflowStatus.WAITING_FOR_CONFIRMATION: {
         WorkflowStatus.RUNNING,
+        WorkflowStatus.PAUSED,
         WorkflowStatus.CANCELLED,
         WorkflowStatus.FAILED,
         WorkflowStatus.EXPIRED,
     },
     WorkflowStatus.WAITING_FOR_APPROVAL: {
         WorkflowStatus.RUNNING,
+        WorkflowStatus.PAUSED,
         WorkflowStatus.CANCELLED,
         WorkflowStatus.FAILED,
         WorkflowStatus.EXPIRED,
     },
     WorkflowStatus.PAUSED: {
         WorkflowStatus.RUNNING,
+        WorkflowStatus.WAITING_FOR_INPUT,
+        WorkflowStatus.WAITING_FOR_CONFIRMATION,
         WorkflowStatus.CANCELLED,
         WorkflowStatus.FAILED,
         WorkflowStatus.EXPIRED,

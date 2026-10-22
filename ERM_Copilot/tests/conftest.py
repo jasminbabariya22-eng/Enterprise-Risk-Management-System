@@ -270,13 +270,14 @@ class InMemoryERMDatabase:
                 return {"success": True, "treatment_id": t_id, "message": "Treatment plan added."}
         return {"success": False, "message": "Risk register not found."}
 
-    def update_treatment_progress(self, treatment_id: int, progress: int, modified_by: int) -> Dict[str, Any]:
+    def update_treatment_progress(self, treatment_id: int, progress: int, modified_by: int = 1, remarks: Optional[str] = None, **kw) -> Dict[str, Any]:
         for r in self.risks.values():
             for t in r.get("treatments", []):
                 if t.get("treatment_id") == treatment_id:
                     t["progress"] = progress
+                    t["remarks"] = remarks
                     self.history.append({"risk_id": r["risk_id"], "action": "UPDATE_PROGRESS", "progress": progress, "by": modified_by})
-                    return {"success": True, "treatment_id": treatment_id, "progress": progress}
+                    return {"success": True, "treatment_id": treatment_id, "progress": progress, "remarks": remarks}
         return {"success": False, "message": "Treatment record not found."}
 
 

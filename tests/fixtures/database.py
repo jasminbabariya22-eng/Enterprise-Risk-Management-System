@@ -9,11 +9,27 @@ class TestDatabase:
 
     def __init__(self):
         self.risks: Dict[str, Dict[str, Any]] = copy.deepcopy(TEST_RISKS)
+        self.treatments: Dict[int, Dict[str, Any]] = {
+            1: {
+                "risk_treatment_id": 1,
+                "risk_register_id": 49,
+                "risk_id": "RSK-GAS-049",
+                "action_plan": "Install automatic shutdown valves",
+                "action_owner_id": 8,
+                "action_owner_name": "Jasmin Babariya",
+                "target_date": "2026-11-30",
+                "progress": 50,
+                "action_status_id": 7,
+                "status_name": "In Progress",
+                "dept_id": 2,
+            }
+        }
         self.history: List[Dict[str, Any]] = []
         self.email_jobs: List[Dict[str, Any]] = []
 
     def reset(self):
         self.risks = copy.deepcopy(TEST_RISKS)
+        self.treatments.clear()
         self.history.clear()
         self.email_jobs.clear()
 
@@ -127,3 +143,92 @@ class TestDatabase:
             "next_stage": next_stage,
             "message": f"Risk {risk_id} successfully processed with action '{action}'."
         }
+
+    def add_risk_treatment(
+        self,
+        risk_register_id: int,
+        action_plan: str,
+        action_owner_id: int,
+        target_date: Optional[str] = None,
+        progress: int = 0,
+        action_status_id: int = 1,
+        created_by: int = 1,
+    ) -> Dict[str, Any]:
+        t_id = len(self.treatments) + 1
+        entry = {
+            "risk_treatment_id": t_id,
+            "risk_register_id": risk_register_id,
+            "risk_id": f"RSK-GEN-{risk_register_id:03d}",
+            "action_plan": action_plan,
+            "action_owner_id": action_owner_id,
+            "action_owner_name": "Test Action Owner",
+            "target_date": target_date or "2026-12-31",
+            "progress": progress,
+            "action_status_id": action_status_id,
+            "created_by": created_by,
+            "created_on": time.time(),
+        }
+        self.treatments[t_id] = entry
+        return {
+            "status": "success",
+            "risk_treatment_id": t_id,
+            "risk_register_id": risk_register_id,
+            "action_plan": action_plan,
+            "action_owner_id": action_owner_id,
+            "progress": progress,
+            "action_status_id": action_status_id,
+        }
+
+    def update_treatment_progress(
+        self,
+        treatment_id: int,
+        progress: int,
+        modified_by: int = 1,
+        remarks: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        t = self.treatments.get(treatment_id)
+        if not t:
+            return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
+        t["progress"] = progress
+        t["action_status_id"] = 8 if progress >= 100 else (7 if progress > 0 else 1)
+        t["status_name"] = "Completed" if progress >= 100 else ("In Progress" if progress > 0 else "Draft")
+        t["modified_by"] = modified_by
+        t["remarks"] = remarks
+        return {
+            "status": "success",
+            "risk_treatment_id": treatment_id,
+            "progress": progress,
+            "action_status_id": t["action_status_id"],
+            "status_name": t["status_name"],
+        }
+
+    def reassign_treatment_owner(
+        self,
+        treatment_id: int,
+        new_action_owner_id: int,
+        modified_by: int = 1,
+    ) -> Dict[str, Any]:
+        t = self.treatments.get(treatment_id)
+        if not t:
+            return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
+        t["action_owner_id"] = new_action_owner_id
+        t["action_owner_name"] = f"Action Owner #{new_action_owner_id}"
+        t["modified_by"] = modified_by
+        return {
+            "status": "success",
+            "risk_treatment_id": treatment_id,
+            "new_action_owner_id": new_action_owner_id,
+            "action_owner_name": t["action_owner_name"],
+        }
+
+    def get_risk_treatments(self, risk_id: Optional[str] = None, risk_register_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        results = []
+        for t in self.treatments.values():
+            if risk_id and str(t.get("risk_id", "")).upper() == str(risk_id).upper():
+                results.append(t)
+            elif risk_register_id and t.get("risk_register_id") == risk_register_id:
+                results.append(t)
+        return results
+
+    def get_treatment_details(self, treatment_id: int) -> Optional[Dict[str, Any]]:
+        return self.treatments.get(treatment_id)

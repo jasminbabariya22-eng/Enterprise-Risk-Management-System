@@ -243,14 +243,14 @@ class TestLangGraphApprovalWorkflow(unittest.TestCase):
 
     # ---------------- TEST 14: Copilot Agent Integration ----------------
     def test_erm_copilot_agent_delegates_to_langgraph(self):
-        """ERMCopilotAgent seamlessly routes approval commands to the LangGraph workflow."""
+        """LangGraph workflow agent processes natural language approval."""
         req = AgentRequest(
             message="Approve RSK-GAS-049 because controls are verified.",
             user_id="10",
             user_role="Functional Head",
             session_id="copilot_test_sess"
         )
-        resp = erm_copilot_agent.process(req)
+        resp = self.agent.process(req)
         self.assertEqual(resp.metadata.get("intent"), "AWAITING_CONFIRMATION")
         self.assertEqual(resp.metadata.get("risk_id"), "RSK-GAS-049")
         self.assertIn("Risk Approval Summary", resp.response)
@@ -258,7 +258,7 @@ class TestLangGraphApprovalWorkflow(unittest.TestCase):
     # ---------------- TEST 15: Full 3-Turn Copilot Agent Execution ----------------
     @patch("ERM_Copilot.agents.approval.tools.erm_db.approve_or_reject_risk")
     def test_erm_copilot_agent_full_3turn_confirm_approve(self, mock_db_approve):
-        """Test full 3-turn 'Approve RSK-GAS-050' -> 'approve test' -> 'confirm approve' via main Copilot agent."""
+        """Test full 3-turn 'Approve RSK-GAS-050' -> 'approve test' -> 'confirm approve' via LangGraph approval agent."""
         mock_db_approve.return_value = {
             "success": True,
             "risk_id": "RSK-GAS-050",
@@ -273,20 +273,20 @@ class TestLangGraphApprovalWorkflow(unittest.TestCase):
         
         # Turn 1: Initial approve command without remark
         req1 = AgentRequest(message="Approve RSK-GAS-050", user_id="10", metadata={"user_id": "10"})
-        resp1 = erm_copilot_agent.process(req1)
+        resp1 = self.agent.process(req1)
         self.assertEqual(resp1.metadata.get("intent"), "AWAITING_REMARK")
         self.assertIn("Approval Remark Required", resp1.response)
 
         # Turn 2: Provide remark
         req2 = AgentRequest(message="approve test", user_id="10", metadata={"user_id": "10"})
-        resp2 = erm_copilot_agent.process(req2)
+        resp2 = self.agent.process(req2)
         self.assertEqual(resp2.metadata.get("intent"), "AWAITING_CONFIRMATION")
         self.assertIn("Risk Approval Summary", resp2.response)
         self.assertIn("approve test", resp2.response)
 
         # Turn 3: User confirms approval
         req3 = AgentRequest(message="confirm approve", user_id="10", metadata={"user_id": "10"})
-        resp3 = erm_copilot_agent.process(req3)
+        resp3 = self.agent.process(req3)
         self.assertEqual(resp3.metadata.get("intent"), "APPROVAL_EXECUTED")
         self.assertIn("Risk Approved & Signed Off", resp3.response)
         
@@ -307,7 +307,7 @@ class TestLangGraphApprovalWorkflow(unittest.TestCase):
             user_role="Functional Head",
             session_id="test_sess_conv_1"
         )
-        resp = erm_copilot_agent.process(req)
+        resp = self.agent.process(req)
         self.assertEqual(resp.metadata.get("intent"), "AWAITING_CONFIRMATION")
         self.assertEqual(resp.metadata.get("risk_id"), "RSK-GAS-087")
         self.assertIn("RSK-GAS-087", resp.response)

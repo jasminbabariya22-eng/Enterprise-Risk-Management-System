@@ -7,6 +7,7 @@ test.describe('E2E: Governance Approval Flow', () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login('admin', '1234');
+    await page.waitForURL('**/home**', { timeout: 15000 }).catch(() => {});
   });
 
   test('Approver prompts for mandatory remark during approval', async ({ page }) => {

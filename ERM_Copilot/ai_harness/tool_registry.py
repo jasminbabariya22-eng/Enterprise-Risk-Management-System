@@ -605,6 +605,38 @@ class CreateRiskInput(BaseModel):
     treatments: Optional[List[Dict[str, Any]]] = Field(default=None, description="Action plan treatments")
 
 
+class AddRiskTreatmentInput(BaseModel):
+    risk_register_id: int = Field(..., description="Risk register numeric ID")
+    action_plan: str = Field(..., min_length=3, description="Mitigation action plan description")
+    action_owner_id: int = Field(..., description="Action owner user ID")
+    target_date: Optional[str] = Field(default=None, description="Target completion date YYYY-MM-DD")
+    progress: int = Field(default=0, ge=0, le=100, description="Initial progress percentage")
+    action_status_id: int = Field(default=1, description="Status ID (default 1 for Draft / In Progress)")
+    created_by: int = Field(default=1, description="Creator user ID")
+
+
+class UpdateTreatmentProgressInput(BaseModel):
+    treatment_id: int = Field(..., description="Unique treatment/action plan ID")
+    progress: int = Field(..., ge=0, le=100, description="New progress percentage (0-100)")
+    modified_by: int = Field(default=1, description="Authenticated user ID modifying progress")
+    remarks: Optional[str] = Field(default=None, description="Optional progress remark")
+
+
+class ReassignTreatmentOwnerInput(BaseModel):
+    treatment_id: int = Field(..., description="Unique treatment/action plan ID")
+    new_action_owner_id: int = Field(..., description="New action owner user ID")
+    modified_by: int = Field(default=1, description="Authenticated user ID modifying the assignment")
+
+
+class GetRiskTreatmentsInput(BaseModel):
+    risk_ident: str = Field(..., description="Risk identifier code or numeric register ID")
+    dept_id: Optional[int] = Field(default=None, description="Optional department ID filter")
+
+
+class GetTreatmentDetailsInput(BaseModel):
+    treatment_id: int = Field(..., description="Unique treatment/action plan ID")
+
+
 @dataclass
 class ToolDefinition:
     """Complete governance definition for an AI tool."""
@@ -1110,6 +1142,7 @@ class ToolRegistry:
                         created_by=int(created_by)
                     )
                 ),
+                schema_model=AddRiskTreatmentInput,
                 allowed_roles=CREATOR_ROLES,
                 requires_confirmation=True,
                 is_state_changing=True,
@@ -1124,16 +1157,81 @@ class ToolRegistry:
                 name="update_treatment_progress",
                 description="Update progress percentage on an existing treatment action plan.",
                 category=ToolCategory.STATE_CHANGING,
-                handler=lambda treatment_id, progress, modified_by, **kw: erm_db.update_treatment_progress(
+                handler=lambda treatment_id, progress, modified_by, remarks=None, **kw: erm_db.update_treatment_progress(
                     treatment_id=int(treatment_id),
                     progress=int(progress),
-                    modified_by=int(modified_by)
+                    modified_by=int(modified_by),
+                    remarks=remarks
                 ),
+                schema_model=UpdateTreatmentProgressInput,
                 allowed_roles=CREATOR_ROLES,
                 requires_confirmation=True,
                 is_state_changing=True,
                 is_idempotent=False,
                 retry_on_transient=False,
+            )
+        )
+
+        # 10b. Reassign Treatment Owner
+        self.register(
+            ToolDefinition(
+                name="reassign_treatment_owner",
+                description="Reassign designated Action Owner for a specific risk treatment.",
+                category=ToolCategory.STATE_CHANGING,
+                handler=lambda treatment_id, new_action_owner_id, modified_by, **kw: (
+                    erm_db.reassign_treatment_owner(
+                        treatment_id=int(treatment_id),
+                        new_action_owner_id=int(new_action_owner_id),
+                        modified_by=int(modified_by)
+                    )
+                ),
+                schema_model=ReassignTreatmentOwnerInput,
+                allowed_roles=CREATOR_ROLES,
+                requires_confirmation=True,
+                is_state_changing=True,
+                is_idempotent=False,
+                retry_on_transient=False,
+            )
+        )
+
+        # 10c. Get Treatments for Risk
+        self.register(
+            ToolDefinition(
+                name="get_risk_treatments",
+                description="Fetch all treatment action plans associated with a risk register record.",
+                category=ToolCategory.READ_ONLY,
+                handler=lambda risk_ident, dept_id=None, **kw: (
+                    erm_db.get_treatments_for_risk(
+                        risk_ident=str(risk_ident),
+                        dept_id=dept_id
+                    )
+                ),
+                schema_model=GetRiskTreatmentsInput,
+                allowed_roles=ALL_ROLES,
+                requires_confirmation=False,
+                is_state_changing=False,
+                is_idempotent=True,
+                retry_on_transient=True,
+            )
+        )
+
+        # 10d. Get Treatment Details
+        self.register(
+            ToolDefinition(
+                name="get_treatment_details",
+                description="Fetch complete details of a specific risk treatment action plan by ID.",
+                category=ToolCategory.READ_ONLY,
+                handler=lambda treatment_id, **kw: (
+                    erm_db.get_treatment_by_id(
+                        treatment_id=int(treatment_id)
+                    )
+                ),
+                schema_model=GetTreatmentDetailsInput,
+                allowed_roles=ALL_ROLES,
+                requires_confirmation=False,
+                is_state_changing=False,
+                is_idempotent=True,
+                retry_on_transient=True,
             )
         )
 

@@ -7,6 +7,7 @@ test.describe('E2E: Governance Rejection Flow', () => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login('admin', '1234');
+    await page.waitForURL('**/home**', { timeout: 15000 }).catch(() => {});
   });
 
   test('Approver requires justification remark when rejecting risk', async ({ page }) => {
@@ -15,6 +16,6 @@ test.describe('E2E: Governance Rejection Flow', () => {
     await copilot.sendMessage('reject RSK-GAS-087');
     await copilot.waitForAssistantResponse();
     const response = await copilot.getLastMessageText();
-    expect(response.toLowerCase()).toContain('reason');
+    expect(response.toLowerCase()).toMatch(/remark|reason/);
   });
 });

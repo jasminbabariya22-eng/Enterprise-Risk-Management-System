@@ -43,8 +43,6 @@ def check_missing_requirements(session: ApprovalWorkflowSession) -> List[str]:
     if goal == ApprovalGoal.APPROVE_RISK:
         if not session.risk_id or not str(session.risk_id).strip():
             missing.append("risk_id")
-        if not session.remark or not str(session.remark).strip():
-            missing.append("remark")
         return missing
 
     if goal == ApprovalGoal.REJECT_RISK:
