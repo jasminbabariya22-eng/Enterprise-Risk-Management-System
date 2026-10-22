@@ -86,6 +86,9 @@ def parse_progress(text: str) -> Optional[int]:
 def detect_field_edits(msg: str) -> Optional[Tuple[str, str]]:
     """Detect if user is requesting to edit a specific field before confirmation."""
     lower = msg.strip().lower()
+    edit_verbs = ["change", "update", "set", "edit", "modify", "reassign"]
+    if not any(v in lower for v in edit_verbs):
+        return None
 
     # Target Date
     if any(w in lower for w in ["target date", "completion date", "due date", "timeline"]):

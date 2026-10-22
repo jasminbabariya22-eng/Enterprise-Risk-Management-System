@@ -3,9 +3,11 @@ PostgreSQL Database Service for MassERS (Schema: ers).
 Handles direct parameterized queries, multi-stage governance approvals, 5x5 heatmap distribution, and audit trails.
 """
 import os
+import re
 import logging
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from difflib import SequenceMatcher
+from typing import List, Dict, Any, Optional, Set, Tuple
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -388,6 +390,196 @@ class ERMDatabaseService:
             return [dict(r) for r in results]
         except Exception as e:
             logger.error(f"Error fetching historical treatments: {e}")
+            return []
+
+    @staticmethod
+    def score_candidate_match(
+        draft_title: str,
+        rec_title: Optional[str] = None,
+        draft_desc: Optional[str] = None,
+        rec_desc: Optional[str] = None,
+        cand_title: Optional[str] = None,
+        cand_desc: Optional[str] = None,
+    ) -> Tuple[Optional[str], float]:
+        """
+        Evaluate deterministic similarity between a draft risk and an existing risk record.
+        Returns (match_reason, similarity_score).
+        """
+        target_title = rec_title if rec_title is not None else cand_title
+        target_desc = rec_desc if rec_desc is not None else cand_desc
+
+        cleaned_draft = str(draft_title or "").strip()
+        cleaned_rec = str(target_title or "").strip()
+        if not cleaned_draft or not cleaned_rec:
+            return None, 0.0
+
+        STOP_WORDS = {
+            "the", "a", "an", "at", "for", "in", "on", "of", "and", "or", "to",
+            "with", "by", "from", "is", "are", "risk", "new", "potential", "due",
+            "issue", "problem", "general", "hazard", "incident"
+        }
+        GENERIC_DESCRIPTIONS = {
+            "operational risk", "process issue", "equipment failure",
+            "general operational risk", "system issue", "safety issue", "routine issue"
+        }
+
+        def normalize_text(text: str) -> str:
+            no_punc = re.sub(r'[^\w\s]', ' ', str(text or "").lower())
+            return " ".join(no_punc.split())
+
+        def get_tokens(text: str) -> Set[str]:
+            norm = normalize_text(text)
+            return {w for w in norm.split() if len(w) >= 3 and w not in STOP_WORDS}
+
+        norm_draft = normalize_text(cleaned_draft)
+        norm_rec = normalize_text(cleaned_rec)
+
+        # Layer A: Exact or Normalized Name Match
+        # Handle whitespace and case-insensitive equality
+        if " ".join(cleaned_draft.lower().split()) == " ".join(cleaned_rec.lower().split()):
+            return "exact_name_match", 1.0
+        if norm_draft == norm_rec:
+            return "normalized_name_match", 0.95
+
+        draft_tokens = get_tokens(cleaned_draft)
+        rec_tokens = get_tokens(cleaned_rec)
+        intersection = draft_tokens & rec_tokens
+        union = draft_tokens | rec_tokens
+
+        jaccard = len(intersection) / len(union) if union else 0.0
+        seq_ratio = SequenceMatcher(None, norm_draft, norm_rec).ratio()
+        min_tokens = min(len(draft_tokens), len(rec_tokens))
+        containment = (len(intersection) / min_tokens) if min_tokens >= 2 else 0.0
+
+        # Layer B: Similar Name Match
+        if jaccard >= 0.50 or containment >= 0.75 or seq_ratio >= 0.70:
+            score = round(max(jaccard, seq_ratio, containment * 0.85), 2)
+            return "similar_name", score
+
+        # Layer C: Name and Description Similarity
+        norm_draft_desc = normalize_text(draft_desc)
+        norm_rec_desc = normalize_text(target_desc)
+        is_meaningful_desc = (
+            len(norm_draft_desc) >= 20
+            and norm_draft_desc not in GENERIC_DESCRIPTIONS
+            and len(norm_rec_desc) >= 15
+        )
+
+        if len(intersection) >= 1 and is_meaningful_desc:
+            draft_desc_tokens = get_tokens(draft_desc)
+            rec_desc_tokens = get_tokens(target_desc)
+            desc_intersection = draft_desc_tokens & rec_desc_tokens
+            if len(desc_intersection) >= 3:
+                score = round(0.50 + min(0.30, len(desc_intersection) * 0.06), 2)
+                return "name_and_description_similarity", score
+
+        return None, 0.0
+
+    def find_potential_duplicate_risks(
+        self,
+        risk_name: str,
+        risk_description: Optional[str] = None,
+        dept_id: Optional[int] = None,
+        limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Identify potential duplicate risks across active risk register records using
+        deterministic, explainable multi-layer matching.
+        """
+        cleaned_title = str(risk_name or "").strip()
+        if len(cleaned_title) < 3:
+            return []
+
+        def normalize_text(text: str) -> str:
+            no_punc = re.sub(r'[^\w\s]', ' ', str(text or "").lower())
+            return " ".join(no_punc.split())
+
+        def get_tokens(text: str) -> Set[str]:
+            norm = normalize_text(text)
+            STOP_WORDS = {
+                "the", "a", "an", "at", "for", "in", "on", "of", "and", "or", "to",
+                "with", "by", "from", "is", "are", "risk", "new", "potential", "due"
+            }
+            return {w for w in norm.split() if len(w) >= 3 and w not in STOP_WORDS}
+
+        draft_tokens = get_tokens(cleaned_title)
+        conn = None
+        try:
+            conn = self._get_connection()
+            if not conn:
+                return []
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+
+            query = f"""
+                SELECT 
+                    r.risk_register_id as id,
+                    r.risk_id,
+                    r.risk_name,
+                    r.dept_id,
+                    COALESCE(d.dept_name, 'Enterprise') as dept_name,
+                    r.risk_status,
+                    COALESCE(s.status_name, 'Draft') as status_name,
+                    COALESCE(rd.risk_description, '') as description
+                FROM {DB_SCHEMA}.risk_register r
+                LEFT JOIN {DB_SCHEMA}.mst_department d ON r.dept_id = d.id
+                LEFT JOIN {DB_SCHEMA}.risk_description rd ON r.risk_register_id = rd.risk_register_id AND (rd.is_deleted = 0 OR rd.is_deleted IS NULL)
+                LEFT JOIN {DB_SCHEMA}.mst_status s ON r.risk_status = s.id
+                WHERE (r.is_deleted = 0 OR r.is_deleted IS NULL)
+            """
+            params: List[Any] = []
+            if dept_id is not None:
+                query += " AND r.dept_id = %s"
+                params.append(dept_id)
+
+            search_tokens = list(draft_tokens)[:4]
+            if search_tokens:
+                token_clauses = ["r.risk_name ILIKE %s" for _ in search_tokens]
+                query += f" AND ({' OR '.join(token_clauses)})"
+                params.extend([f"%{t}%" for t in search_tokens])
+            else:
+                query += " AND r.risk_name ILIKE %s"
+                params.append(f"%{cleaned_title[:20]}%")
+
+            query += " ORDER BY r.risk_register_id DESC LIMIT 50;"
+
+            cur.execute(query, params)
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+
+            candidates: List[Dict[str, Any]] = []
+            for row in rows:
+                rec_name = str(row.get("risk_name") or "")
+                rec_desc = str(row.get("description") or "")
+
+                match_reason, sim_score = self.score_candidate_match(
+                    draft_title=cleaned_title,
+                    rec_title=rec_name,
+                    draft_desc=risk_description,
+                    rec_desc=rec_desc
+                )
+
+                if match_reason and sim_score >= 0.50:
+                    candidates.append({
+                        "risk_id": row.get("risk_id"),
+                        "risk_name": rec_name,
+                        "dept_id": row.get("dept_id"),
+                        "dept_name": row.get("dept_name"),
+                        "status_name": row.get("status_name", "Draft"),
+                        "match_reason": match_reason,
+                        "similarity_score": sim_score,
+                    })
+
+            candidates.sort(key=lambda x: x["similarity_score"], reverse=True)
+            return candidates[:limit]
+
+        except Exception as e:
+            logger.error(f"Error querying potential duplicate risks: {e}", exc_info=True)
+            if conn:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
             return []
 
     def get_department_action_owners(self, dept_id: Optional[int] = None, dept_name: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -1037,6 +1229,82 @@ class ERMDatabaseService:
             if lower in s_name or s_name in lower or str(s.get("id")) == lower:
                 return s
         return None
+
+    def get_dropdown_options(self, dept_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Fetch dropdown metadata options for departments, statuses, likelihood, impact, and action owners.
+        Guarantees parameterized query execution, department scoping, and robust error handling.
+        """
+        from ERM_Copilot.agents.risk_creation.scoring import RiskMatrixCalculator
+
+        likelihood_scales = [
+            {"id": k, "name": v, "code": f"L{k}"}
+            for k, v in RiskMatrixCalculator.LIKELIHOOD_LABELS.items()
+        ]
+        impact_scales = [
+            {"id": k, "name": v, "code": f"I{k}"}
+            for k, v in RiskMatrixCalculator.IMPACT_LABELS.items()
+        ]
+
+        departments: List[Dict[str, Any]] = []
+        statuses: List[Dict[str, Any]] = []
+        action_owners: List[Dict[str, Any]] = []
+
+        try:
+            conn = self._get_connection()
+            if conn:
+                try:
+                    cur = conn.cursor(cursor_factory=RealDictCursor)
+                    cur.execute(f"""
+                        SELECT id, dept_name, dept_short_name 
+                        FROM {DB_SCHEMA}.mst_department 
+                        WHERE is_deleted = 0 
+                        ORDER BY id ASC;
+                    """)
+                    dept_rows = cur.fetchall()
+                    departments = [dict(r) for r in dept_rows]
+                    cur.close()
+                finally:
+                    conn.close()
+        except Exception as e:
+            logger.error(f"Error fetching departments in get_dropdown_options: {e}")
+
+        try:
+            statuses = self.get_status_options(status_type="risk")
+        except Exception as e:
+            logger.error(f"Error fetching status options in get_dropdown_options: {e}")
+            statuses = []
+
+        if dept_id is not None:
+            try:
+                resolved_dept_id = int(dept_id) if str(dept_id).isdigit() else None
+                if resolved_dept_id:
+                    raw_owners = self.get_department_action_owners(dept_id=resolved_dept_id)
+                    # Sanitize to prevent exposing sensitive personal data
+                    action_owners = [
+                        {
+                            "user_id": ao.get("user_id"),
+                            "log_id": ao.get("log_id"),
+                            "full_name": ao.get("full_name"),
+                            "dept_id": ao.get("dept_id"),
+                            "dept_name": ao.get("dept_name"),
+                            "role_name": ao.get("role_name", "Action Owner"),
+                        }
+                        for ao in raw_owners
+                    ]
+            except Exception as e:
+                logger.error(f"Error fetching action owners in get_dropdown_options: {e}")
+                action_owners = []
+
+        return {
+            "status": "success",
+            "departments": departments,
+            "statuses": statuses,
+            "likelihood_scales": likelihood_scales,
+            "impact_scales": impact_scales,
+            "action_owners": action_owners,
+        }
+
 
     def approve_or_reject_risk(
         self,

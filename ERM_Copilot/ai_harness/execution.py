@@ -21,7 +21,14 @@ from ERM_Copilot.ai_harness.exceptions import (
     ToolValidationError,
 )
 from ERM_Copilot.ai_harness.observability import observability_tracer
-from ERM_Copilot.ai_harness.policies import enforce_tool_rbac
+from ERM_Copilot.ai_harness.policies import (
+    ROLE_ADMIN,
+    ROLE_SUPER_ADMIN,
+    ROLE_RISK_MANAGER,
+    ROLE_RISK_HEADER,
+    enforce_tool_rbac,
+    normalize_role,
+)
 from ERM_Copilot.ai_harness.retry import RetryPolicy
 from ERM_Copilot.ai_harness.tool_registry import tool_registry
 
@@ -72,6 +79,36 @@ class ExecutionCoordinator:
                     validated_args["user_id"] = int(context.user_id)
             if "modified_by" in validated_args or tool_name == "update_treatment_progress":
                 validated_args["modified_by"] = int(context.user_id)
+            if tool_name in (
+                "lookup_eligible_owners", "get_eligible_risk_owners",
+                "get_mitigation_suggestions", "generate_mitigation_suggestions",
+                "get_action_plan_suggestions", "generate_action_plan_suggestions",
+                "detect_duplicate_risks", "check_risk_duplicates",
+                "assess_risk_completeness", "validate_risk_payload",
+                "get_risk_creation_requirements",
+            ):
+                validated_args["caller_role"] = context.user_role
+                validated_args["caller_dept_id"] = context.dept_id
+                validated_args["caller_user_id"] = context.user_id
+            if tool_name in (
+                "resolve_reference_data", "get_risk_reference_options",
+                "get_mitigation_suggestions", "generate_mitigation_suggestions",
+                "get_action_plan_suggestions", "generate_action_plan_suggestions",
+                "detect_duplicate_risks", "check_risk_duplicates",
+                "assess_risk_completeness", "validate_risk_payload",
+                "get_risk_creation_requirements",
+            ):
+                if validated_args.get("dept_id") is None and context.dept_id is not None:
+                    validated_args["dept_id"] = context.dept_id
+            if tool_name in ("create_risk", "save_risk"):
+                validated_args["risk_owner_id"] = context.user_id
+                # Enforce department context: standard users cannot spoof department
+                is_admin_or_enterprise = normalize_role(context.user_role) in (
+                    ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_RISK_MANAGER, ROLE_RISK_HEADER
+                )
+                if not is_admin_or_enterprise or not validated_args.get("dept_id"):
+                    if context.dept_id is not None:
+                        validated_args["dept_id"] = context.dept_id
 
             # 4. Confirmation verification for state-changing operations
             if tool.requires_confirmation and not bypass_confirmation:

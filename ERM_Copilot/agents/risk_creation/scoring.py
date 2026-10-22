@@ -43,13 +43,53 @@ class RiskMatrixCalculator:
     }
 
     @staticmethod
-    def calculate_score(likelihood: int, impact: int) -> Tuple[int, str, str]:
+    def is_valid_rating(value: Any) -> bool:
+        """Check if rating is a valid integer between 1 and 5."""
+        if value is None or isinstance(value, bool):
+            return False
+        try:
+            val_int = int(value)
+            return 1 <= val_int <= 5 and float(value) == val_int
+        except (ValueError, TypeError):
+            return False
+
+    @staticmethod
+    def validate_rating(rating: Any, field_name: str = "Rating") -> Tuple[bool, Optional[str]]:
+        """Validate rating is strictly an integer between 1 and 5."""
+        if rating is None:
+            return False, f"{field_name} is missing."
+        if isinstance(rating, bool):
+            return False, f"{field_name} must be an integer between 1 and 5, not a boolean."
+        try:
+            val_int = int(rating)
+            if float(rating) != val_int:
+                return False, f"{field_name} must be a whole integer between 1 and 5 (got {rating})."
+            if not (1 <= val_int <= 5):
+                return False, f"{field_name} must be between 1 and 5 (got {rating})."
+            return True, None
+        except (ValueError, TypeError):
+            return False, f"{field_name} must be a valid integer between 1 and 5 (got {rating})."
+
+    @classmethod
+    def calculate_score(cls, likelihood: int, impact: int, strict: bool = True) -> Tuple[int, str, str]:
         """
         Calculate Risk Score and Severity Level according to ERM 5x5 Matrix standards.
         Returns: (score, level_name, severity_badge)
+        Raises ValueError if ratings are invalid and strict=True.
         """
-        l = max(1, min(5, int(likelihood)))
-        i = max(1, min(5, int(impact)))
+        if strict:
+            ok_l, err_l = cls.validate_rating(likelihood, "Likelihood")
+            if not ok_l:
+                raise ValueError(err_l)
+            ok_i, err_i = cls.validate_rating(impact, "Impact")
+            if not ok_i:
+                raise ValueError(err_i)
+            l = int(likelihood)
+            i = int(impact)
+        else:
+            l = max(1, min(5, int(likelihood)))
+            i = max(1, min(5, int(impact)))
+
         score = l * i
 
         if score >= 15:
@@ -75,6 +115,11 @@ class RiskMatrixCalculator:
             return 3, 3
         if any(w in lower for w in ["option d", "2x2", "2 2", "score 4"]):
             return 2, 2
+
+        # Check if text contains explicit numbers out of bounds (e.g. 0 or > 5)
+        raw_digits = [int(s) for s in re.findall(r'\b\d+\b', text)]
+        if any(d < 1 or d > 5 for d in raw_digits):
+            return None
 
         # Check named word combinations, e.g. "Probable Major" or "Likelihood Remote Impact Moderate"
         found_l = None
@@ -112,8 +157,6 @@ class RiskMatrixCalculator:
             return numbers[0], found_i
         elif len(numbers) == 1 and found_l is not None:
             return found_l, numbers[0]
-        elif len(numbers) == 1:
-            return numbers[0], min(numbers[0] + 1, 5)
 
         return None
 

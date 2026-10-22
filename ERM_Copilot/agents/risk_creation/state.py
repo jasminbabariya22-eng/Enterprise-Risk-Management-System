@@ -96,6 +96,7 @@ class RiskCreationSession:
     submission_mode: str = "draft"
     validation_result: Optional[Dict[str, Any]] = None
     awaiting_confirmation: bool = False
+    pending_confirmation: Optional[Dict[str, Any]] = None
 
     # Financial Year
     financial_year: str = "2026-2027"
@@ -108,28 +109,70 @@ class RiskCreationSession:
     available_co_owners: List[Dict[str, Any]] = field(default_factory=list)
     available_statuses: List[Dict[str, Any]] = field(default_factory=list)
 
+    # Duplicate Risk Detection
+    duplicate_check_status: str = "not_checked"
+    duplicate_candidates: List[Dict[str, Any]] = field(default_factory=list)
+    duplicate_check_input_hash: Optional[str] = None
+    duplicate_acknowledged: bool = False
+
+    # Provenance tracking: mapping of field_name -> source ('user_stated', 'user_corrected', 'suggested', 'system_default', 'calculated')
+    field_provenance: Dict[str, str] = field(default_factory=dict)
+
+    # Durable tool call tracking
+    tool_call_history: List[Dict[str, Any]] = field(default_factory=list)
+
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
-    def update_inherent_assessment(self, likelihood: int, impact: int) -> None:
-        """Update inherent likelihood, impact, score, and level using authoritative math."""
-        score, level, badge = RiskMatrixCalculator.calculate_score(likelihood, impact)
-        self.inherent_likelihood = likelihood
-        self.inherent_impact = impact
+    def update_inherent_assessment(self, likelihood: Optional[int], impact: Optional[int]) -> bool:
+        """Update inherent likelihood, impact, score, and level using authoritative math. Invalidate if invalid."""
+        self.pending_confirmation = None
+        self.awaiting_confirmation = False
+        self.duplicate_check_input_hash = None
+        self.duplicate_acknowledged = False
+
+        if likelihood is None or impact is None or not (RiskMatrixCalculator.is_valid_rating(likelihood) and RiskMatrixCalculator.is_valid_rating(impact)):
+            self.inherent_likelihood = int(likelihood) if RiskMatrixCalculator.is_valid_rating(likelihood) else None
+            self.inherent_impact = int(impact) if RiskMatrixCalculator.is_valid_rating(impact) else None
+            self.inherent_score = None
+            self.inherent_level = None
+            self.inherent_badge = None
+            self.updated_at = datetime.now(timezone.utc)
+            return False
+
+        score, level, badge = RiskMatrixCalculator.calculate_score(int(likelihood), int(impact), strict=True)
+        self.inherent_likelihood = int(likelihood)
+        self.inherent_impact = int(impact)
         self.inherent_score = score
         self.inherent_level = level
         self.inherent_badge = badge
         self.updated_at = datetime.now(timezone.utc)
+        return True
 
-    def update_current_assessment(self, likelihood: int, impact: int) -> None:
-        """Update current / residual likelihood, impact, score, and level independently."""
-        score, level, badge = RiskMatrixCalculator.calculate_score(likelihood, impact)
-        self.current_likelihood = likelihood
-        self.current_impact = impact
+    def update_current_assessment(self, likelihood: Optional[int], impact: Optional[int]) -> bool:
+        """Update current / residual likelihood, impact, score, and level independently. Invalidate if invalid."""
+        self.pending_confirmation = None
+        self.awaiting_confirmation = False
+        self.duplicate_check_input_hash = None
+        self.duplicate_acknowledged = False
+
+        if likelihood is None or impact is None or not (RiskMatrixCalculator.is_valid_rating(likelihood) and RiskMatrixCalculator.is_valid_rating(impact)):
+            self.current_likelihood = int(likelihood) if RiskMatrixCalculator.is_valid_rating(likelihood) else None
+            self.current_impact = int(impact) if RiskMatrixCalculator.is_valid_rating(impact) else None
+            self.current_score = None
+            self.current_level = None
+            self.current_badge = None
+            self.updated_at = datetime.now(timezone.utc)
+            return False
+
+        score, level, badge = RiskMatrixCalculator.calculate_score(int(likelihood), int(impact), strict=True)
+        self.current_likelihood = int(likelihood)
+        self.current_impact = int(impact)
         self.current_score = score
         self.current_level = level
         self.current_badge = badge
         self.updated_at = datetime.now(timezone.utc)
+        return True
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize session to dictionary for persistent checkpointing."""
@@ -165,7 +208,16 @@ class RiskCreationSession:
             "status_name": self.status_name,
             "progress": self.progress,
             "submission_mode": self.submission_mode,
+            "pending_confirmation": self.pending_confirmation,
             "financial_year": self.financial_year,
+            "field_provenance": self.field_provenance,
+            "mitigation_options": self.mitigation_options,
+            "action_plan_options": self.action_plan_options,
+            "duplicate_check_status": self.duplicate_check_status,
+            "duplicate_candidates": self.duplicate_candidates,
+            "duplicate_check_input_hash": self.duplicate_check_input_hash,
+            "duplicate_acknowledged": self.duplicate_acknowledged,
+            "tool_call_history": self.tool_call_history,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -206,6 +258,15 @@ class RiskCreationSession:
             progress=data.get("progress", 0),
             submission_mode=data.get("submission_mode", "draft"),
             financial_year=data.get("financial_year", "2026-2027"),
+            field_provenance=data.get("field_provenance", {}),
         )
+        sess.pending_confirmation = data.get("pending_confirmation")
+        sess.mitigation_options = data.get("mitigation_options", [])
+        sess.action_plan_options = data.get("action_plan_options", [])
+        sess.duplicate_check_status = data.get("duplicate_check_status", "not_checked")
+        sess.duplicate_candidates = data.get("duplicate_candidates", [])
+        sess.duplicate_check_input_hash = data.get("duplicate_check_input_hash")
+        sess.duplicate_acknowledged = bool(data.get("duplicate_acknowledged", False))
+        sess.tool_call_history = data.get("tool_call_history", [])
         return sess
 

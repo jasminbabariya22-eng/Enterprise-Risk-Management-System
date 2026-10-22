@@ -23,6 +23,25 @@ from ERM_Copilot.agents.risk_creation.tools import (
     detect_field_edits
 )
 
+from ERM_Copilot.agents.risk_creation.requirements import (
+    FieldConstraint,
+    FieldRequirement,
+    RiskCreationRequirements,
+    get_risk_creation_requirements
+)
+from ERM_Copilot.agents.risk_creation.extraction import (
+    ExtractedRiskFields,
+    extract_risk_fields
+)
+from ERM_Copilot.agents.risk_creation.completeness import (
+    RiskCompletenessAssessment,
+    assess_risk_completeness
+)
+from ERM_Copilot.agents.risk_creation.merge import (
+    RiskMergeResult,
+    merge_risk_draft
+)
+
 __all__ = [
     "RiskCreationAgent",
     "risk_creation_agent",
@@ -35,5 +54,15 @@ __all__ = [
     "build_preview",
     "parse_target_date",
     "parse_progress",
-    "detect_field_edits"
+    "detect_field_edits",
+    "FieldConstraint",
+    "FieldRequirement",
+    "RiskCreationRequirements",
+    "get_risk_creation_requirements",
+    "ExtractedRiskFields",
+    "extract_risk_fields",
+    "RiskCompletenessAssessment",
+    "assess_risk_completeness",
+    "RiskMergeResult",
+    "merge_risk_draft",
 ]

@@ -48,6 +48,35 @@ from ERM_Copilot.agents.risk_creation.tools import (
 from ERM_Copilot.guardrails.manager import GuardrailManager
 from ERM_Copilot.models.contracts import AgentRequest, AgentResponse, RequestContext
 from ERM_Copilot.services.db_service import erm_db
+from ERM_Copilot.ai_harness.confirmation import confirmation_manager
+from ERM_Copilot.ai_harness.context import HarnessContext
+from ERM_Copilot.ai_harness.exceptions import ConfirmationMismatchError
+from ERM_Copilot.ai_harness.execution import ExecutionCoordinator
+from ERM_Copilot.agents.risk_creation.requirements import (
+    RiskCreationRequirements,
+    get_risk_creation_requirements
+)
+from ERM_Copilot.agents.risk_creation.extraction import (
+    ExtractedRiskFields,
+    extract_risk_fields
+)
+from ERM_Copilot.agents.risk_creation.completeness import (
+    RiskCompletenessAssessment,
+    assess_risk_completeness
+)
+from ERM_Copilot.agents.risk_creation.merge import (
+    RiskMergeResult,
+    merge_risk_draft
+)
+from ERM_Copilot.agents.risk_creation.validation import (
+    RiskValidationResult,
+    validate_risk_draft,
+)
+from ERM_Copilot.agents.risk_creation.payload import (
+    FinalRiskPayload,
+    RiskPayloadError,
+    build_final_risk_payload,
+)
 
 logger = logging.getLogger("ERM_Copilot.agents.risk_creation.agent")
 
@@ -106,9 +135,7 @@ class RiskCreationAgent(BaseAgent):
         return None
 
     def is_session_active(self, session_key: str) -> bool:
-        if session_key in self.sessions:
-            return True
-        return self.get_session(session_key) is not None
+        return session_key in self.sessions
 
     def clear_session(self, session_key: str) -> None:
         if session_key in self.sessions:
@@ -138,16 +165,15 @@ class RiskCreationAgent(BaseAgent):
     @staticmethod
     def is_start_trigger(msg: str) -> bool:
         lower = msg.lower()
-        # If user wants to manage an action plan or treatment, do not trigger risk creation
+        # If user explicitly wants to attach/manage action items to an existing risk, do not trigger risk creation
         if any(w in lower for w in [
-            "action plan", "treatment", "mitigation plan", "attach action",
-            "add action", "new action", "update action", "reassign", "action to risk", "plan to risk"
+            "attach action", "add action to", "update action", "reassign action", "action to risk", "plan to risk"
         ]):
             return False
         return (
             any(w in lower for w in ["save", "create", "insert", "log", "record", "add"])
             and any(w in lower for w in ["risk", "hazard", "vulnerability", "leakage", "corrosion"])
-            and not any(w in lower for w in ["queue", "audit", "trail", "timeline", "search", "show", "list", "pending", "history", "who approved", "action plan", "treatment"])
+            and not any(w in lower for w in ["queue", "audit", "trail", "timeline", "search", "show", "list", "pending", "history", "who approved"])
         )
 
     @staticmethod
@@ -168,13 +194,16 @@ class RiskCreationAgent(BaseAgent):
     def extract_risk_name_from_trigger(msg: str) -> Optional[str]:
         """Extract risk name if explicitly supplied in initial trigger sentence."""
         cleaned = re.sub(
-            r'^(?:please\s+)?(?:save|create|insert|log|record|add)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?risk\s*(?:for|about|on|regarding|at|called|named)?\s*',
+            r'^(?:please\s+)?(?:save|create|insert|log|record|add)\s+(?:a\s+|an\s+|the\s+)?(?:new\s+)?risk\s*[:\-]?(?:\s*(?:for|about|on|regarding|at|called|named))?\s*[:\-]?\s*',
             '', msg, flags=re.IGNORECASE
-        ).strip()
+        ).strip().lstrip(":- ").strip()
         
         # If user only said "Create a new risk" or "Create risk", return None so agent asks
         if not cleaned or cleaned.lower() in ["risk", "new risk", "a risk", "a new risk"]:
             return None
+
+        # Stop at sentence boundary or next field keyword
+        cleaned = re.split(r'[\.\n\r;]|(?:\b(?:description|where|inherent|current|residual|mitigation|action|likelihood|impact|target)\b)', cleaned, flags=re.IGNORECASE)[0].strip().lstrip(":- ").strip()
 
         # Sanitize known plant identifiers
         cleaned = re.sub(r'\bpup\s*p\s*101\b', 'Pump P-101', cleaned, flags=re.IGNORECASE)
@@ -198,53 +227,224 @@ class RiskCreationAgent(BaseAgent):
         return True, "Authorized"
 
     # -----------------------------------------------------------------
+    # -----------------------------------------------------------------
     # Validation
     # -----------------------------------------------------------------
 
     def validate(self, session: RiskCreationSession) -> Dict[str, Any]:
         """Validate complete risk details across Identity, Required Fields, Ownership, Assessment, Governance."""
-        errors: List[str] = []
-        warnings: List[str] = []
-
-        # 1. Identity
-        if not session.user_id:
-            errors.append("Authenticated User ID is required.")
-        if not session.dept_id:
-            errors.append("Department ID could not be resolved from authenticated user context.")
-
-        # 2. Required Risk Fields
-        if not session.risk_name or len(session.risk_name.strip()) < 3:
-            errors.append("Risk Name / Title is required (minimum 3 characters).")
-        if not session.risk_description or len(session.risk_description.strip()) < 5:
-            errors.append("Risk Description is required (minimum 5 characters).")
-
-        # 3. Assessment
-        if not session.inherent_likelihood or not (1 <= session.inherent_likelihood <= 5):
-            errors.append("Inherent Likelihood must be between 1 and 5.")
-        if not session.inherent_impact or not (1 <= session.inherent_impact <= 5):
-            errors.append("Inherent Impact must be between 1 and 5.")
-        if not session.mitigation or len(session.mitigation.strip()) < 5:
-            errors.append("Mitigation Strategy is required (minimum 5 characters).")
-        if not session.current_likelihood or not (1 <= session.current_likelihood <= 5):
-            errors.append("Current / Residual Likelihood must be between 1 and 5.")
-        if not session.current_impact or not (1 <= session.current_impact <= 5):
-            errors.append("Current / Residual Impact must be between 1 and 5.")
-
-        # 4. Action Plan & Ownership
-        if not session.action_plan or len(session.action_plan.strip()) < 5:
-            errors.append("Action Plan is required (minimum 5 characters).")
-        if not session.action_owner_id:
-            warnings.append("Action Owner is not yet assigned. Risk Owner will be designated as default.")
-
-        # 5. Governance
-        if not session.target_date:
-            warnings.append("Target Date not explicitly set; defaulting to +30 days.")
-
-        return {
-            "valid": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings
+        server_ctx = {
+            "user_id": session.user_id,
+            "role": session.user_role,
+            "user_role": session.user_role,
+            "dept_id": session.dept_id,
+            "dept_name": session.dept_name,
         }
+        val_res = validate_risk_draft(session, server_context=server_ctx)
+        session.validation_result = {
+            "valid": val_res.is_valid and val_res.is_ready_for_review,
+            "errors": list(val_res.errors.values()),
+            "error_map": val_res.errors,
+            "warnings": val_res.warnings,
+            "missing_fields": val_res.missing_required_fields,
+            "calculated_scores": val_res.calculated_scores,
+        }
+        return session.validation_result
+
+    # -----------------------------------------------------------------
+    @staticmethod
+    def _build_canonical_payload(session: RiskCreationSession) -> Dict[str, Any]:
+        """Build deterministic canonical dictionary of all risk fields affecting persistence."""
+        server_ctx = {
+            "user_id": session.user_id,
+            "role": session.user_role,
+            "user_role": session.user_role,
+            "dept_id": session.dept_id,
+            "dept_name": session.dept_name,
+        }
+        try:
+            final_p = build_final_risk_payload(session, server_ctx)
+            return final_p.to_canonical_dict()
+        except RiskPayloadError:
+            target_dt = session.target_date
+            if not target_dt:
+                target_dt = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%d")
+            return {
+                "action_owner_id": session.action_owner_id or session.user_id,
+                "action_plan": str(session.action_plan or "").strip(),
+                "current_impact": session.current_impact,
+                "current_likelihood": session.current_likelihood,
+                "current_score": session.current_score,
+                "dept_id": session.dept_id,
+                "dept_name": str(session.dept_name or "General").strip(),
+                "financial_year": str(session.financial_year or "2026-2027").strip(),
+                "inherent_impact": session.inherent_impact,
+                "inherent_likelihood": session.inherent_likelihood,
+                "inherent_score": session.inherent_score,
+                "mitigation": str(session.mitigation or "").strip(),
+                "progress": session.progress,
+                "risk_co_owner_id": session.risk_co_owner_id,
+                "risk_description": str(session.risk_description or session.risk_name or "").strip(),
+                "risk_name": str(session.risk_name or "").strip()[:250],
+                "risk_owner_id": str(session.user_id).strip(),
+                "status": session.status_id,
+                "status_name": str(session.status_name or "Draft").strip(),
+                "target_date": target_dt,
+            }
+
+    def _bind_pending_confirmation(self, session: RiskCreationSession) -> Dict[str, Any]:
+        """Compute cryptographic fingerprint for current draft and bind pending confirmation state."""
+        payload = self._build_canonical_payload(session)
+        pending = confirmation_manager.create_pending_confirmation(
+            action_name="create_risk",
+            user_id=str(session.user_id),
+            user_role=str(session.user_role),
+            parameters=payload,
+            summary_text=f"Create risk '{session.risk_name or 'Operational Risk'}' in department '{session.dept_name or 'General'}'."
+        )
+        session.pending_confirmation = pending
+        session.awaiting_confirmation = True
+        return pending
+
+    def execute_governed_tool(
+        self,
+        tool_name: str,
+        arguments: Dict[str, Any],
+        session: RiskCreationSession,
+        bypass_confirmation: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Execute a tool through the AI Harness with session context and audit tracking.
+        Enforces RBAC, input validation, execution policy, and records outcomes into session state.
+        """
+        harness_ctx = HarnessContext.build_from_auth(
+            user_id=str(session.user_id),
+            user_role=session.user_role,
+            dept_id=session.dept_id,
+            dept_name=session.dept_name,
+            session_id=session.session_id,
+        )
+        if session.pending_confirmation:
+            harness_ctx.confirmation_state = session.pending_confirmation
+
+        try:
+            res = ExecutionCoordinator.execute_tool(
+                tool_name=tool_name,
+                arguments=arguments,
+                context=harness_ctx,
+                bypass_confirmation=bypass_confirmation,
+            )
+            session.tool_call_history.append({
+                "tool_name": tool_name,
+                "arguments": {k: v for k, v in arguments.items() if k not in ("caller_user_id", "caller_role")},
+                "success": True,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            return res
+        except Exception as e:
+            session.tool_call_history.append({
+                "tool_name": tool_name,
+                "arguments": {k: v for k, v in arguments.items() if k not in ("caller_user_id", "caller_role")},
+                "success": False,
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            raise
+
+    def _run_duplicate_check(self, session: RiskCreationSession) -> None:
+        """Run governed check_risk_duplicates check if inputs have materially changed."""
+        if not session.risk_name or len(session.risk_name.strip()) < 3:
+            session.duplicate_check_status = "not_checked"
+            return
+
+        cur_hash = f"{session.dept_id}::{session.risk_name.strip().lower()}::{str(session.risk_description or '').strip().lower()}"
+        if session.duplicate_check_input_hash == cur_hash and session.duplicate_check_status in ("checked_no_matches", "potential_matches_found"):
+            return  # Cache hit, valid results already preserved
+
+        try:
+            exec_res = self.execute_governed_tool(
+                tool_name="check_risk_duplicates",
+                arguments={
+                    "risk_title": session.risk_name,
+                    "risk_description": session.risk_description,
+                    "dept_id": session.dept_id,
+                },
+                session=session,
+            )
+            tool_data = exec_res.get("result", {})
+            if tool_data.get("status") == "error":
+                session.duplicate_check_status = "check_failed"
+                session.duplicate_candidates = []
+                session.duplicate_check_input_hash = cur_hash
+                return
+
+            candidates = tool_data.get("candidates", [])
+            session.duplicate_candidates = candidates
+            session.duplicate_check_status = "potential_matches_found" if candidates else "checked_no_matches"
+            session.duplicate_check_input_hash = cur_hash
+        except Exception as e:
+            logger.warning(f"Error executing check_risk_duplicates tool: {e}")
+            session.duplicate_check_status = "check_failed"
+            session.duplicate_candidates = []
+            session.duplicate_check_input_hash = cur_hash
+
+    def _render_preview_with_advisory(self, session: RiskCreationSession) -> str:
+        """Render markdown preview table, prepending duplicate risk advisory if potential duplicates exist."""
+        self._run_duplicate_check(session)
+        preview_text = build_preview(session)
+        if session.duplicate_check_status == "potential_matches_found" and not session.duplicate_acknowledged and session.duplicate_candidates:
+            cand_lines = []
+            for c in session.duplicate_candidates[:3]:
+                sim_pct = int(round(c.get("similarity_score", 0.0) * 100))
+                cand_lines.append(
+                    f"- **`{c.get('risk_id')}`**: *{c.get('risk_name')}* "
+                    f"(`{c.get('status_name', 'Draft')}`) — Match: `{c.get('match_reason')}` ({sim_pct}%)"
+                )
+            advisory = (
+                f"⚠️ **Potential Duplicate Risk Advisory:**\n"
+                f"We identified {len(session.duplicate_candidates)} existing risk(s) in your department that may cover similar hazards:\n"
+                + "\n".join(cand_lines)
+                + "\n\n👉 *Please review the existing risk(s) above. If this is a distinct risk, you can proceed by clicking **Confirm & Save** or replying **`confirm`** / **`proceed`**.*"
+            )
+            return f"{advisory}\n\n{preview_text}"
+        return preview_text
+
+    def _prompt_next_missing_field(self, session: RiskCreationSession) -> Tuple[str, str]:
+        """
+        Identify the next required field that is missing,
+        and return the corresponding prompt text and step_code.
+        """
+        requirements = get_risk_creation_requirements(dept_id=session.dept_id)
+        completeness = assess_risk_completeness(session, requirements)
+
+        if completeness.is_ready_for_review:
+            session.state = RiskCreationState.AWAITING_CONFIRMATION
+            session.validation_result = self.validate(session)
+            self._bind_pending_confirmation(session)
+            return self._render_preview_with_advisory(session), "WIZARD_CONFIRMATION"
+
+        if "risk_name" in completeness.missing_required_fields:
+            return prompt_risk_name(session), "STEP_RISK_NAME"
+
+        if "risk_description" in completeness.missing_required_fields:
+            return prompt_description(session), "STEP_DESCRIPTION"
+
+        if "inherent_likelihood" in completeness.missing_required_fields or "inherent_impact" in completeness.missing_required_fields:
+            return prompt_inherent_assessment(session), "STEP_INHERENT_ASSESSMENT"
+
+        if "mitigation" in completeness.missing_required_fields:
+            return prompt_mitigation(session), "STEP_MITIGATION"
+
+        if "current_likelihood" in completeness.missing_required_fields or "current_impact" in completeness.missing_required_fields:
+            return prompt_current_assessment(session), "STEP_CURRENT_ASSESSMENT"
+
+        if "action_plan" in completeness.missing_required_fields:
+            return prompt_action_plan(session), "STEP_ACTION_PLAN"
+
+        session.state = RiskCreationState.AWAITING_CONFIRMATION
+        session.validation_result = self.validate(session)
+        self._bind_pending_confirmation(session)
+        return self._render_preview_with_advisory(session), "WIZARD_CONFIRMATION"
 
     # -----------------------------------------------------------------
     # Main Workflow Dispatcher
@@ -312,14 +512,59 @@ class RiskCreationAgent(BaseAgent):
             )
             self.sessions[session_key] = session
 
+            server_context = {
+                "user_id": resolved_user_id,
+                "role": user_role,
+                "user_role": user_role,
+                "dept_id": resolved_dept_id,
+                "dept_name": resolved_dept_name,
+            }
+            # Extract any and all fields mentioned in the message
+            extracted = extract_risk_fields(msg, session)
             initial_title = self.extract_risk_name_from_trigger(msg)
             if initial_title:
-                session.risk_name = initial_title
+                extracted.risk_name = initial_title
+
+            merge_res = merge_risk_draft(session, extracted, server_context)
+            requirements = get_risk_creation_requirements(dept_id=session.dept_id)
+            completeness = assess_risk_completeness(session, requirements)
+
+            if completeness.is_ready_for_review:
+                session.state = RiskCreationState.AWAITING_CONFIRMATION
+                session.validation_result = self.validate(session)
+                self._bind_pending_confirmation(session)
+                preview_text = self._render_preview_with_advisory(session)
+                return self._make_response(request, preview_text, "WIZARD_CONFIRMATION")
+
+            if completeness.invalid_fields:
+                err_text = "\n".join([f"- **{k.replace('_', ' ').title()}:** {v}" for k, v in completeness.invalid_fields.items()])
+                return self._make_response(
+                    request,
+                    f"⚠️ **Validation Notice:**\n{err_text}\n\nPlease provide a corrected value.",
+                    "VALIDATION_FAILED"
+                )
+
+            # If only risk_name was provided (and no other fields), prompt co-owner (for existing 14-step test compatibility)
+            has_other_fields = bool(
+                session.risk_description
+                or session.inherent_likelihood
+                or session.mitigation
+                or session.current_likelihood
+                or session.action_plan
+                or session.risk_co_owner_name
+                or session.risk_co_owner_id
+                or session.action_owner_id
+                or session.action_owner_name
+            )
+            if session.risk_name and not has_other_fields:
                 answer = prompt_co_owner(session)
                 return self._make_response(request, answer, "STEP_CO_OWNER")
-            else:
+            elif not session.risk_name:
                 answer = prompt_risk_name(session)
                 return self._make_response(request, answer, "STEP_RISK_NAME")
+            else:
+                answer, next_step = self._prompt_next_missing_field(session)
+                return self._make_response(request, answer, next_step)
 
         # Retrieve ongoing session
         session = self.get_session(session_key)
@@ -339,24 +584,376 @@ class RiskCreationAgent(BaseAgent):
             )
             return self._make_response(request, warn_answer, "WIZARD_INTERRUPTED")
 
-        # Inline editing check
+        # Inline editing check across all states
         edit_target = detect_field_edits(msg)
-        if edit_target and session.state in [RiskCreationState.AWAITING_CONFIRMATION, RiskCreationState.READY_FOR_PREVIEW]:
+        if edit_target:
             field_name, new_val = edit_target
             updated_msg = self._apply_field_edit(session, field_name, new_val)
-            val_res = self.validate(session)
-            session.validation_result = val_res
-            preview_text = build_preview(session)
-            full_resp = f"✏️ **{updated_msg}**\n\n{preview_text}"
-            return self._make_response(request, full_resp, "WIZARD_EDITED")
+            requirements = get_risk_creation_requirements(dept_id=session.dept_id)
+            completeness = assess_risk_completeness(session, requirements)
+            session.validation_result = self.validate(session)
+            if completeness.is_ready_for_review or session.state == RiskCreationState.AWAITING_CONFIRMATION:
+                session.state = RiskCreationState.AWAITING_CONFIRMATION
+                self._bind_pending_confirmation(session)
+                preview_text = self._render_preview_with_advisory(session)
+                full_resp = f"✏️ **{updated_msg}**\n\n{preview_text}"
+                return self._make_response(request, full_resp, "WIZARD_CONFIRMATION")
+            else:
+                answer, next_step = self._prompt_next_missing_field(session)
+                full_resp = f"✏️ **{updated_msg}**\n\n{answer}"
+                return self._make_response(request, full_resp, next_step)
 
-        # Step 1: Risk Name -> Co-Owner
+        # Check confirmation if currently awaiting confirmation
+        if session.state == RiskCreationState.AWAITING_CONFIRMATION:
+            # Check if user acknowledges duplicate advisory or declares distinct risk
+            if any(w in lower_msg for w in ["distinct risk", "not duplicate", "not a duplicate", "ignore duplicate", "distinct"]):
+                session.duplicate_acknowledged = True
+                self._bind_pending_confirmation(session)
+                preview_text = self._render_preview_with_advisory(session)
+                ack_text = (
+                    f"✅ **Acknowledged:** This draft has been marked as a distinct risk from existing records.\n\n"
+                    f"Please review the final details below and reply **`confirm`** or click **Confirm & Save** to create the risk in the register.\n\n"
+                    f"{preview_text}"
+                )
+                return self._make_response(request, ack_text, "DUPLICATES_ACKNOWLEDGED")
+
+            if any(w in lower_msg for w in ["confirm", "yes", "save", "submit", "proceed", "commit", "ok", "confirm and save"]):
+                # Step 6: Validate confirmation fingerprint before creating risk
+                server_context = {
+                    "user_id": session.user_id,
+                    "role": user_role,
+                    "user_role": user_role,
+                    "dept_id": session.dept_id,
+                    "dept_name": session.dept_name,
+                }
+                try:
+                    final_payload = build_final_risk_payload(session, server_context)
+                    executing_payload = final_payload.to_canonical_dict()
+                except RiskPayloadError as rpe:
+                    logger.warning(f"Payload validation failed for session {session.session_id}: {rpe}")
+                    session.state = RiskCreationState.VALIDATING
+                    return self._make_response(
+                        request,
+                        f"⚠️ **Validation Notice:** {rpe}\n\nPlease provide corrected information before confirming.",
+                        "VALIDATION_FAILED"
+                    )
+
+                try:
+                    confirmation_manager.validate_confirmation(
+                        pending_state=session.pending_confirmation,
+                        executing_user_id=str(session.user_id),
+                        executing_action="create_risk",
+                        executing_params=executing_payload,
+                    )
+                except ConfirmationMismatchError as cme:
+                    logger.warning(f"Confirmation rejected for session {session.session_id}: {cme}")
+                    # Re-bind fresh preview and require fresh explicit confirmation
+                    self._bind_pending_confirmation(session)
+                    preview_text = self._render_preview_with_advisory(session)
+                    warn_text = (
+                        f"⚠️ **Confirmation Verification Notice:** {cme}\n\n"
+                        f"The action payload or confirmation state did not match the reviewed preview. "
+                        f"A fresh preview has been generated below. Please verify and reply **`confirm`** to proceed.\n\n"
+                        f"{preview_text}"
+                    )
+                    return self._make_response(request, warn_text, "WIZARD_CONFIRMATION")
+
+                # Mark confirmation token as EXECUTED to protect against replay / duplicate submissions
+                if session.pending_confirmation:
+                    session.pending_confirmation["status"] = "EXECUTED"
+
+                # Persist with exact verified payload kwargs through governed AI Harness tool layer
+                exec_res = self.execute_governed_tool(
+                    tool_name="create_risk",
+                    arguments=final_payload.to_db_kwargs(),
+                    session=session,
+                    bypass_confirmation=True,  # Confirmation token was explicitly validated above and marked EXECUTED
+                )
+                res = exec_res.get("result", {})
+
+                if res.get("status") == "error":
+                    session.state = RiskCreationState.FAILED
+                    err_msg = res.get("message", "Database save error")
+                    return self._make_response(
+                        request,
+                        f"❌ **Failed to Save Risk to Database:** {err_msg}\n\nPlease try confirming again or cancel.",
+                        "SAVE_FAILED"
+                    )
+
+                generated_risk_id = res.get("risk_id", "N/A")
+                reg_id = res.get("risk_register_id", "")
+                
+                self.clear_session(session_key)
+
+                success_text = (
+                    f"### ✅ Risk Created Successfully\n\n"
+                    f"Your risk has been successfully saved to the Enterprise Risk Management database (`MassERS`).\n\n"
+                    f"| Field | Value |\n"
+                    f"| :--- | :--- |\n"
+                    f"| **Risk ID** | **`{generated_risk_id}`** (Register #{reg_id}) |\n"
+                    f"| **Risk Name** | {session.risk_name} |\n"
+                    f"| **Department** | {session.dept_name or 'General'} |\n"
+                    f"| **Status** | `{session.status_name}` |\n\n"
+                    f"The risk is now available in the ERM Risk Register and pending governance queues."
+                )
+                return self._make_response(request, success_text, "WIZARD_COMPLETED")
+
+            else:
+                if session.pending_confirmation:
+                    session.pending_confirmation["status"] = "CANCELLED"
+                self.clear_session(session_key)
+                return self._make_response(
+                    request,
+                    "❌ **Risk Creation Cancelled.** Active draft session has been discarded.\n\nHow else may I assist you?",
+                    "WIZARD_CANCELLED"
+                )
+
+        previous_state = session.state
+        server_context = {
+            "user_id": session.user_id,
+            "role": user_role,
+            "user_role": user_role,
+            "dept_id": session.dept_id,
+            "dept_name": session.dept_name,
+        }
+
+        # Check if user is selecting a numbered option or declining suggestions
+        is_option_selection = bool(
+            re.search(r'\b(?:option\s*[1-3]|use\s*option\s*[1-3]|first\s*option|second\s*option|third\s*option)\b', lower_msg)
+            or lower_msg in ["1", "2", "3"]
+        )
+        is_declining_suggestions = any(
+            w in lower_msg for w in ["no suggestions", "decline suggestions", "skip suggestions", "write my own", "without suggestions", "no options"]
+        )
+
+        # Check if user acknowledges duplicate advisory or declares distinct risk
+        if any(w in lower_msg for w in ["distinct risk", "not duplicate", "not a duplicate", "ignore duplicate", "proceed with draft", "save anyway"]):
+            session.duplicate_acknowledged = True
+
+        # Check for explicit duplicate check queries
+        is_dup_check_request = bool(
+            re.search(r'\b(?:check\s+(?:for\s+)?duplicates?|any\s+duplicates?|duplicate\s+check|detect\s+duplicates?|is\s+this\s+(?:a\s+)?duplicate)\b', lower_msg)
+        )
+        if is_dup_check_request:
+            target_title = session.risk_name or self.extract_risk_name_from_trigger(msg)
+            if not target_title or len(target_title.strip()) < 3:
+                return self._make_response(
+                    request,
+                    "💡 To check for potential duplicates, please specify the **Risk Name / Title** first.",
+                    "STEP_RISK_NAME"
+                )
+            if not session.risk_name:
+                session.risk_name = target_title
+            self._run_duplicate_check(session)
+            if session.duplicate_check_status == "potential_matches_found" and session.duplicate_candidates:
+                cand_lines = [
+                    f"{idx+1}. **`{c.get('risk_id')}`**: *{c.get('risk_name')}* "
+                    f"(`{c.get('status_name', 'Draft')}`) — Match: `{c.get('match_reason')}` ({int(round(c.get('similarity_score', 0.0)*100))}%)"
+                    for idx, c in enumerate(session.duplicate_candidates)
+                ]
+                resp_text = (
+                    f"### 🔍 Duplicate Risk Check Results for `{session.risk_name}`\n\n"
+                    f"Found {len(session.duplicate_candidates)} potentially similar existing risk(s) in your department register:\n\n"
+                    + "\n".join(cand_lines)
+                    + f"\n\n👉 *If this is a distinct risk, you may continue entering details. Otherwise, consider updating the existing risk.*"
+                )
+                return self._make_response(request, resp_text, "DUPLICATE_CHECK_RESULTS")
+            elif session.duplicate_check_status == "check_failed":
+                return self._make_response(
+                    request,
+                    "⚠️ Duplicate risk check could not be completed at this time. You may continue drafting.",
+                    "DUPLICATE_CHECK_FAILED"
+                )
+            else:
+                return self._make_response(
+                    request,
+                    f"✅ **No Duplicate Risks Found:** No similar active risks were found in the department register matching **`{session.risk_name}`**.\n\nYou may continue with the draft.",
+                    "DUPLICATE_CHECK_CLEAR"
+                )
+
+        # Check for explicit suggestion requests across turns
+        is_mitigation_sugg_request = not (is_declining_suggestions or is_option_selection) and bool(
+            re.search(r'\b(?:suggest|recommend|give|show)\b.*\b(?:mitigation|control|treatment)s?\b', lower_msg)
+            or re.search(r'\b(?:mitigation|control)\s+suggestions?\b', lower_msg)
+            or (session.state == RiskCreationState.AWAITING_MITIGATION and any(w in lower_msg for w in ["suggest", "recommend", "show options", "give options", "options"]))
+        )
+        is_action_plan_sugg_request = not (is_declining_suggestions or is_option_selection) and bool(
+            re.search(r'\b(?:suggest|recommend|give|show)\b.*\b(?:action\s*plan|implementation\s*steps?|actions?)\b', lower_msg)
+            or re.search(r'\b(?:action\s*plan)\s+suggestions?\b', lower_msg)
+            or (session.state == RiskCreationState.AWAITING_ACTION_PLAN and any(w in lower_msg for w in ["suggest", "recommend", "show options", "give options", "options"]))
+        )
+
+        if is_mitigation_sugg_request:
+            target_title = session.risk_name or self.extract_risk_name_from_trigger(msg)
+            if not target_title or len(target_title.strip()) < 3:
+                return self._make_response(
+                    request,
+                    "💡 To provide relevant mitigation recommendations, please specify the **Risk Name / Title** first.",
+                    "STEP_RISK_NAME"
+                )
+
+            try:
+                exec_res = self.execute_governed_tool(
+                    tool_name="generate_mitigation_suggestions",
+                    arguments={"risk_title": target_title, "risk_description": session.risk_description},
+                    session=session,
+                )
+                tool_data = exec_res.get("result", {})
+                suggs = tool_data.get("suggestions", [])
+            except Exception as e:
+                logger.error(f"Error executing generate_mitigation_suggestions tool: {e}")
+                suggs = static_suggestion_provider.get_mitigation_suggestions(target_title)
+                tool_data = {"message": "Retrieved curated fallback recommendations."}
+
+            session.mitigation_options = suggs
+            sugg_lines = "\n".join([f"{idx+1}. **Option {idx+1}:** {s}" for idx, s in enumerate(suggs)])
+            resp_text = (
+                f"### 💡 Recommended Mitigation Options for `{target_title}`\n\n"
+                f"{tool_data.get('message', '')}\n\n"
+                f"{sugg_lines}\n\n"
+                f"👉 *These are recommendations and have not been added to your draft. "
+                f"To accept an option, reply e.g. **`Option 1`**, edit it, or enter your custom mitigation text.*"
+            )
+            session.state = RiskCreationState.AWAITING_MITIGATION
+            return self._make_response(request, resp_text, "STEP_MITIGATION")
+
+        if is_action_plan_sugg_request:
+            target_title = session.risk_name or self.extract_risk_name_from_trigger(msg)
+            if not target_title or len(target_title.strip()) < 3:
+                return self._make_response(
+                    request,
+                    "💡 To provide actionable action plan recommendations, please specify the **Risk Name / Title** first.",
+                    "STEP_RISK_NAME"
+                )
+
+            try:
+                exec_res = self.execute_governed_tool(
+                    tool_name="generate_action_plan_suggestions",
+                    arguments={
+                        "risk_title": target_title,
+                        "mitigation_strategy": session.mitigation,
+                        "risk_description": session.risk_description,
+                    },
+                    session=session,
+                )
+                tool_data = exec_res.get("result", {})
+                suggs = tool_data.get("suggestions", [])
+            except Exception as e:
+                logger.error(f"Error executing generate_action_plan_suggestions tool: {e}")
+                suggs = static_suggestion_provider.get_action_plan_suggestions(target_title, session.mitigation)
+                tool_data = {"message": "Retrieved curated fallback recommendations."}
+
+            session.action_plan_options = suggs
+            sugg_lines = "\n".join([f"{idx+1}. **Option {idx+1}:** {s}" for idx, s in enumerate(suggs)])
+            resp_text = (
+                f"### 💡 Recommended Action Plan Options for `{target_title}`\n\n"
+                f"{tool_data.get('message', '')}\n\n"
+                f"{sugg_lines}\n\n"
+                f"👉 *These are recommendations and have not been added to your draft. "
+                f"To accept an option, reply e.g. **`Option 1`**, edit it, or enter your custom action plan.*"
+            )
+            session.state = RiskCreationState.AWAITING_ACTION_PLAN
+            return self._make_response(request, resp_text, "STEP_ACTION_PLAN")
+
+        is_desc_sugg_request = not (is_declining_suggestions or is_option_selection) and bool(
+            re.search(r'\b(?:suggest|recommend|give|show)\b.*\b(?:description|hazard)s?\b', lower_msg)
+            or re.search(r'\b(?:risk\s*)?description\s+suggestions?\b', lower_msg)
+            or (session.state == RiskCreationState.AWAITING_DESCRIPTION and any(w in lower_msg for w in ["suggest", "recommend", "show options", "give options", "options"]))
+        )
+        if is_desc_sugg_request:
+            target_title = session.risk_name or self.extract_risk_name_from_trigger(msg)
+            if not target_title or len(target_title.strip()) < 3:
+                return self._make_response(
+                    request,
+                    "💡 To provide relevant description recommendations, please specify the **Risk Name / Title** first.",
+                    "STEP_RISK_NAME"
+                )
+            try:
+                exec_res = self.execute_governed_tool(
+                    tool_name="generate_risk_description_suggestions",
+                    arguments={"risk_title": target_title},
+                    session=session,
+                )
+                tool_data = exec_res.get("result", {})
+                suggs = tool_data.get("suggestions", [])
+            except Exception as e:
+                logger.error(f"Error executing generate_risk_description_suggestions tool: {e}")
+                suggs = static_suggestion_provider.get_description_suggestions(target_title)
+                tool_data = {"message": "Retrieved curated fallback recommendations."}
+
+            session.desc_options = suggs
+            sugg_lines = "\n".join([f"{idx+1}. **Option {idx+1}:** {s}" for idx, s in enumerate(suggs)])
+            resp_text = (
+                f"### 💡 Recommended Risk Description Options for `{target_title}`\n\n"
+                f"{tool_data.get('message', '')}\n\n"
+                f"{sugg_lines}\n\n"
+                f"👉 *These are recommendations and have not been added to your draft. "
+                f"To accept an option, reply e.g. **`Option 1`**, edit it, or enter your custom description text.*"
+            )
+            session.state = RiskCreationState.AWAITING_DESCRIPTION
+            return self._make_response(request, resp_text, "STEP_DESCRIPTION")
+
+        # Check for owner lookup queries across turns
+        is_owner_lookup_request = bool(
+            re.search(r'\b(?:who\s+can\s+be|eligible|lookup|list|find|search|available)\s+(?:action\s*owner|co[\s\-_]?owner)s?\b', lower_msg)
+            or re.search(r'\b(?:action\s*owner|co[\s\-_]?owner)\s+(?:options|candidates|list)\b', lower_msg)
+        )
+        if is_owner_lookup_request:
+            is_co = "co" in lower_msg
+            owner_type = "co_owner" if is_co else "action_owner"
+            search_term = None
+            term_match = re.search(r'(?:named|for|like|called|matching)\s+([A-Za-z0-9_\-\s]+)', msg, flags=re.IGNORECASE)
+            if term_match:
+                search_term = term_match.group(1).strip()
+            try:
+                exec_res = self.execute_governed_tool(
+                    tool_name="get_eligible_risk_owners",
+                    arguments={
+                        "owner_type": owner_type,
+                        "search_term": search_term,
+                        "dept_id": session.dept_id,
+                    },
+                    session=session,
+                )
+                tool_data = exec_res.get("result", {})
+                owners = tool_data.get("owners", [])
+                guidance = tool_data.get("guidance", "")
+                if owners:
+                    owner_lines = "\n".join([
+                        f"- **{o.get('full_name')}** (`{o.get('log_id')}`) — *{o.get('role_name')}* ({o.get('dept_name', 'Enterprise')})"
+                        for o in owners[:5]
+                    ])
+                    resp_text = (
+                        f"### 👥 Eligible {owner_type.replace('_', ' ').title()} Candidates\n\n"
+                        f"{guidance}\n\n"
+                        f"{owner_lines}\n\n"
+                        f"👉 *To assign one, reply e.g. **`Assign {owner_type.replace('_', ' ')} {owners[0].get('full_name')}`** or specify their name.*"
+                    )
+                else:
+                    resp_text = f"ℹ️ {guidance}"
+                return self._make_response(request, resp_text, "STEP_ACTION_OWNER" if not is_co else "STEP_CO_OWNER")
+            except Exception as e:
+                logger.error(f"Error executing get_eligible_risk_owners tool: {e}")
+
+        # Step-specific input handling for guided workflow
         if session.state == RiskCreationState.AWAITING_RISK_NAME:
             session.risk_name = msg.strip()
-            answer = prompt_co_owner(session)
-            return self._make_response(request, answer, "STEP_CO_OWNER")
+            extracted = extract_risk_fields(msg, session)
+            has_other_fields = bool(
+                extracted.risk_description
+                or extracted.inherent_likelihood
+                or extracted.mitigation
+                or extracted.current_likelihood
+                or extracted.action_plan
+                or extracted.risk_co_owner_name
+                or extracted.action_owner_name
+                or session.risk_co_owner_name
+                or session.action_owner_id
+            )
+            if not has_other_fields:
+                answer = prompt_co_owner(session)
+                return self._make_response(request, answer, "STEP_CO_OWNER")
 
-        # Step 2: Co-Owner -> Description
         elif session.state == RiskCreationState.AWAITING_CO_OWNER:
             if any(w in lower_msg for w in ["skip", "none", "no co-owner", "no co owner", "pass", "without"]):
                 session.risk_co_owner_id = None
@@ -392,10 +989,6 @@ class RiskCreationAgent(BaseAgent):
                     session.risk_co_owner_name = msg.strip()
                     session.risk_co_owner_role = "Co-Owner"
 
-            answer = prompt_description(session)
-            return self._make_response(request, answer, "STEP_DESCRIPTION")
-
-        # Step 3: Description -> Inherent Assessment
         elif session.state == RiskCreationState.AWAITING_DESCRIPTION:
             opts = session.desc_options
             if any(w in lower_msg for w in ["option 1", "1"]) and len(opts) >= 1:
@@ -407,17 +1000,17 @@ class RiskCreationAgent(BaseAgent):
             else:
                 session.risk_description = msg.strip()
 
-            answer = prompt_inherent_assessment(session)
-            return self._make_response(request, answer, "STEP_INHERENT_ASSESSMENT")
-
-        # Step 4: Inherent Assessment -> Mitigation
         elif session.state == RiskCreationState.AWAITING_INHERENT_ASSESSMENT:
+            raw_digits = [int(s) for s in re.findall(r'\b\d+\b', msg)]
+            if any(d < 1 or d > 5 for d in raw_digits):
+                return self._make_response(
+                    request,
+                    f"⚠️ **Validation Notice:** Likelihood and Impact ratings must be integers between 1 and 5. Out-of-bounds rating {raw_digits} was rejected.\n\nPlease select valid ratings (1–5):\n\n[assessment-matrix:inherent]",
+                    "VALIDATION_FAILED"
+                )
             parsed = RiskMatrixCalculator.parse_likelihood_impact(msg)
-            if parsed:
-                l_val, i_val = parsed
-                session.update_inherent_assessment(l_val, i_val)
-                answer = prompt_mitigation(session)
-                return self._make_response(request, answer, "STEP_MITIGATION")
+            if parsed and RiskMatrixCalculator.is_valid_rating(parsed[0]) and RiskMatrixCalculator.is_valid_rating(parsed[1]):
+                session.update_inherent_assessment(parsed[0], parsed[1])
             else:
                 only_l = RiskMatrixCalculator.parse_single_likelihood(msg)
                 only_i = RiskMatrixCalculator.parse_single_impact(msg)
@@ -437,34 +1030,48 @@ class RiskCreationAgent(BaseAgent):
                         f"💥 Inherent Impact set to **{only_i} ({i_name})**.\n\nPlease select the mandatory **Likelihood (1–5)** rating:\n\n[assessment-matrix:inherent]",
                         "STEP_INHERENT_ASSESSMENT"
                     )
-                else:
-                    session.update_inherent_assessment(3, 4)
-                    answer = prompt_mitigation(session)
-                    return self._make_response(request, answer, "STEP_MITIGATION")
 
-        # Step 5: Mitigation -> Current Assessment
         elif session.state == RiskCreationState.AWAITING_MITIGATION:
+            if any(w in lower_msg for w in ["no suggestions", "decline suggestions", "skip suggestions", "write my own"]):
+                return self._make_response(
+                    request,
+                    "Understood. Please enter your custom **Mitigation Strategy** text:",
+                    "STEP_MITIGATION"
+                )
             opts = session.mitigation_options
-            if any(w in lower_msg for w in ["option 1", "1"]) and len(opts) >= 1:
+            if any(w in lower_msg for w in ["option 1", "use option 1", "first option"]) and len(opts) >= 1:
                 session.mitigation = opts[0]
-            elif any(w in lower_msg for w in ["option 2", "2"]) and len(opts) >= 2:
+                session.field_provenance["mitigation"] = "user_selected_suggestion"
+            elif any(w in lower_msg for w in ["option 2", "use option 2", "second option"]) and len(opts) >= 2:
                 session.mitigation = opts[1]
-            elif any(w in lower_msg for w in ["option 3", "3"]) and len(opts) >= 3:
+                session.field_provenance["mitigation"] = "user_selected_suggestion"
+            elif any(w in lower_msg for w in ["option 3", "use option 3", "third option"]) and len(opts) >= 3:
                 session.mitigation = opts[2]
+                session.field_provenance["mitigation"] = "user_selected_suggestion"
+            elif lower_msg == "1" and len(opts) >= 1:
+                session.mitigation = opts[0]
+                session.field_provenance["mitigation"] = "user_selected_suggestion"
+            elif lower_msg == "2" and len(opts) >= 2:
+                session.mitigation = opts[1]
+                session.field_provenance["mitigation"] = "user_selected_suggestion"
+            elif lower_msg == "3" and len(opts) >= 3:
+                session.mitigation = opts[2]
+                session.field_provenance["mitigation"] = "user_selected_suggestion"
             else:
                 session.mitigation = msg.strip()
+                session.field_provenance["mitigation"] = "user_stated"
 
-            answer = prompt_current_assessment(session)
-            return self._make_response(request, answer, "STEP_CURRENT_ASSESSMENT")
-
-        # Step 6: Current Assessment -> Action Plan
         elif session.state == RiskCreationState.AWAITING_CURRENT_ASSESSMENT:
+            raw_digits = [int(s) for s in re.findall(r'\b\d+\b', msg)]
+            if any(d < 1 or d > 5 for d in raw_digits):
+                return self._make_response(
+                    request,
+                    f"⚠️ **Validation Notice:** Current Likelihood and Impact ratings must be integers between 1 and 5. Out-of-bounds rating {raw_digits} was rejected.\n\nPlease select valid ratings (1–5):\n\n[assessment-matrix:current]",
+                    "VALIDATION_FAILED"
+                )
             parsed = RiskMatrixCalculator.parse_likelihood_impact(msg)
-            if parsed:
-                c_l, c_i = parsed
-                session.update_current_assessment(c_l, c_i)
-                answer = prompt_action_plan(session)
-                return self._make_response(request, answer, "STEP_ACTION_PLAN")
+            if parsed and RiskMatrixCalculator.is_valid_rating(parsed[0]) and RiskMatrixCalculator.is_valid_rating(parsed[1]):
+                session.update_current_assessment(parsed[0], parsed[1])
             else:
                 only_l = RiskMatrixCalculator.parse_single_likelihood(msg)
                 only_i = RiskMatrixCalculator.parse_single_impact(msg)
@@ -484,27 +1091,37 @@ class RiskCreationAgent(BaseAgent):
                         f"💥 Current Impact set to **{only_i} ({i_name})**.\n\nPlease select the mandatory **Likelihood (1–5)** rating:\n\n[assessment-matrix:current]",
                         "STEP_CURRENT_ASSESSMENT"
                     )
-                else:
-                    session.update_current_assessment(2, 2)
-                    answer = prompt_action_plan(session)
-                    return self._make_response(request, answer, "STEP_ACTION_PLAN")
 
-        # Step 7: Action Plan -> Action Owner
         elif session.state == RiskCreationState.AWAITING_ACTION_PLAN:
+            if any(w in lower_msg for w in ["no suggestions", "decline suggestions", "skip suggestions", "write my own"]):
+                return self._make_response(
+                    request,
+                    "Understood. Please enter your custom **Action Plan** text:",
+                    "STEP_ACTION_PLAN"
+                )
             opts = session.action_plan_options
-            if any(w in lower_msg for w in ["option 1", "1"]) and len(opts) >= 1:
+            if any(w in lower_msg for w in ["option 1", "use option 1", "first option"]) and len(opts) >= 1:
                 session.action_plan = opts[0]
-            elif any(w in lower_msg for w in ["option 2", "2"]) and len(opts) >= 2:
+                session.field_provenance["action_plan"] = "user_selected_suggestion"
+            elif any(w in lower_msg for w in ["option 2", "use option 2", "second option"]) and len(opts) >= 2:
                 session.action_plan = opts[1]
-            elif any(w in lower_msg for w in ["option 3", "3"]) and len(opts) >= 3:
+                session.field_provenance["action_plan"] = "user_selected_suggestion"
+            elif any(w in lower_msg for w in ["option 3", "use option 3", "third option"]) and len(opts) >= 3:
                 session.action_plan = opts[2]
+                session.field_provenance["action_plan"] = "user_selected_suggestion"
+            elif lower_msg == "1" and len(opts) >= 1:
+                session.action_plan = opts[0]
+                session.field_provenance["action_plan"] = "user_selected_suggestion"
+            elif lower_msg == "2" and len(opts) >= 2:
+                session.action_plan = opts[1]
+                session.field_provenance["action_plan"] = "user_selected_suggestion"
+            elif lower_msg == "3" and len(opts) >= 3:
+                session.action_plan = opts[2]
+                session.field_provenance["action_plan"] = "user_selected_suggestion"
             else:
                 session.action_plan = msg.strip()
+                session.field_provenance["action_plan"] = "user_stated"
 
-            answer = prompt_action_owner(session)
-            return self._make_response(request, answer, "STEP_ACTION_OWNER")
-
-        # Step 8: Action Owner -> Target Date
         elif session.state == RiskCreationState.AWAITING_ACTION_OWNER:
             avail_aos = session.available_action_owners
             matched_ao = None
@@ -533,24 +1150,18 @@ class RiskCreationAgent(BaseAgent):
                 session.action_owner_name = matched_ao.get("full_name", "Action Owner")
                 session.action_owner_role = matched_ao.get("role_name", "Action Owner")
             else:
-                session.action_owner_id = None
-                session.action_owner_name = msg.strip()
-                session.action_owner_role = "Action Owner"
+                return self._make_response(
+                    request,
+                    f"🚫 **Ineligible Action Owner:** '{msg.strip()}' was not found among authorized Action Owners in department '{session.dept_name or 'General'}'.\n\nPlease select an eligible Action Owner from the department register.",
+                    "STEP_ACTION_OWNER"
+                )
 
-            answer = prompt_target_date(session)
-            return self._make_response(request, answer, "STEP_TARGET_DATE")
-
-        # Step 9: Target Date -> Status
         elif session.state == RiskCreationState.AWAITING_TARGET_DATE:
             parsed_dt = parse_target_date(msg)
             if not parsed_dt:
                 parsed_dt = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%d")
             session.target_date = parsed_dt
 
-            answer = prompt_status(session)
-            return self._make_response(request, answer, "STEP_STATUS")
-
-        # Step 10: Status -> Validate & Preview
         elif session.state == RiskCreationState.AWAITING_STATUS:
             resolved_st = erm_db.resolve_status_by_name(msg)
             if resolved_st:
@@ -564,90 +1175,57 @@ class RiskCreationAgent(BaseAgent):
                     session.status_id = 1
                     session.status_name = "Draft"
 
-            session.progress = 0
+        # Also extract and merge any additional fields present in this message
+        extracted = extract_risk_fields(msg, session)
+        merge_res = merge_risk_draft(session, extracted, server_context)
+        requirements = get_risk_creation_requirements(dept_id=session.dept_id)
+        completeness = assess_risk_completeness(session, requirements)
 
-            # Validate
-            val_res = self.validate(session)
-            session.validation_result = val_res
+        if completeness.invalid_fields:
+            err_text = "\n".join([f"- **{k.replace('_', ' ').title()}:** {v}" for k, v in completeness.invalid_fields.items()])
+            return self._make_response(
+                request,
+                f"⚠️ **Validation Notice:**\n{err_text}\n\nPlease provide a corrected value.",
+                "VALIDATION_FAILED"
+            )
+
+        if completeness.is_ready_for_review:
+            # If user was walking through wizard steps, continue the natural sequence
+            is_single_step_advance = (
+                previous_state in [
+                    RiskCreationState.AWAITING_ACTION_PLAN,
+                    RiskCreationState.AWAITING_ACTION_OWNER,
+                    RiskCreationState.AWAITING_TARGET_DATE
+                ]
+                and not bool(extracted.action_plan and (extracted.mitigation or extracted.inherent_likelihood))
+            )
+            if is_single_step_advance:
+                if previous_state == RiskCreationState.AWAITING_ACTION_PLAN and not session.action_owner_id:
+                    answer = prompt_action_owner(session)
+                    return self._make_response(request, answer, "STEP_ACTION_OWNER")
+                elif previous_state == RiskCreationState.AWAITING_ACTION_OWNER and not session.target_date:
+                    answer = prompt_target_date(session)
+                    return self._make_response(request, answer, "STEP_TARGET_DATE")
+                elif previous_state == RiskCreationState.AWAITING_TARGET_DATE:
+                    answer = prompt_status(session)
+                    return self._make_response(request, answer, "STEP_STATUS")
+
             session.state = RiskCreationState.AWAITING_CONFIRMATION
-
-            if not val_res["valid"]:
-                err_text = "\n".join([f"- {e}" for e in val_res["errors"]])
-                return self._make_response(
-                    request,
-                    f"⚠️ **Validation Errors Detected:**\n{err_text}\n\nPlease correct these issues before saving.",
-                    "VALIDATION_FAILED"
-                )
-
-            preview_text = build_preview(session)
+            session.validation_result = self.validate(session)
+            self._bind_pending_confirmation(session)
+            preview_text = self._render_preview_with_advisory(session)
             return self._make_response(request, preview_text, "WIZARD_CONFIRMATION")
 
-        # Step 13 & 14: Confirmation & Database Persistence
-        elif session.state == RiskCreationState.AWAITING_CONFIRMATION:
-            if any(w in lower_msg for w in ["confirm", "yes", "save", "submit", "proceed", "commit", "ok", "confirm and save"]):
-                treatments = [{
-                    "action_plan": session.action_plan or "Operational Risk Mitigation Action",
-                    "action_owner_id": session.action_owner_id,
-                    "target_date": session.target_date,
-                    "progress": session.progress
-                }]
-
-                res = erm_db.create_risk(
-                    risk_name=session.risk_name or "Operational Risk",
-                    risk_description=session.risk_description or session.risk_name or "Operational Risk",
-                    dept_id=session.dept_id,
-                    dept_name=session.dept_name,
-                    risk_owner_id=session.user_id,
-                    risk_co_owner_id=session.risk_co_owner_id,
-                    inherent_likelihood=session.inherent_likelihood or 3,
-                    inherent_impact=session.inherent_impact or 4,
-                    current_likelihood=session.current_likelihood or 2,
-                    current_impact=session.current_impact or 2,
-                    mitigation=session.mitigation or "",
-                    status=session.status_id,
-                    financial_year=session.financial_year,
-                    treatments=treatments
-                )
-
-                if res.get("status") == "error":
-                    session.state = RiskCreationState.FAILED
-                    err_msg = res.get("message", "Database save error")
-                    return self._make_response(
-                        request,
-                        f"❌ **Failed to Save Risk to Database:** {err_msg}\n\nPlease try confirming again or cancel.",
-                        "SAVE_FAILED"
-                    )
-
-                generated_risk_id = res.get("risk_id", "N/A")
-                reg_id = res.get("risk_register_id", "")
-                
-                self.clear_session(session_key)
-
-                success_text = (
-                    f"### ✅ Risk Created Successfully\n\n"
-                    f"Your risk has been successfully saved to the Enterprise Risk Management database (`MassERS`).\n\n"
-                    f"| Field | Value |\n"
-                    f"| :--- | :--- |\n"
-                    f"| **Risk ID** | **`{generated_risk_id}`** (Register #{reg_id}) |\n"
-                    f"| **Risk Name** | {session.risk_name} |\n"
-                    f"| **Department** | {session.dept_name or 'General'} |\n"
-                    f"| **Status** | `{session.status_name}` |\n\n"
-                    f"The risk is now available in the ERM Risk Register and pending governance queues."
-                )
-                return self._make_response(request, success_text, "WIZARD_COMPLETED")
-
-            else:
-                self.clear_session(session_key)
-                return self._make_response(
-                    request,
-                    "❌ **Risk Creation Cancelled.** Active draft session has been discarded.\n\nHow else may I assist you?",
-                    "WIZARD_CANCELLED"
-                )
-
-        return self._make_response(request, "Unexpected state in Risk Creation workflow.", "WIZARD_ERROR")
+        # Determine and prompt the next missing required field
+        answer, next_step = self._prompt_next_missing_field(session)
+        return self._make_response(request, answer, next_step)
 
     def _apply_field_edit(self, session: RiskCreationSession, field_name: str, new_val: str) -> str:
         """Apply user's requested edit to session field."""
+        session.pending_confirmation = None
+        session.awaiting_confirmation = False
+        session.duplicate_check_input_hash = None
+        session.duplicate_acknowledged = False
         if field_name == "target_date":
             parsed_dt = parse_target_date(new_val)
             session.target_date = parsed_dt or new_val
@@ -670,10 +1248,14 @@ class RiskCreationAgent(BaseAgent):
 
         elif field_name == "risk_description":
             session.risk_description = new_val
+            session.duplicate_check_input_hash = None
+            session.duplicate_acknowledged = False
             return "Updated Risk Description."
 
         elif field_name == "risk_name":
             session.risk_name = new_val
+            session.duplicate_check_input_hash = None
+            session.duplicate_acknowledged = False
             return f"Updated Risk Name to `{session.risk_name}`."
 
         elif field_name == "co_owner":
