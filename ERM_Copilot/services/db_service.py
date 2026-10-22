@@ -531,7 +531,7 @@ class ERMDatabaseService:
                 query += " AND r.dept_id = %s"
                 params.append(dept_id)
 
-            search_tokens = list(draft_tokens)[:4]
+            search_tokens = sorted(draft_tokens, key=lambda t: (-len(t), t))[:4]
             if search_tokens:
                 token_clauses = ["r.risk_name ILIKE %s" for _ in search_tokens]
                 query += f" AND ({' OR '.join(token_clauses)})"

@@ -116,9 +116,22 @@ class RiskMatrixCalculator:
         if any(w in lower for w in ["option d", "2x2", "2 2", "score 4"]):
             return 2, 2
 
-        # Check if text contains explicit numbers out of bounds (e.g. 0 or > 5)
-        raw_digits = [int(s) for s in re.findall(r'\b\d+\b', text)]
-        if any(d < 1 or d > 5 for d in raw_digits):
+        # Check if text contains explicit rating numbers out of bounds (e.g. 0 or > 5)
+        labeled_ratings = [
+            int(s) for s in re.findall(
+                r'(?<!financial\s)(?<!monetary\s)\b(?:likelihood|impact|inherent|current|residual)\s*(?:risk|assessment|rating|severity)?\s*(?:likelihood|impact|l|i)?\s*(?:\bis\b|[:=])?\s*(\d+)\b',
+                lower
+            )
+        ]
+        matrix_pairs = re.findall(r'\b(\d+)\s*[xX*]\s*(\d+)\b', text)
+        for p1, p2 in matrix_pairs:
+            labeled_ratings.extend([int(p1), int(p2)])
+
+        pair_match = re.search(r'^\s*(\d+)\s*[,xX* ]\s*(\d+)\s*$', text.strip())
+        if pair_match:
+            labeled_ratings.extend([int(pair_match.group(1)), int(pair_match.group(2))])
+
+        if any(d < 1 or d > 5 for d in labeled_ratings):
             return None
 
         # Check named word combinations, e.g. "Probable Major" or "Likelihood Remote Impact Moderate"

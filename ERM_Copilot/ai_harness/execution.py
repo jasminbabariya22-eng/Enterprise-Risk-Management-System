@@ -106,9 +106,14 @@ class ExecutionCoordinator:
                 is_admin_or_enterprise = normalize_role(context.user_role) in (
                     ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_RISK_MANAGER, ROLE_RISK_HEADER
                 )
-                if not is_admin_or_enterprise or not validated_args.get("dept_id"):
-                    if context.dept_id is not None:
-                        validated_args["dept_id"] = context.dept_id
+                if not is_admin_or_enterprise:
+                    if context.dept_id is None:
+                        raise AuthorizationError(
+                            f"User role '{context.user_role}' requires an authenticated department context to execute '{tool_name}'."
+                        )
+                    validated_args["dept_id"] = context.dept_id
+                elif not validated_args.get("dept_id") and context.dept_id is not None:
+                    validated_args["dept_id"] = context.dept_id
 
             # 4. Confirmation verification for state-changing operations
             if tool.requires_confirmation and not bypass_confirmation:

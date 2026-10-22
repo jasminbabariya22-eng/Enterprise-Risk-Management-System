@@ -50,7 +50,7 @@ from ERM_Copilot.models.contracts import AgentRequest, AgentResponse, RequestCon
 from ERM_Copilot.services.db_service import erm_db
 from ERM_Copilot.ai_harness.confirmation import confirmation_manager
 from ERM_Copilot.ai_harness.context import HarnessContext
-from ERM_Copilot.ai_harness.exceptions import ConfirmationMismatchError
+from ERM_Copilot.ai_harness.exceptions import ConfirmationMismatchError, ToolValidationError
 from ERM_Copilot.ai_harness.execution import ExecutionCoordinator
 from ERM_Copilot.agents.risk_creation.requirements import (
     RiskCreationRequirements,
@@ -123,6 +123,9 @@ class RiskCreationAgent(BaseAgent):
     def get_session(self, session_key: str) -> Optional[RiskCreationSession]:
         if session_key in self.sessions:
             return self.sessions[session_key]
+        for k, s in self.sessions.items():
+            if k.startswith(f"{session_key}::") or k.endswith(f"::{session_key}") or str(s.user_id) == str(session_key):
+                return s
         try:
             from ERM_Copilot.workflow import workflow_checkpointer, WorkflowType
             active_wf = workflow_checkpointer.load_active_for_session(session_key)
@@ -478,7 +481,20 @@ class RiskCreationAgent(BaseAgent):
                 )
 
         # 3. Handle Start Trigger (Initialize new session)
-        if self.is_start_trigger(msg):
+        existing_session = self.sessions.get(session_key)
+        has_active_nonterminal_session = (
+            existing_session is not None
+            and existing_session.state not in (
+                RiskCreationState.SAVED,
+                RiskCreationState.SUBMITTED,
+                RiskCreationState.CANCELLED,
+                RiskCreationState.FAILED,
+            )
+        )
+        explicit_restart = any(w in lower_msg for w in ["restart", "start over", "reset"])
+        should_start = (not has_active_nonterminal_session and self.is_start_trigger(msg)) or (has_active_nonterminal_session and explicit_restart)
+
+        if should_start:
             resolved_dept_id = dept_id
             resolved_dept_name = dept_name
             resolved_user_id = raw_user_id
@@ -584,24 +600,25 @@ class RiskCreationAgent(BaseAgent):
             )
             return self._make_response(request, warn_answer, "WIZARD_INTERRUPTED")
 
-        # Inline editing check across all states
-        edit_target = detect_field_edits(msg)
-        if edit_target:
-            field_name, new_val = edit_target
-            updated_msg = self._apply_field_edit(session, field_name, new_val)
-            requirements = get_risk_creation_requirements(dept_id=session.dept_id)
-            completeness = assess_risk_completeness(session, requirements)
-            session.validation_result = self.validate(session)
-            if completeness.is_ready_for_review or session.state == RiskCreationState.AWAITING_CONFIRMATION:
-                session.state = RiskCreationState.AWAITING_CONFIRMATION
-                self._bind_pending_confirmation(session)
-                preview_text = self._render_preview_with_advisory(session)
-                full_resp = f"✏️ **{updated_msg}**\n\n{preview_text}"
-                return self._make_response(request, full_resp, "WIZARD_CONFIRMATION")
-            else:
-                answer, next_step = self._prompt_next_missing_field(session)
-                full_resp = f"✏️ **{updated_msg}**\n\n{answer}"
-                return self._make_response(request, full_resp, next_step)
+        # Inline editing check gated to preview and confirmation states
+        if session.state in (RiskCreationState.READY_FOR_PREVIEW, RiskCreationState.AWAITING_CONFIRMATION):
+            edit_target = detect_field_edits(msg)
+            if edit_target:
+                field_name, new_val = edit_target
+                updated_msg = self._apply_field_edit(session, field_name, new_val)
+                requirements = get_risk_creation_requirements(dept_id=session.dept_id)
+                completeness = assess_risk_completeness(session, requirements)
+                session.validation_result = self.validate(session)
+                if completeness.is_ready_for_review or session.state == RiskCreationState.AWAITING_CONFIRMATION:
+                    session.state = RiskCreationState.AWAITING_CONFIRMATION
+                    self._bind_pending_confirmation(session)
+                    preview_text = self._render_preview_with_advisory(session)
+                    full_resp = f"✏️ **{updated_msg}**\n\n{preview_text}"
+                    return self._make_response(request, full_resp, "WIZARD_CONFIRMATION")
+                else:
+                    answer, next_step = self._prompt_next_missing_field(session)
+                    full_resp = f"✏️ **{updated_msg}**\n\n{answer}"
+                    return self._make_response(request, full_resp, next_step)
 
         # Check confirmation if currently awaiting confirmation
         if session.state == RiskCreationState.AWAITING_CONFIRMATION:
@@ -617,7 +634,13 @@ class RiskCreationAgent(BaseAgent):
                 )
                 return self._make_response(request, ack_text, "DUPLICATES_ACKNOWLEDGED")
 
-            if any(w in lower_msg for w in ["confirm", "yes", "save", "submit", "proceed", "commit", "ok", "confirm and save"]):
+            is_negated = bool(re.search(r'\b(?:not?|never|don\'?t|do\s+not|no)\b', lower_msg))
+            is_confirm = bool(
+                re.search(r'\b(?:confirm(?:\s+and\s+save)?|yes|save|submit|proceed|commit)\b', lower_msg)
+                or re.search(r'\bok\b', lower_msg)
+            ) and not is_negated
+
+            if is_confirm:
                 # Step 6: Validate confirmation fingerprint before creating risk
                 server_context = {
                     "user_id": session.user_id,
@@ -663,12 +686,22 @@ class RiskCreationAgent(BaseAgent):
                     session.pending_confirmation["status"] = "EXECUTED"
 
                 # Persist with exact verified payload kwargs through governed AI Harness tool layer
-                exec_res = self.execute_governed_tool(
-                    tool_name="create_risk",
-                    arguments=final_payload.to_db_kwargs(),
-                    session=session,
-                    bypass_confirmation=True,  # Confirmation token was explicitly validated above and marked EXECUTED
-                )
+                try:
+                    exec_res = self.execute_governed_tool(
+                        tool_name="create_risk",
+                        arguments=final_payload.to_db_kwargs(),
+                        session=session,
+                        bypass_confirmation=True,  # Confirmation token was explicitly validated above and marked EXECUTED
+                    )
+                except ToolValidationError as tve:
+                    logger.warning(f"create_risk validation failed: {tve}")
+                    session.state = RiskCreationState.VALIDATING
+                    return self._make_response(
+                        request,
+                        f"⚠️ **Validation Notice:** {tve}\n\nPlease correct this information before confirming.",
+                        "VALIDATION_FAILED"
+                    )
+
                 res = exec_res.get("result", {})
 
                 if res.get("status") == "error":
@@ -699,14 +732,23 @@ class RiskCreationAgent(BaseAgent):
                 return self._make_response(request, success_text, "WIZARD_COMPLETED")
 
             else:
-                if session.pending_confirmation:
-                    session.pending_confirmation["status"] = "CANCELLED"
-                self.clear_session(session_key)
-                return self._make_response(
-                    request,
-                    "❌ **Risk Creation Cancelled.** Active draft session has been discarded.\n\nHow else may I assist you?",
-                    "WIZARD_CANCELLED"
+                if self.is_cancellation(msg):
+                    if session.pending_confirmation:
+                        session.pending_confirmation["status"] = "CANCELLED"
+                    self.clear_session(session_key)
+                    return self._make_response(
+                        request,
+                        "❌ **Risk Creation Cancelled.** Active draft session has been discarded.\n\nHow else may I assist you?",
+                        "WIZARD_CANCELLED"
+                    )
+                # Unrecognized confirmation reply: re-show preview and preserve draft
+                self._bind_pending_confirmation(session)
+                preview_text = self._render_preview_with_advisory(session)
+                help_text = (
+                    f"ℹ️ Reply **`confirm`** to save this risk to the register, or specify changes (e.g. *\"Change mitigation to ...\"*), or type **`cancel`** to discard.\n\n"
+                    f"{preview_text}"
                 )
+                return self._make_response(request, help_text, "WIZARD_CONFIRMATION")
 
         previous_state = session.state
         server_context = {
@@ -893,13 +935,12 @@ class RiskCreationAgent(BaseAgent):
             session.state = RiskCreationState.AWAITING_DESCRIPTION
             return self._make_response(request, resp_text, "STEP_DESCRIPTION")
 
-        # Check for owner lookup queries across turns
         is_owner_lookup_request = bool(
             re.search(r'\b(?:who\s+can\s+be|eligible|lookup|list|find|search|available)\s+(?:action\s*owner|co[\s\-_]?owner)s?\b', lower_msg)
             or re.search(r'\b(?:action\s*owner|co[\s\-_]?owner)\s+(?:options|candidates|list)\b', lower_msg)
         )
         if is_owner_lookup_request:
-            is_co = "co" in lower_msg
+            is_co = bool(re.search(r'\bco[\s\-_]?owners?\b', lower_msg))
             owner_type = "co_owner" if is_co else "action_owner"
             search_term = None
             term_match = re.search(r'(?:named|for|like|called|matching)\s+([A-Za-z0-9_\-\s]+)', msg, flags=re.IGNORECASE)
@@ -937,8 +978,13 @@ class RiskCreationAgent(BaseAgent):
 
         # Step-specific input handling for guided workflow
         if session.state == RiskCreationState.AWAITING_RISK_NAME:
-            session.risk_name = msg.strip()
             extracted = extract_risk_fields(msg, session)
+            if extracted.risk_name:
+                title = extracted.risk_name
+            else:
+                first_part = re.split(r'[\.\n\r;]', msg.strip())[0].strip()
+                title = first_part or msg.strip()
+            session.risk_name = title[:250].strip()
             has_other_fields = bool(
                 extracted.risk_description
                 or extracted.inherent_likelihood
@@ -1001,11 +1047,25 @@ class RiskCreationAgent(BaseAgent):
                 session.risk_description = msg.strip()
 
         elif session.state == RiskCreationState.AWAITING_INHERENT_ASSESSMENT:
-            raw_digits = [int(s) for s in re.findall(r'\b\d+\b', msg)]
-            if any(d < 1 or d > 5 for d in raw_digits):
+            labeled_ratings = [
+                int(s) for s in re.findall(
+                    r'(?<!financial\s)(?<!monetary\s)\b(?:likelihood|impact|inherent|current|residual)\s*(?:risk|assessment|rating|severity)?\s*(?:likelihood|impact|l|i)?\s*(?:\bis\b|[:=])?\s*(\d+)\b',
+                    lower_msg
+                )
+            ]
+            matrix_pairs = re.findall(r'\b(\d+)\s*[xX*]\s*(\d+)\b', msg)
+            for p1, p2 in matrix_pairs:
+                labeled_ratings.extend([int(p1), int(p2)])
+
+            pair_match = re.search(r'^\s*(\d+)\s*[,xX* ]\s*(\d+)\s*$', msg.strip())
+            if pair_match:
+                labeled_ratings.extend([int(pair_match.group(1)), int(pair_match.group(2))])
+
+            if any(d < 1 or d > 5 for d in labeled_ratings):
+                invalid_vals = [d for d in labeled_ratings if d < 1 or d > 5]
                 return self._make_response(
                     request,
-                    f"⚠️ **Validation Notice:** Likelihood and Impact ratings must be integers between 1 and 5. Out-of-bounds rating {raw_digits} was rejected.\n\nPlease select valid ratings (1–5):\n\n[assessment-matrix:inherent]",
+                    f"⚠️ **Validation Notice:** Likelihood and Impact ratings must be integers between 1 and 5. Out-of-bounds rating {invalid_vals} was rejected.\n\nPlease select valid ratings (1–5):\n\n[assessment-matrix:inherent]",
                     "VALIDATION_FAILED"
                 )
             parsed = RiskMatrixCalculator.parse_likelihood_impact(msg)

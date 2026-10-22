@@ -52,13 +52,13 @@ Every capability accessible to the agent is registered with explicit Pydantic va
   - `dataset`: `Literal['all', 'assessment_criteria', 'departments', 'status']`
 - **Allowed Roles**: All authenticated roles (including `Auditor`).
 - **Department Boundary**: Enterprise-wide.
-- **Handler**: `_handle_resolve_reference_data` querying `erm_db.get_criteria_matrix()`.
+- **Handler**: `_handle_resolve_reference_data` calling `erm_db.get_dropdown_options()`.
 
 ### 2. `lookup_eligible_owners`
 - **Purpose**: Governed search for valid personnel eligible to be assigned as Co-Owners or Action Owners.
 - **Schema**:
   - `owner_type`: `Literal['action_owner', 'co_owner']`
-  - `search_term`: `Optional[str]` (name or email prefix)
+  - `search_term`: `Optional[str]` (name, log_id, or role)
   - `dept_id`: `Optional[int]`
 - **Allowed Roles**: `Risk Owner`, `Functional Head`, `Risk Manager`, `Risk Head`, `Admin`, `Super Admin`.
 - **Department Boundary**:
@@ -91,14 +91,15 @@ Every capability accessible to the agent is registered with explicit Pydantic va
 - **Schema**:
   - `risk_title`: `str` (min 3 chars)
   - `dept_id`: `Optional[int]`
+  - `limit`: `int = 5`
   - `similarity_threshold`: `float = 0.65`
 - **Allowed Roles**: `Risk Owner`, `Functional Head`, `Risk Manager`, `Risk Head`, `Admin`, `Super Admin`.
 - **Key Invariant**: **Advisory only**. A database error or timeout returns an explicit error status; it is never fabricated into "verified unique".
 
-### 6. `validate_risk_draft`
+### 6. `validate_risk_payload`
 - **Purpose**: Deterministic validation of all entered draft parameters against business rules prior to scoring.
 - **Schema**:
-  - `draft_fields`: `Dict[str, Any]`
+  - `draft`: `Dict[str, Any]`
 - **Allowed Roles**: `Risk Owner`, `Functional Head`, `Risk Manager`, `Risk Head`, `Admin`, `Super Admin`.
 - **Rules Checked**: Rating ranges (`1..5`), positive financial impact, minimum description length, target date formatting (`YYYY-MM-DD`).
 
@@ -107,21 +108,14 @@ Every capability accessible to the agent is registered with explicit Pydantic va
 - **Schema**:
   - `likelihood`: `int` (1..5)
   - `impact`: `int` (1..5)
-- **Allowed Roles**: All roles except `Auditor`.
+- **Allowed Roles**: `ALL_ROLES` (including `Auditor`).
 - **Logic**: Strict $Score = Likelihood \times Impact$ mapped to matrix bands:
-  - `1-3`: Low (Green)
-  - `4-6`: Medium (Yellow)
-  - `8-12`: High (Amber)
-  - `15-25`: Critical (Red)
+  - `Score < 5`: Low (Green)
+  - `5–9`: Medium (Yellow)
+  - `10–14`: High (Amber)
+  - `15+`: Critical (Red)
 
-### 8. `build_risk_payload`
-- **Purpose**: Assembles the sanitized, immutable `FinalRiskPayload` structure from the completed draft and trusted server context.
-- **Schema**:
-  - `session_id`: `str`
-  - `draft`: `Dict[str, Any]`
-- **Security Invariant**: Pins `risk_owner_id = context.user_id` and `dept_id = context.dept_id` for standard users.
-
-### 9. `create_risk`
+### 8. `create_risk` (registered also as `save_risk`)
 - **Purpose**: Official persistence of the validated risk record into PostgreSQL.
 - **Schema**: `CreateRiskInput` (enforcing all database column types).
 - **Execution Invariants**:
@@ -129,11 +123,14 @@ Every capability accessible to the agent is registered with explicit Pydantic va
   - **Anti-Retry Policy**: Classified as `is_state_changing=True, is_idempotent=False`. The coordinator explicitly disables automatic retries to prevent duplicate database insertions on network timeouts.
   - **Anti-Spoofing**: Standard users cannot supply a foreign `dept_id`; server-verified `context.dept_id` overrides any payload argument.
 
-### 10. `get_dropdown_options`
+### 9. `get_dropdown_options`
 - **Purpose**: Backward-compatible reference data helper for UI dropdown elements.
 
-### 11. `check_risk_duplicates`
+### 10. `check_risk_duplicates`
 - **Purpose**: Alias / legacy router targeting the primary duplicate detection engine.
+
+### 11. `get_description_suggestions` (registered also as `generate_risk_description_suggestions`)
+- **Purpose**: Curated risk description recommendations based on risk title or hazard category.
 
 ---
 
@@ -249,5 +246,5 @@ The architecture is covered by **123 automated tests** across 8 test suites:
 
 To run the complete suite:
 ```powershell
-d:\ERM\myenv\Scripts\python.exe -m unittest discover -s ERM_Copilot/tests -p "test_*.py"
+python -m unittest discover -s ERM_Copilot/tests -p "test_*.py"
 ```

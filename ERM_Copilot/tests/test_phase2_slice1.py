@@ -91,7 +91,8 @@ class TestResolveReferenceDataTool(unittest.TestCase):
         self.assertTrue(tool.is_idempotent)
         self.assertIsNotNone(tool.schema_model)
 
-    def test_resolve_status_dataset(self):
+    @patch.object(erm_db, "get_status_options", return_value=[{"id": 1, "status_name": "Draft"}, {"id": 2, "status_name": "Submitted to Functional Head"}])
+    def test_resolve_status_dataset(self, mock_status):
         res = ExecutionCoordinator.execute_tool(
             tool_name="resolve_reference_data",
             arguments={"dataset": "status"},

@@ -120,8 +120,17 @@ def _handle_lookup_eligible_owners(
     if is_cross_dept_permitted:
         effective_dept_id = dept_id if dept_id is not None else caller_dept_id
     else:
-        # Prevent user-supplied dept_id manipulation for standard users
-        effective_dept_id = caller_dept_id if caller_dept_id is not None else dept_id
+        # Prevent user-supplied dept_id manipulation for standard users; fail closed if missing
+        if caller_dept_id is None and normalized_type == "action_owner":
+            return {
+                "status": "error",
+                "owner_type": normalized_type,
+                "dept_id": None,
+                "count": 0,
+                "owners": [],
+                "guidance": "Cannot look up action owners without an authenticated department context.",
+            }
+        effective_dept_id = caller_dept_id
 
     if normalized_type == "action_owner":
         raw_candidates = erm_db.get_department_action_owners(dept_id=effective_dept_id)
@@ -234,21 +243,25 @@ def _handle_get_mitigation_suggestions(
     if include_historical:
         try:
             is_admin = caller_role in (ROLE_ADMIN, ROLE_SUPER_ADMIN, "Admin", "Super Admin")
-            effective_dept = dept_id if (is_admin and dept_id is not None) else caller_dept_id
+            if not is_admin and caller_dept_id is None:
+                effective_dept = None
+            else:
+                effective_dept = dept_id if (is_admin and dept_id is not None) else caller_dept_id
             
-            raw_hist = erm_db.get_historical_treatments(
-                keyword=risk_title,
-                dept_id=effective_dept,
-                limit=3
-            )
-            for h in raw_hist:
-                plan = h.get("action_plan")
-                if plan and str(plan).strip():
-                    historical_evidence.append({
-                        "risk_name": h.get("risk_name") or "Historical Risk",
-                        "historical_action": plan.strip(),
-                        "status": h.get("status", "Completed")
-                    })
+            if is_admin or effective_dept is not None:
+                raw_hist = erm_db.get_historical_treatments(
+                    keyword=risk_title,
+                    dept_id=effective_dept,
+                    limit=3
+                )
+                for h in raw_hist:
+                    plan = h.get("action_plan")
+                    if plan and str(plan).strip():
+                        historical_evidence.append({
+                            "risk_name": h.get("risk_name") or "Historical Risk",
+                            "historical_action": plan.strip(),
+                            "status": h.get("status", "Completed")
+                        })
         except Exception as e:
             logger.warning(f"Historical treatment lookup failed (continuing with curated): {e}")
 
@@ -340,7 +353,17 @@ def _handle_detect_duplicate_risks(
     if is_cross_dept_permitted:
         effective_dept = dept_id if dept_id is not None else caller_dept_id
     else:
-        effective_dept = caller_dept_id if caller_dept_id is not None else dept_id
+        if caller_dept_id is None:
+            return {
+                "status": "error",
+                "checked_risk_title": risk_title,
+                "candidate_count": 0,
+                "candidates": [],
+                "is_duplicate_suspected": False,
+                "message": "Duplicate check requires an authenticated department context for standard users.",
+                "warnings": ["Duplicate detection skipped due to missing department context."]
+            }
+        effective_dept = caller_dept_id
 
     try:
         candidates = erm_db.find_potential_duplicate_risks(
@@ -567,7 +590,7 @@ def _handle_validate_risk_payload(
 
 class CreateRiskInput(BaseModel):
     risk_name: str = Field(..., min_length=3, max_length=250, description="Risk title/name")
-    risk_description: str = Field(..., min_length=10, description="Risk description")
+    risk_description: str = Field(..., min_length=5, description="Risk description")
     dept_id: Optional[int] = Field(default=None, description="Department ID")
     dept_name: Optional[str] = Field(default=None, description="Department name")
     risk_owner_id: Optional[Any] = Field(default=None, description="Risk owner ID")

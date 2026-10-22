@@ -103,38 +103,42 @@ def deterministic_extract(message: str) -> ExtractedRiskFields:
 
     # 4. Inherent & Current Likelihood / Impact Numbers
     # Case A: Explicit labeled inherent likelihood / impact
-    # e.g. "inherent likelihood 4 and impact 5" or "inherent: likelihood=4, impact=5" or "inherent 4x5"
-    inh_match = re.search(r'inherent\s*(?:risk|assessment|rating|severity)?\s*(?:likelihood|l)?\s*[:=]?\s*([1-5])\s*(?:and|,|x|\*|\s)?\s*(?:impact|i)?\s*[:=]?\s*([1-5])', lower_msg)
+    # e.g. "inherent likelihood 4 and impact 5" or "inherent: likelihood=4, impact=5" or "inherent 4x5" or "inherent likelihood is 4"
+    inh_match = re.search(r'inherent\s*(?:risk|assessment|rating|severity)?\s*(?:likelihood|l)?\s*(?:\bis\b|[:=])?\s*([1-5])\s*(?:and|,|x|\*|\s)?\s*(?:impact|i)?\s*(?:\bis\b|[:=])?\s*([1-5])', lower_msg)
     if inh_match:
         extracted.inherent_likelihood = int(inh_match.group(1))
         extracted.inherent_impact = int(inh_match.group(2))
     else:
         # Separate matches
-        inh_l = re.search(r'inherent\s*(?:likelihood|prob|probability)\s*[:=]?\s*([1-5])', lower_msg)
+        inh_l = re.search(r'inherent\s*(?:likelihood|prob|probability)\s*(?:\bis\b|[:=])?\s*([1-5])', lower_msg)
         if inh_l:
             extracted.inherent_likelihood = int(inh_l.group(1))
-        inh_i = re.search(r'inherent\s*(?:impact|consequence|severity)\s*[:=]?\s*([1-5])', lower_msg)
+        inh_i = re.search(r'inherent\s*(?:impact|consequence|severity)\s*(?:\bis\b|[:=])?\s*([1-5])', lower_msg)
         if inh_i:
             extracted.inherent_impact = int(inh_i.group(1))
 
     # Case B: Explicit labeled residual / current likelihood / impact
-    curr_match = re.search(r'(?:current|residual)\s*(?:risk|assessment|rating|severity)?\s*(?:likelihood|l)?\s*[:=]?\s*([1-5])\s*(?:and|,|x|\*|\s)?\s*(?:impact|i)?\s*[:=]?\s*([1-5])', lower_msg)
+    curr_match = re.search(r'(?:current|residual)\s*(?:risk|assessment|rating|severity)?\s*(?:likelihood|l)?\s*(?:\bis\b|[:=])?\s*([1-5])\s*(?:and|,|x|\*|\s)?\s*(?:impact|i)?\s*(?:\bis\b|[:=])?\s*([1-5])', lower_msg)
     if curr_match:
         extracted.current_likelihood = int(curr_match.group(1))
         extracted.current_impact = int(curr_match.group(2))
     else:
-        cur_l = re.search(r'(?:current|residual)\s*(?:likelihood|prob|probability)\s*[:=]?\s*([1-5])', lower_msg)
+        cur_l = re.search(r'(?:current|residual)\s*(?:likelihood|prob|probability)\s*(?:\bis\b|[:=])?\s*([1-5])', lower_msg)
         if cur_l:
             extracted.current_likelihood = int(cur_l.group(1))
-        cur_i = re.search(r'(?:current|residual)\s*(?:impact|consequence|severity)\s*[:=]?\s*([1-5])', lower_msg)
+        cur_i = re.search(r'(?:current|residual)\s*(?:impact|consequence|severity)\s*(?:\bis\b|[:=])?\s*([1-5])', lower_msg)
         if cur_i:
             extracted.current_impact = int(cur_i.group(1))
 
     # Case C: Matrix option codes (Option A 4x5, Option B 3x4, etc.)
     matrix_match = re.search(r'\b([1-5])\s*[xX*]\s*([1-5])\b', msg)
     if matrix_match and extracted.inherent_likelihood is None:
-        extracted.inherent_likelihood = int(matrix_match.group(1))
-        extracted.inherent_impact = int(matrix_match.group(2))
+        is_overlapping_curr = False
+        if curr_match:
+            is_overlapping_curr = not (matrix_match.end() <= curr_match.start() or matrix_match.start() >= curr_match.end())
+        if not is_overlapping_curr:
+            extracted.inherent_likelihood = int(matrix_match.group(1))
+            extracted.inherent_impact = int(matrix_match.group(2))
 
     # 5. Mitigation extraction via boundary keywords
     mit_patterns = [

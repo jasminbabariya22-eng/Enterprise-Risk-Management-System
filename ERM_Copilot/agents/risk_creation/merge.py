@@ -195,15 +195,51 @@ def merge_risk_draft(
         result.modified_fields.append("status_id")
 
     # 11. Co-Owner & Action Owner Names (If present in extracted)
+    from ERM_Copilot.ai_harness.tool_registry import _handle_lookup_eligible_owners
     if extracted.risk_co_owner_name and not draft.risk_co_owner_name:
-        draft.risk_co_owner_name = extracted.risk_co_owner_name
-        draft.field_provenance["risk_co_owner_name"] = "user_stated"
-        result.modified_fields.append("risk_co_owner_name")
+        try:
+            res_co = _handle_lookup_eligible_owners(
+                owner_type="co_owner",
+                search_term=extracted.risk_co_owner_name,
+                caller_role=server_context.get("role") or server_context.get("user_role"),
+                caller_dept_id=draft.dept_id,
+            )
+            owners_co = res_co.get("owners", [])
+            if owners_co:
+                matched = owners_co[0]
+                draft.risk_co_owner_id = matched.get("user_id")
+                draft.risk_co_owner_name = matched.get("full_name") or extracted.risk_co_owner_name
+                draft.risk_co_owner_role = matched.get("role_name", "Co-Owner")
+                draft.field_provenance["risk_co_owner_name"] = "user_stated"
+                result.modified_fields.append("risk_co_owner_name")
+            else:
+                draft.pending_co_owner = extracted.risk_co_owner_name
+        except Exception as e:
+            logger.debug(f"Could not resolve co-owner name: {e}")
+            draft.pending_co_owner = extracted.risk_co_owner_name
 
     if extracted.action_owner_name and not draft.action_owner_name:
-        draft.action_owner_name = extracted.action_owner_name
-        draft.field_provenance["action_owner_name"] = "user_stated"
-        result.modified_fields.append("action_owner_name")
+        try:
+            res_ao = _handle_lookup_eligible_owners(
+                owner_type="action_owner",
+                search_term=extracted.action_owner_name,
+                dept_id=draft.dept_id,
+                caller_role=server_context.get("role") or server_context.get("user_role"),
+                caller_dept_id=draft.dept_id,
+            )
+            owners_ao = res_ao.get("owners", [])
+            if owners_ao:
+                matched = owners_ao[0]
+                draft.action_owner_id = matched.get("user_id")
+                draft.action_owner_name = matched.get("full_name") or extracted.action_owner_name
+                draft.action_owner_role = matched.get("role_name", "Action Owner")
+                draft.field_provenance["action_owner_name"] = "user_stated"
+                result.modified_fields.append("action_owner_name")
+            else:
+                draft.pending_action_owner = extracted.action_owner_name
+        except Exception as e:
+            logger.debug(f"Could not resolve action owner name: {e}")
+            draft.pending_action_owner = extracted.action_owner_name
 
     draft.updated_at = now_utc
     result.success = len(result.conflicts) == 0

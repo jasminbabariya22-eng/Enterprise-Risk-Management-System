@@ -146,7 +146,8 @@ class TestPhase4BVerificationAndHardening(unittest.TestCase):
     # Task 2: Prove Dynamic Decisions
     # =========================================================================
 
-    def test_dynamic_co_owner_in_initial_prompt_skips_co_owner_prompt(self):
+    @patch.object(erm_db, "get_all_users_for_co_owner", return_value=[{"user_id": 201, "full_name": "Alice Smith", "role_name": "Functional Head"}])
+    def test_dynamic_co_owner_in_initial_prompt_skips_co_owner_prompt(self, mock_users):
         """User supplies title and co-owner in initial prompt; agent does not ask for co-owner."""
         msg = "Create risk: Cryogenic Valve Sticking. Co-owner: Alice Smith."
         req = AgentRequest(message=msg, user_id="803", metadata=self.meta)

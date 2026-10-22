@@ -53,6 +53,7 @@ class RiskCreationSession:
     risk_co_owner_id: Optional[int] = None
     risk_co_owner_name: Optional[str] = None
     risk_co_owner_role: Optional[str] = None
+    pending_co_owner: Optional[str] = None
 
     # 3. Risk Description
     risk_description: Optional[str] = None
@@ -81,6 +82,7 @@ class RiskCreationSession:
     action_owner_id: Optional[int] = None
     action_owner_name: Optional[str] = None
     action_owner_role: Optional[str] = None
+    pending_action_owner: Optional[str] = None
 
     # 9. Target Date
     target_date: Optional[str] = None
@@ -211,8 +213,11 @@ class RiskCreationSession:
             "pending_confirmation": self.pending_confirmation,
             "financial_year": self.financial_year,
             "field_provenance": self.field_provenance,
+            "desc_options": self.desc_options,
             "mitigation_options": self.mitigation_options,
             "action_plan_options": self.action_plan_options,
+            "available_action_owners": self.available_action_owners,
+            "available_co_owners": self.available_co_owners,
             "duplicate_check_status": self.duplicate_check_status,
             "duplicate_candidates": self.duplicate_candidates,
             "duplicate_check_input_hash": self.duplicate_check_input_hash,
@@ -261,8 +266,11 @@ class RiskCreationSession:
             field_provenance=data.get("field_provenance", {}),
         )
         sess.pending_confirmation = data.get("pending_confirmation")
+        sess.desc_options = data.get("desc_options", [])
         sess.mitigation_options = data.get("mitigation_options", [])
         sess.action_plan_options = data.get("action_plan_options", [])
+        sess.available_action_owners = data.get("available_action_owners", [])
+        sess.available_co_owners = data.get("available_co_owners", [])
         sess.duplicate_check_status = data.get("duplicate_check_status", "not_checked")
         sess.duplicate_candidates = data.get("duplicate_candidates", [])
         sess.duplicate_check_input_hash = data.get("duplicate_check_input_hash")

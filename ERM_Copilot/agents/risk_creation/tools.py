@@ -105,30 +105,30 @@ def detect_field_edits(msg: str) -> Optional[Tuple[str, str]]:
         val = re.sub(r'^(?:change|update|set|edit|modify)\s*(?:the\s*)?(?:mitigation|treatment|control)\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
         return "mitigation", val
 
-    # Action Plan
-    if any(w in lower for w in ["action plan", "action", "plan"]):
-        val = re.sub(r'^(?:change|update|set|edit|modify)\s*(?:the\s*)?action\s*plan\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
-        return "action_plan", val
-
-    # Description
-    if any(w in lower for w in ["description", "risk description", "hazard description"]):
-        val = re.sub(r'^(?:change|update|set|edit|modify)\s*(?:the\s*)?(?:risk\s*)?description\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
-        return "risk_description", val
-
-    # Risk Name / Title
-    if any(w in lower for w in ["risk name", "risk title", "title", "name"]):
-        val = re.sub(r'^(?:change|update|set|edit|modify)\s*(?:the\s*)?(?:risk\s*)?(?:name|title)\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
-        return "risk_name", val
-
     # Co-Owner
     if any(w in lower for w in ["co-owner", "co owner", "co_owner"]):
-        val = re.sub(r'^(?:change|update|set|edit|modify)\s*(?:the\s*)?(?:risk\s*)?co[\s\-_]?owner\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
+        val = re.sub(r'^(?:change|update|set|edit|modify|reassign)\s*(?:the\s*)?(?:risk\s*)?co[\s\-_]?owner\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
         return "co_owner", val
 
     # Action Owner
     if any(w in lower for w in ["action owner", "action_owner"]):
-        val = re.sub(r'^(?:change|update|set|edit|modify)\s*(?:the\s*)?action\s*owner\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
+        val = re.sub(r'^(?:change|update|set|edit|modify|reassign)\s*(?:the\s*)?action\s*owner\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
         return "action_owner", val
+
+    # Action Plan
+    if any(w in lower for w in ["action plan", "action", "plan"]):
+        val = re.sub(r'^(?:change|update|set|edit|modify|reassign)\s*(?:the\s*)?action\s*plan\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
+        return "action_plan", val
+
+    # Description
+    if any(w in lower for w in ["description", "risk description", "hazard description"]):
+        val = re.sub(r'^(?:change|update|set|edit|modify|reassign)\s*(?:the\s*)?(?:risk\s*)?description\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
+        return "risk_description", val
+
+    # Risk Name / Title
+    if any(w in lower for w in ["risk name", "risk title", "title", "name"]):
+        val = re.sub(r'^(?:change|update|set|edit|modify|reassign)\s*(?:the\s*)?(?:risk\s*)?(?:name|title)\s*(?:to|is|=)?\s*', '', msg, flags=re.IGNORECASE).strip()
+        return "risk_name", val
 
     # Inherent Assessment
     if any(w in lower for w in ["inherent severity", "inherent score", "inherent rating", "inherent risk", "inherent likelihood"]):
