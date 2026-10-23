@@ -42,6 +42,15 @@ from ERM_Copilot.models.contracts import AgentRequest
 class TestRiskCreationAgent(unittest.TestCase):
     """Unit and integration tests for RiskCreationAgent."""
 
+    @classmethod
+    def setUpClass(cls):
+        from ERM_Copilot.services.db_service import erm_db
+        try:
+            conn = erm_db._get_connection()
+            conn.close()
+        except Exception as e:
+            raise unittest.SkipTest(f"Live PostgreSQL database not available: {e}")
+
     def setUp(self):
         self.agent = RiskCreationAgent()
         self.user_id = "12"

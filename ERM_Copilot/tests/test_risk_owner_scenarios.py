@@ -31,6 +31,14 @@ from ERM_Copilot.services.db_service import erm_db
 class TestRiskOwnerScenarios(unittest.TestCase):
     """Behavioral and security tests for a user logged in as 'Risk Owner'."""
 
+    @classmethod
+    def setUpClass(cls):
+        try:
+            conn = erm_db._get_connection()
+            conn.close()
+        except Exception as e:
+            raise unittest.SkipTest(f"Live PostgreSQL database not available: {e}")
+
     def setUp(self):
         self.agent = RiskCreationAgent()
         self.agent.sessions.clear()

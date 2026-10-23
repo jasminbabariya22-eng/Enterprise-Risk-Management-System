@@ -56,6 +56,14 @@ from ERM_Copilot.services.db_service import erm_db
 class TestTreatmentManagementAgent(unittest.TestCase):
     """Test suite for upgraded TreatmentManagementAgent."""
 
+    @classmethod
+    def setUpClass(cls):
+        try:
+            conn = erm_db._get_connection()
+            conn.close()
+        except Exception as e:
+            raise unittest.SkipTest(f"Live PostgreSQL database not available: {e}")
+
     def setUp(self):
         self.agent = TreatmentManagementAgent()
         for k in ["test_user_ao", "single_turn_user", "progress_updater", "reassigner_user", "canceller_user", "8"]:

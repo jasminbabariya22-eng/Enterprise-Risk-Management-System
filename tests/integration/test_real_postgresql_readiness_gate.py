@@ -42,8 +42,11 @@ def real_pg_db():
     db = ERMDatabaseService()
     db.dbname = "WFTest"
     # Ensure connectivity
-    conn = db._get_connection(readonly=False)
-    conn.close()
+    try:
+        conn = db._get_connection(readonly=False)
+        conn.close()
+    except Exception as e:
+        pytest.skip(f"Live PostgreSQL WFTest database not available: {e}")
     return db
 
 

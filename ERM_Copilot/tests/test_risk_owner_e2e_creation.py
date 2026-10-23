@@ -19,6 +19,14 @@ from ERM_Copilot.services.db_service import erm_db
 class TestRiskOwnerCopilotE2E(unittest.TestCase):
     """Test full multi-turn conversational risk creation scenario for Gas Processing Facilities."""
 
+    @classmethod
+    def setUpClass(cls):
+        try:
+            conn = erm_db._get_connection()
+            conn.close()
+        except Exception as e:
+            raise unittest.SkipTest(f"Live PostgreSQL database not available: {e}")
+
     def setUp(self):
         self.user_id = 8
         self.user_role = "Risk Owner"
