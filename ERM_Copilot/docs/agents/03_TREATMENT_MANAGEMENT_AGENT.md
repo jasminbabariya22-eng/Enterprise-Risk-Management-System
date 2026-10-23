@@ -45,13 +45,13 @@ When user supplies all parameters in one command:
 
 The Treatment Management Agent interacts with the database exclusively through the governed AI Harness:
 
-| Tool Name | Implementation Function | Category | Primary Inputs | Output Return |
+| Tool / Service API | Implementation Function | Category | Primary Service Arguments | Output Return |
 | :--- | :--- | :--- | :--- | :--- |
-| **`add_risk_treatment`** | [`db_service.add_risk_treatment`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L940) | STATE_CHANGING | `risk_id: str, action_plan: str, action_owner_id: int, target_date: str, progress: int, status: str` | `{"success": bool, "risk_treatment_id": int}` |
-| **`update_treatment_progress`** | [`db_service.update_treatment_progress`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L980) | STATE_CHANGING | `treatment_id: int, progress: int, status: Optional[str], remark: Optional[str]` | `{"success": bool, "treatment_id": int, "new_progress": int}` |
-| **`reassign_treatment_owner`** | [`db_service.reassign_treatment_owner`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L1060) | STATE_CHANGING | `treatment_id: int, new_owner_id: int, remark: Optional[str]` | `{"success": bool, "new_owner_name": str}` |
-| **`list_risk_treatments`** | [`db_service.get_risk_treatments`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L900) | READ_ONLY | `risk_id: str` | `List[Dict[str, Any]]` |
-| **`get_treatment_details`** | [`db_service.get_treatment_by_id`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L920) | READ_ONLY | `treatment_id: int` | `Dict[str, Any]` |
+| **`add_risk_treatment`** | [`db_service.add_risk_treatment`](../services/db_service.py) | STATE_CHANGING | `risk_register_id: int, action_plan: str, action_owner_id: int, target_date: Optional[str] = None, progress: int = 0, action_status_id: int = 1, created_by: int = 1` | `{"status": "success", "risk_treatment_id": int, "risk_register_id": int, ...}` |
+| **`update_treatment_progress`** | [`db_service.update_treatment_progress`](../services/db_service.py) | STATE_CHANGING | `treatment_id: int, progress: int, modified_by: int = 1, remarks: Optional[str] = None` | `{"status": "success", "risk_treatment_id": int, "progress": str, "status_label": str, ...}` |
+| **`reassign_treatment_owner`** | [`db_service.reassign_treatment_owner`](../services/db_service.py) | STATE_CHANGING | `treatment_id: int, new_action_owner_id: int, modified_by: int = 1` | `{"status": "success", "risk_treatment_id": int, "action_owner_id": int, "action_owner_name": str, ...}` |
+| **`list_risk_treatments`** | [`db_service.get_treatments_for_risk`](../services/db_service.py) | READ_ONLY | `risk_ident: Union[int, str], dept_id: Optional[int] = None` | `List[Dict[str, Any]]` |
+| **`get_treatment_details`** | [`db_service.get_treatment_by_id`](../services/db_service.py) | READ_ONLY | `treatment_id: int` | `Optional[Dict[str, Any]]` |
 
 ---
 

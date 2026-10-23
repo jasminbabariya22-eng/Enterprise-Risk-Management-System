@@ -51,16 +51,14 @@ export class CopilotWidgetPage {
   }
 
   async getLastMessageText(): Promise<string> {
-    const messages = this.page.locator('.chat-msg.bot .bot-content-area');
-    const count = await messages.count();
-    if (count > 0) {
-      return (await messages.nth(count - 1).textContent()) || '';
+    const botMessages = this.page.locator('.chat-msg.bot');
+    const count = await botMessages.count();
+    if (count === 0) return '';
+    const lastBot = botMessages.nth(count - 1);
+    const contentArea = lastBot.locator('.bot-content-area');
+    if ((await contentArea.count()) > 0) {
+      return (await contentArea.first().textContent()) || '';
     }
-    const fallbacks = this.page.locator('.chat-msg.bot');
-    const fCount = await fallbacks.count();
-    if (fCount > 0) {
-      return (await fallbacks.nth(fCount - 1).textContent()) || '';
-    }
-    return '';
+    return (await lastBot.textContent()) || '';
   }
 }

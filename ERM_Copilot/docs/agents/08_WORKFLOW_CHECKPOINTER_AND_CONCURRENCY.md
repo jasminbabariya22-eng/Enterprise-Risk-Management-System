@@ -16,37 +16,44 @@
 ```sql
 CREATE TABLE IF NOT EXISTS ers.agent_workflow_checkpoints (
     workflow_id VARCHAR(64) PRIMARY KEY,
+    conversation_id VARCHAR(64) NOT NULL,
     session_id VARCHAR(128) NOT NULL,
-    user_id VARCHAR(64) NOT NULL,
+    owner_user_id VARCHAR(64) NOT NULL,
+    owner_role VARCHAR(64) NOT NULL,
+    dept_id INT,
     workflow_type VARCHAR(64) NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    workflow_status VARCHAR(64) NOT NULL,
+    current_agent VARCHAR(64) NOT NULL,
     current_step VARCHAR(64) NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    collected_fields JSONB NOT NULL DEFAULT '{}'::jsonb,
-    validation_errors JSONB NOT NULL DEFAULT '[]'::jsonb,
-    history JSONB NOT NULL DEFAULT '[]'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    state_version INT NOT NULL DEFAULT 1,
+    state_payload TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
--- Fast lookup by session and status
-CREATE INDEX IF NOT EXISTS idx_workflow_checkpoints_session_status
-ON ers.agent_workflow_checkpoints(session_id, status);
-
--- Fast lookup by user and status
-CREATE INDEX IF NOT EXISTS idx_workflow_checkpoints_user_status
-ON ers.agent_workflow_checkpoints(user_id, status);
+-- Fast lookup indexes
+CREATE INDEX IF NOT EXISTS idx_workflow_session ON ers.agent_workflow_checkpoints (session_id, workflow_status);
+CREATE INDEX IF NOT EXISTS idx_workflow_owner ON ers.agent_workflow_checkpoints (owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_workflow_expires ON ers.agent_workflow_checkpoints (expires_at);
 ```
 
 ### Table Column Details:
 - **`workflow_id` (PK):** Unique identifier (e.g., `wf-10a2b3c4d5`).
+- **`conversation_id`:** Conversation identifier linking multi-turn message turns (e.g., `conv_abc123`).
 - **`session_id`:** Client session identifier (e.g., `sess_web_7_abc123`).
-- **`user_id`:** Authenticated user ID (e.g., `7`).
-- **`workflow_type`:** Enum string: `RISK_CREATION`, `TREATMENT_MANAGEMENT`, `APPROVAL_GOVERNANCE`.
-- **`status`:** Lifecycle status: `INITIATION`, `IN_PROGRESS`, `PAUSED`, `AWAITING_INPUT`, `COMPLETED`, `CANCELLED`, `FAILED`.
-- **`version`:** Integer counter incremented on every save to enforce **Optimistic Concurrency Control**.
-- **`collected_fields`:** JSONB dictionary holding all intermediate collected form fields.
-- **`history`:** JSONB array logging timestamped state transitions and reasons.
+- **`owner_user_id`:** Authenticated user ID owning the workflow (e.g., `7`).
+- **`owner_role`:** Authenticated role of the workflow owner (e.g., `risk_owner`).
+- **`dept_id`:** Department ID associated with the workflow.
+- **`workflow_type`:** Enum string: `RISK_CREATION`, `TREATMENT`, `APPROVAL`, `LEGACY_APPROVAL`.
+- **`workflow_status`:** Lifecycle status: `INITIATION`, `IN_PROGRESS`, `PAUSED`, `AWAITING_INPUT`, `COMPLETED`, `CANCELLED`, `EXPIRED`, `FAILED`.
+- **`current_agent`:** Active subagent identifier (e.g., `agent_risk_creation`).
+- **`current_step`:** Current step within the active agent workflow.
+- **`state_version`:** Integer counter incremented on every save to enforce **Optimistic Concurrency Control**.
+- **`state_payload`:** Serialized JSON text containing full session dictionary, collected fields, draft payload, and history.
+- **`created_at`:** Checkpoint creation timestamp.
+- **`updated_at`:** Last update timestamp.
+- **`expires_at`:** Expiration timestamp enforcing TTL (15 minutes).
 
 ---
 

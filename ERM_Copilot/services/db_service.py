@@ -1105,15 +1105,39 @@ class ERMDatabaseService:
                 UPDATE {DB_SCHEMA}.risk_treatment
                 SET progress = %s, action_status_id = %s, modified_by = %s, modified_on = %s
                 WHERE risk_treatment_id = %s AND is_deleted = 0
-                RETURNING risk_treatment_id, risk_register_id, risk_id, action_plan, action_owner_id, target_date, progress, action_status_id;
+                RETURNING risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan, action_owner_id, target_date, progress, action_status_id, next_followup_date, created_by, created_on;
             """, (str(progress), new_status_id, modified_by, now_str, treatment_id))
 
             updated = cur.fetchone()
+            if not updated:
+                cur.close()
+                conn.close()
+                return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
+
+            # Record audit history in risk_treatment_hist
+            try:
+                cur.execute(f"""
+                    INSERT INTO {DB_SCHEMA}.risk_treatment_hist (
+                        risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan,
+                        action_owner_id, target_date, progress, action_status_id, next_followup_date,
+                        created_by, created_on, modified_by, modified_on, is_deleted
+                    ) VALUES (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s
+                    );
+                """, (
+                    updated["risk_treatment_id"], updated["risk_description_id"], updated["risk_register_id"],
+                    updated["risk_id"], updated["action_plan"], updated["action_owner_id"],
+                    updated["target_date"], updated["progress"], updated["action_status_id"],
+                    updated.get("next_followup_date"), updated["created_by"] or modified_by,
+                    updated["created_on"] or now_str, modified_by, now_str, 0
+                ))
+            except Exception as h_err:
+                logger.warning(f"Could not record treatment history on progress update: {h_err}")
+
             cur.close()
             conn.close()
-
-            if not updated:
-                return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
 
             return {
                 "status": "success",
@@ -1145,7 +1169,7 @@ class ERMDatabaseService:
                 UPDATE {DB_SCHEMA}.risk_treatment
                 SET action_owner_id = %s, modified_by = %s, modified_on = %s
                 WHERE risk_treatment_id = %s AND is_deleted = 0
-                RETURNING risk_treatment_id, risk_register_id, risk_id, action_plan, action_owner_id;
+                RETURNING risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan, action_owner_id, target_date, progress, action_status_id, next_followup_date, created_by, created_on;
             """, (new_action_owner_id, modified_by, now_str, treatment_id))
 
             updated = cur.fetchone()
@@ -1153,6 +1177,28 @@ class ERMDatabaseService:
                 cur.close()
                 conn.close()
                 return {"status": "error", "message": f"Treatment #{treatment_id} not found."}
+
+            # Record audit history in risk_treatment_hist
+            try:
+                cur.execute(f"""
+                    INSERT INTO {DB_SCHEMA}.risk_treatment_hist (
+                        risk_treatment_id, risk_description_id, risk_register_id, risk_id, action_plan,
+                        action_owner_id, target_date, progress, action_status_id, next_followup_date,
+                        created_by, created_on, modified_by, modified_on, is_deleted
+                    ) VALUES (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s
+                    );
+                """, (
+                    updated["risk_treatment_id"], updated["risk_description_id"], updated["risk_register_id"],
+                    updated["risk_id"], updated["action_plan"], updated["action_owner_id"],
+                    updated["target_date"], updated["progress"], updated["action_status_id"],
+                    updated.get("next_followup_date"), updated["created_by"] or modified_by,
+                    updated["created_on"] or now_str, modified_by, now_str, 0
+                ))
+            except Exception as h_err:
+                logger.warning(f"Could not record treatment history on reassign: {h_err}")
 
             cur.execute(f"SELECT COALESCE(first_name || ' ' || last_name, log_id) AS full_name FROM {DB_SCHEMA}.mst_users WHERE id = %s;", (new_action_owner_id,))
             ao_row = cur.fetchone()
@@ -1563,7 +1609,7 @@ class ERMDatabaseService:
                     new_rm_by = approver_id
                     new_rm_on = now_dt
                     new_rm_remark = remark_str
-                    new_risk_status = status_map.get("opened", 4)
+                    new_risk_status = status_map.get("rm approved", 4)
                     stage_name = "Stage 2: Risk Manager Validation"
                     next_queue = "Stage 3: Risk Head Final Approval Queue"
                 else: # approval_level == 3
@@ -2008,7 +2054,7 @@ class ERMDatabaseService:
                 item = {"risk_id": r["risk_id"], "risk_name": r["risk_name"], "department": r["department"], "score": score, "coords": f"{l}x{i}"}
                 grid[f"{l}x{i}"].append(item)
 
-                if score >= 16:
+                if score >= 15:
                     critical_list.append(item)
                 elif score >= 10:
                     high_list.append(item)

@@ -106,30 +106,43 @@ Captures specific action plans, milestones, and designated Action Owners:
 
 ### 3.4. `ers.agent_workflow_checkpoints` (Authoritative Agent Checkpoint Store)
 Stores persistent conversational state, form drafts, and optimistic concurrency versioning for multi-turn AI workflows:
-- `workflow_id`: Primary key UUID string.
-- `session_id`: Client session identifier.
-- `user_id`: Authenticated user ID.
-- `workflow_type`: Target domain (`RISK_CREATION`, `TREATMENT_MANAGEMENT`, `APPROVAL_GOVERNANCE`).
-- `status`: Workflow lifecycle status (`INITIATION`, `IN_PROGRESS`, `PAUSED`, `AWAITING_INPUT`, `COMPLETED`, `CANCELLED`, `FAILED`).
-- `version`: Monotonically increasing integer supporting Optimistic Concurrency Control.
-- `collected_fields`: JSONB object storing all intermediate form answers.
-- `history`: JSONB array logging state transitions, timestamps, and suspension reasons.
+- `workflow_id`: Primary key UUID string (VARCHAR 64).
+- `conversation_id`: Conversation identifier linking multi-turn message turns (VARCHAR 64).
+- `session_id`: Client session identifier (VARCHAR 128).
+- `owner_user_id`: Authenticated user ID owning the workflow (VARCHAR 64).
+- `owner_role`: Authenticated role of the workflow owner (VARCHAR 64).
+- `dept_id`: Department identifier associated with the workflow (INT).
+- `workflow_type`: Target domain enum (`RISK_CREATION`, `TREATMENT`, `APPROVAL`, `LEGACY_APPROVAL`).
+- `workflow_status`: Lifecycle status (`INITIATION`, `IN_PROGRESS`, `PAUSED`, `AWAITING_INPUT`, `COMPLETED`, `CANCELLED`, `EXPIRED`, `FAILED`).
+- `current_agent`: Active subagent identifier (VARCHAR 64).
+- `current_step`: Current step / phase identifier within the agent state machine (VARCHAR 64).
+- `state_version`: Monotonically increasing integer supporting Optimistic Concurrency Control (INT NOT NULL DEFAULT 1).
+- `state_payload`: Full serialized JSON text storing state variables, collected fields, draft payload, and history (TEXT NOT NULL).
+- `created_at`: Checkpoint initialization timestamp (TIMESTAMP WITH TIME ZONE).
+- `updated_at`: Last state modification timestamp (TIMESTAMP WITH TIME ZONE).
+- `expires_at`: Absolute expiration timestamp enforcing session TTL (TIMESTAMP WITH TIME ZONE).
 
 ```sql
 CREATE TABLE IF NOT EXISTS ers.agent_workflow_checkpoints (
     workflow_id VARCHAR(64) PRIMARY KEY,
+    conversation_id VARCHAR(64) NOT NULL,
     session_id VARCHAR(128) NOT NULL,
-    user_id VARCHAR(64) NOT NULL,
+    owner_user_id VARCHAR(64) NOT NULL,
+    owner_role VARCHAR(64) NOT NULL,
+    dept_id INT,
     workflow_type VARCHAR(64) NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    workflow_status VARCHAR(64) NOT NULL,
+    current_agent VARCHAR(64) NOT NULL,
     current_step VARCHAR(64) NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    collected_fields JSONB NOT NULL DEFAULT '{}'::jsonb,
-    validation_errors JSONB NOT NULL DEFAULT '[]'::jsonb,
-    history JSONB NOT NULL DEFAULT '[]'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    state_version INT NOT NULL DEFAULT 1,
+    state_payload TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_workflow_session ON ers.agent_workflow_checkpoints (session_id, workflow_status);
+CREATE INDEX IF NOT EXISTS idx_workflow_owner ON ers.agent_workflow_checkpoints (owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_workflow_expires ON ers.agent_workflow_checkpoints (expires_at);
 ```
 
 ---

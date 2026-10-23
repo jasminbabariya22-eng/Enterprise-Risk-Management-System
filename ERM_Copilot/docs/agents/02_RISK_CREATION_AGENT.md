@@ -57,7 +57,7 @@ stateDiagram-v2
 | **11**| `STEP_11_ACTION_OWNER` | Accountable personnel | User dropdown for department | Verifies user exists in `ers.mst_users` |
 | **12**| `STEP_12_TARGET_DATE` | Target completion timeline | Quick chips (`+30 Days`, `+60 Days`, `+90 Days`) | [`parse_target_date`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/parsers.py#L45) rejects past dates; formats ISO `YYYY-MM-DD` |
 | **13**| `STEP_13_CONFIRMATION_PREVIEW`| Two-phase human review | Full markdown summary table | Generates HMAC-SHA256 signature; enables inline field edits |
-| **14**| `STEP_14_PERSISTENCE` | Authoritative DB commit | Final confirmation card with risk ID | Executes `create_risk` tool; invalidates cache |
+| **14**| `STEP_14_PERSISTENCE` | Authoritative DB commit | Final confirmation card with risk ID | Executes `create_risk` tool entering the review workflow (`status: 2` - Submitted to Functional Head); clears draft checkpoint and invalidates cache |
 
 ---
 

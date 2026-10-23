@@ -67,6 +67,13 @@ test.describe('E2E: Final Gate - Orchestrator & Cross-Agent Integration Suite', 
     await copilot.waitForAssistantResponse();
     const generalReply = await copilot.getLastMessageText();
     expect(generalReply.toLowerCase()).toMatch(/distribution|matrix|risk|level|low|medium|high/);
+    expect(generalReply).toMatch(/Draft Saved|active.*session in progress/i);
+
+    // Continue the risk workflow and verify the pending draft survived
+    await copilot.sendMessage('Operations and Maintenance');
+    await copilot.waitForAssistantResponse();
+    const continuedReply = await copilot.getLastMessageText();
+    expect(continuedReply.toLowerCase()).toMatch(/risk|hazard|description|likelihood|impact|mitigation|department/);
 
     // Cancel to clean up session
     await copilot.sendMessage('cancel');

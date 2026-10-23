@@ -301,7 +301,13 @@ class ERMCopilotAgent(BaseAgent):
                 return resp
 
             # Check for read-only interruption during active workflow
-            if self._is_read_only_query(lower_msg, msg):
+            is_ro_query = self._is_read_only_query(lower_msg, msg)
+            if is_ro_query and active_wf_type == "RISK_CREATION":
+                # Do not treat wizard rating answers as standalone read-only queries
+                if any(w in lower_msg for w in ["likelihood", "impact", "score", "option"]):
+                    is_ro_query = False
+
+            if is_ro_query:
                 dir_resp = self._handle_direct_queries(
                     request, msg, lower_msg, user_role, dept_name,
                     filter_dept_id, filter_dept_name, is_enterprise_role, user_id

@@ -577,6 +577,12 @@ def test_authoritative_treatment_management_service_paths(real_pg_db):
     cur = conn.cursor()
     cur.execute("SELECT progress FROM ers.risk_treatment WHERE risk_treatment_id = %s", (treatment_id,))
     assert int(float(cur.fetchone()[0])) == 75
+
+    # Verify risk_treatment_hist persisted for progress update
+    cur.execute("SELECT progress FROM ers.risk_treatment_hist WHERE risk_treatment_id = %s ORDER BY modified_on DESC LIMIT 1", (treatment_id,))
+    hist_prog = cur.fetchone()
+    assert hist_prog is not None
+    assert int(float(hist_prog[0])) == 75
     conn.close()
 
     # 3. Reassign Treatment Owner (reassign_treatment_owner)
@@ -591,4 +597,10 @@ def test_authoritative_treatment_management_service_paths(real_pg_db):
     cur = conn.cursor()
     cur.execute("SELECT action_owner_id FROM ers.risk_treatment WHERE risk_treatment_id = %s", (treatment_id,))
     assert cur.fetchone()[0] == 5
+
+    # Verify risk_treatment_hist persisted for owner reassignment
+    cur.execute("SELECT action_owner_id FROM ers.risk_treatment_hist WHERE risk_treatment_id = %s ORDER BY modified_on DESC LIMIT 1", (treatment_id,))
+    hist_ao = cur.fetchone()
+    assert hist_ao is not None
+    assert hist_ao[0] == 5
     conn.close()
