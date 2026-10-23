@@ -15,6 +15,12 @@ from ERM_Copilot.workflow.contracts import WorkflowType, WorkflowStatus
 
 @pytest.fixture(autouse=True)
 def cleanup_workflows():
+    from ERM_Copilot.services.db_service import erm_db
+    try:
+        conn = erm_db._get_connection()
+        conn.close()
+    except Exception as e:
+        pytest.skip(f"Live PostgreSQL database not available: {e}")
     workflow_checkpointer.cleanup_expired()
     yield
 

@@ -27,6 +27,12 @@ def in_memory_checkpointer():
 
 @pytest.fixture
 def pg_checkpointer():
+    from ERM_Copilot.services.db_service import erm_db
+    try:
+        conn = erm_db._get_connection()
+        conn.close()
+    except Exception as e:
+        pytest.skip(f"Live PostgreSQL database not available: {e}")
     cp = PostgreSQLWorkflowCheckpointer(fallback_in_memory=True)
     cp.ensure_schema()
     return cp
