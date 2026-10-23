@@ -71,7 +71,7 @@ class RiskMatrixCalculator:
             return False, f"{field_name} must be a valid integer between 1 and 5 (got {rating})."
 
     @classmethod
-    def calculate_score(cls, likelihood: int, impact: int, strict: bool = True) -> Tuple[int, str, str]:
+    def calculate_score(cls, likelihood: int, impact: int, strict: bool = False) -> Tuple[int, str, str]:
         """
         Calculate Risk Score and Severity Level according to ERM 5x5 Matrix standards.
         Returns: (score, level_name, severity_badge)

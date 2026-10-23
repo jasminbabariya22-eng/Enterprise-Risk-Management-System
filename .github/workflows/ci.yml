@@ -16,6 +16,14 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
+    env:
+      DATABASE_URL: "postgresql+psycopg2://postgres:postgres@localhost:5432/MassERS"
+      SECRET_KEY: "default_secret_key_for_testing_purposes_only_32_bytes_long!"
+      ALGORITHM: "HS256"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
+      DB_SCHEMA: "ers"
+      FERNET_KEY: "cw0Hk-N0_xLdG8Z2vQ8Y9P-7L0xR4q1W8k6T5m2P4rA="
+      MAIN_URL: "http://localhost:8088"
 
     steps:
       - name: Checkout Codebase
