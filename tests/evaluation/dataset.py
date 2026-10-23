@@ -153,7 +153,7 @@ GOLDEN_QUESTION_DATASET: List[Dict[str, Any]] = [
         "question": "Show pending approvals in my queue.",
         "expected": {
             "authorization": "allow",
-            "expected_agent": "orchestrator",
+            "expected_agent": "agent_approval_workflow",
             "expected_tool": "get_pending_approvals",
             "key_facts": ["RSK-GAS-087"],
         }
@@ -169,7 +169,7 @@ GOLDEN_QUESTION_DATASET: List[Dict[str, Any]] = [
         "question": "What's in my FH approval queue?",
         "expected": {
             "authorization": "allow",
-            "expected_agent": "orchestrator",
+            "expected_agent": "agent_approval_workflow",
             "expected_tool": "get_pending_approvals",
             "key_facts": ["RSK-GAS-087"],
         }

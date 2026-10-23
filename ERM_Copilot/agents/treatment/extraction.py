@@ -230,6 +230,21 @@ def extract_treatment_inputs(text: str, current_goal: Optional[TreatmentGoal] = 
             if len(candidate) >= 5 and not re.match(r'^(?:to\s+risk|for\s+risk|risk)\b', candidate, re.IGNORECASE):
                 action_plan_text = candidate
 
+    # Conversational direct plan input when already in ADD_TREATMENT flow
+    if not action_plan_text and goal == TreatmentGoal.ADD_TREATMENT:
+        if (
+            len(cleaned) >= 5
+            and not is_add_treatment_trigger(cleaned)
+            and not confirming
+            and not cancelling
+            and not extracted_risk_id
+            and not action_owner_name
+            and not action_owner_id
+            and extracted_progress is None
+            and not extracted_date
+        ):
+            action_plan_text = cleaned
+
 
     # 6. Extract Remarks / Reasons
     extracted_remark: Optional[str] = None

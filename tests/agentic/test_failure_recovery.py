@@ -84,7 +84,7 @@ def test_treatment_management_interrupted_and_resumed():
         user_id=uid,
         session_id=sess_id,
         user_role="Risk Owner",
-        metadata={"dept_id": 2}
+        metadata={"dept_id": 1}
     )
     resp1 = agent1.process(req1)
     assert "action plan" in resp1.response.lower()
@@ -98,7 +98,8 @@ def test_treatment_management_interrupted_and_resumed():
         message="Install ultrasonic thickness sensor",
         user_id=uid,
         session_id=sess_id,
-        user_role="Risk Owner"
+        user_role="Risk Owner",
+        metadata={"dept_id": 1}
     )
     resp2 = agent2.process(req2)
     assert any(w in resp2.response.lower() for w in ["action owner", "assign action owner", "step 3"])

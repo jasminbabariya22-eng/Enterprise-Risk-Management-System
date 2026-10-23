@@ -455,7 +455,7 @@ class ERMResponseFormatter:
         btn_str = " ".join([f"[btn:{s}|{s}]" for s in suggestions]) if suggestions else "[btn:Show all active risks|Show all risks in the register]"
         return (
             f"### ℹ️ No Matching Risk Records Found\n\n"
-            f"No active risk items matched **\"{query.strip()}\"** within `{scope}`.\n\n"
+            f"No risk items matched **\"{query.strip()}\"** within `{scope}`.\n\n"
             f"👉 **Try one of the following actions:**\n\n"
             f"{btn_str}"
         )

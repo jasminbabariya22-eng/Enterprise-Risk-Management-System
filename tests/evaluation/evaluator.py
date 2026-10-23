@@ -2,6 +2,7 @@
 Evaluation Engine: Deterministic Assertions and Grounding Verification.
 Evaluates agent execution output against ground-truth facts, RBAC policies, and safety invariants.
 """
+import re
 from typing import Dict, Any, List, Optional
 from tests.evaluation.classifier import FailureCategory, EvaluationFailure
 
@@ -53,6 +54,7 @@ class BehavioralEvaluator:
             "erm_copilot_agent": "erm_copilot_agent",
             "approval_workflow": "agent_approval_langgraph_v1",
             "approval_agent": "agent_approval_langgraph_v1",
+            "agent_approval_workflow": "agent_approval_langgraph_v1",
             "agent_approval_langgraph_v1": "agent_approval_langgraph_v1",
             "risk_creation": "risk_creation_agent",
             "risk_creation_agent": "risk_creation_agent",
@@ -103,8 +105,10 @@ class BehavioralEvaluator:
     ) -> bool:
         """Verify that agent explicitly reports entity not found and invents nothing."""
         output_text = str(actual_result.get("response_text", "") or actual_result.get("result", ""))
+        # Strip UI action chips ([btn:...]) to avoid false-positive attribute matching on navigation buttons
+        cleaned_text = re.sub(r'\[btn:[^\]]+\]', '', output_text)
         for forbidden in must_not_invent:
-            if forbidden.lower() in output_text.lower():
+            if forbidden.lower() in cleaned_text.lower():
                 raise EvaluationFailure(
                     FailureCategory.HALLUCINATION,
                     f"Hallucination detected! Agent invented forbidden attribute '{forbidden}' for probe '{probe_entity}'."
