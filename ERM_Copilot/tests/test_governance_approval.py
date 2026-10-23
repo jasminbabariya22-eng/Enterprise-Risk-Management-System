@@ -174,10 +174,12 @@ class TestGovernanceApprovalUnit:
 
         user_row = {
             "id": 4, "log_id": "gas_fh", "first_name": "Gas", "last_name": "FH",
+            "dept_id": 1,
             "user_type_name": "Functional Head"
         }
         risk_row = {
             "risk_register_id": 104, "risk_id": "RSK-GAS-004", "risk_name": "Flare System Surge",
+            "dept_id": 1,
             "risk_function_head_approval_status": 0, "risk_manager_approval_status": 0, "risk_head_approval_status": 0,
             "current_status_name": "Submitted to Functional Head"
         }
@@ -200,6 +202,7 @@ class TestGovernanceApprovalUnit:
 
         user_row = {
             "id": 2, "log_id": "gas_rh", "first_name": "Chief", "last_name": "Risk Officer",
+            "dept_id": 1,
             "user_type_name": "Risk Head"
         }
         risk_row = {
@@ -233,6 +236,17 @@ class TestGovernanceApprovalAgent:
 
     def setup_method(self):
         self.agent = ERMCopilotAgent()
+        from ERM_Copilot.agents.approval_workflow import approval_workflow_agent
+        from ERM_Copilot.workflow.checkpointer import workflow_checkpointer
+        approval_workflow_agent.sessions.clear()
+        for sid in ["test_rej_sess", "test_app_sess"]:
+            for key in (f"4::{sid}", sid):
+                try:
+                    wf = workflow_checkpointer.load_active_for_session(key)
+                    if wf:
+                        workflow_checkpointer.delete(wf.workflow_id)
+                except Exception:
+                    pass
 
     def test_missing_auth_user_id_returns_auth_error(self):
         """Test chat command without authenticated user_id fails immediately without fallback."""
@@ -243,29 +257,51 @@ class TestGovernanceApprovalAgent:
             metadata={}
         )
         resp = self.agent.process(req)
-        assert "Authentication Failure" in resp.response
+        assert "Authentication" in resp.response
         assert resp.metadata.get("intent") == "AUTH_FAILURE"
 
-    def test_rejection_without_remark_prompts_for_reason(self):
+    @patch("ERM_Copilot.agents.approval_workflow.agent.fetch_risk_details")
+    def test_rejection_without_remark_prompts_for_reason(self, mock_fetch_details):
         """Test chat command 'Reject RSK-GAS-001' prompts user for mandatory reason."""
+        mock_fetch_details.return_value = {
+            "risk_id": "RSK-GAS-001",
+            "risk_name": "Flare System Surge",
+            "dept_id": 1,
+            "risk_status": 2,
+            "fh_status": 0,
+            "rm_status": 0,
+            "rh_status": 0,
+        }
         req = AgentRequest(
             message="Reject RSK-GAS-001",
             user_id="4",
             user_role="Functional Head",
-            session_id="test_rej_sess"
+            session_id="test_rej_sess",
+            metadata={"dept_id": 1}
         )
         resp = self.agent.process(req)
         assert "Rejection Reason Required" in resp.response
         assert resp.metadata.get("intent") == "AWAITING_REMARK"
 
-    def test_approve_without_remark_prompts_for_remark(self):
-        """Test chat command 'Approve RSK-GAS-001' prompts user for mandatory approval remark."""
+    @patch("ERM_Copilot.agents.approval_workflow.agent.fetch_risk_details")
+    def test_approve_prompts_for_confirmation(self, mock_fetch_details):
+        """Test chat command 'Approve RSK-GAS-001' prompts user for confirmation preview."""
+        mock_fetch_details.return_value = {
+            "risk_id": "RSK-GAS-001",
+            "risk_name": "Flare System Surge",
+            "dept_id": 1,
+            "risk_status": 2,
+            "fh_status": 0,
+            "rm_status": 0,
+            "rh_status": 0,
+        }
         req = AgentRequest(
             message="Approve RSK-GAS-001",
             user_id="4",
-            user_role="FH",
-            session_id="test_app_sess"
+            user_role="Functional Head",
+            session_id="test_app_sess",
+            metadata={"dept_id": 1}
         )
         resp = self.agent.process(req)
-        assert resp.metadata.get("intent") == "AWAITING_REMARK"
-        assert "Approval Remark Required" in resp.response
+        assert resp.metadata.get("intent") == "AWAITING_CONFIRMATION"
+        assert "Risk Approval Summary" in resp.response

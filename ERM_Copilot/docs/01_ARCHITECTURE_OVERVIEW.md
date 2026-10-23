@@ -1,113 +1,129 @@
-# 🏛️ ERM Copilot – Architecture Overview
-
-## 1. Executive Summary
-
-**ERM Copilot** is a high-performance, decoupled Artificial Intelligence agent designed specifically for Enterprise Risk Management (ERM). Operating within mission-critical industrial environments (refineries, petrochemicals, gas processing, and corporate operations), the Copilot provides interactive risk assessment, conversational risk creation, approval automation, audit trail reconstruction, and real-time risk heatmaps.
+# 🏛️ ERM Copilot – System Architecture & Multi-Agent Ecosystem
 
 ---
 
-## 2. High-Level System Architecture
+## 📌 1. Executive Summary
+
+**ERM Copilot** is an enterprise-grade, multi-agent AI copilot system designed specifically for Enterprise Risk Management (ERM). Operating within mission-critical industrial environments (petrochemicals, gas processing, power, refineries, and corporate governance), the Copilot coordinates specialized subagents to provide conversational risk creation, goal-driven 3-tier approvals, dynamic treatment lifecycle tracking, real-time heatmaps, audio transcription, and immutable audit trails.
+
+The architecture follows a governed multi-agent model orchestrated by a central master agent, backed by a persistent PostgreSQL checkpoint store with optimistic concurrency, and governed by an enterprise AI harness with strict RBAC tool policies and cryptographic HMAC confirmation tokens.
+
+---
+
+## 🏛️ 2. High-Level Multi-Agent Architecture
 
 ```mermaid
 flowchart TB
     subgraph UI_Layer ["Frontend / User Experience (Port 8088)"]
         UI_Web["ERM Web Portal (HTML5 / Bootstrap 5 / AdminLTE)"]
         UI_Widget["Floating ERM Copilot Drawer Modal"]
-        UI_Buttons["Interactive Action Tokens & Buttons"]
+        UI_Audio["Live Voice Recorder & Wave Visualizer"]
+        UI_Buttons["Interactive Action Tokens [btn-confirm, btn-cancel]"]
     end
 
-    subgraph API_Layer ["API & Routing (FastAPI Port 8001 / Flask Port 8088)"]
-        Web_Router["/api/erm/chat Controller"]
+    subgraph API_Layer ["API & Ingress Layer (FastAPI Port 8001 / Flask Port 8088)"]
+        Chat_Endpoint["/api/erm/chat Controller"]
+        STT_Endpoint["/api/erm/speech-to-text Controller"]
         FastAPI_Core["ESM FastAPI Core Services"]
     end
 
-    subgraph Agent_Layer ["ERM Copilot Intelligence Engine"]
-        BaseAgent["BaseAgent Interface"]
-        ERMCopilotAgent["ERMCopilotAgent (State Machine & Intent Router)"]
-        RiskWizard["ConversationalRiskWizard (5-Step State Machine)"]
-        OutputFormatter["Structured Markdown & Table Formatter"]
+    subgraph Master_Orchestration ["Master Orchestration Layer"]
+        MasterOrch["ERM Orchestrator Agent\n(agent_orchestrator)"]
+        WorkflowResolver["Workflow Lifecycle Resolver\n(resolve_active_workflow)"]
+        IntentRouter["Multi-Intent Router & Keyword Guard"]
     end
 
-    subgraph Gateway_Layer ["Multi-Provider LLM Gateway"]
-        LLM_Router["SmartLLMGatewayClient (Resilient Router)"]
-        Portkey_GW["Portkey / Mesh Gateway"]
-        Groq_LLM["Groq LLaMA 3.3 (70B Versatile)"]
-        Gemini_LLM["Google Gemini 2.5 Flash"]
+    subgraph Specialized_Agents ["Specialized Domain Subagents"]
+        RiskAgent["Risk Creation Wizard Agent\n(agent_risk_creation)\n14-Step Conversational State Machine"]
+        ApprovalAgent["Governance Approval Workflow Agent\n(agent_approval_workflow)\nGoal-Driven 3-Tier Policy Planner"]
+        TreatmentAgent["Treatment Management Agent\n(agent_treatment)\nMitigation & Reassignment Engine"]
+        STTAgent["Speech-to-Text Transcriber\n(QwenSpeechToTextService)"]
+        FormatterAgent["Centralized Response Formatter\n(ERMResponseFormatter)"]
     end
 
-    subgraph Data_Layer ["Persistence & Governance Layer (Port 5433)"]
-        DB_Service["ERMDatabaseService (Direct psycopg2 Connection)"]
-        API_Client["ESMAPIClient (REST Client)"]
-        PG_DB[("PostgreSQL: MassERS (Schema: ers)")]
+    subgraph Governance_Harness ["Governed AI Harness & Tool Registry"]
+        AI_Harness["ERMAIHarness & ExecutionCoordinator"]
+        ToolRegistry["ToolRegistry (20+ Tools with RBAC & Schema)"]
+        HMAC_Sec["Cryptographic HMAC-SHA256 Two-Phase Confirmation"]
     end
 
-    UI_Widget -->|POST /api/erm/chat| Web_Router
-    Web_Router -->|AgentRequest| ERMCopilotAgent
-    ERMCopilotAgent -->|State Check| RiskWizard
-    ERMCopilotAgent -->|Direct Query / Update| DB_Service
-    ERMCopilotAgent -->|REST Sync| API_Client
-    ERMCopilotAgent -->|Reasoning & Mitigation Prompts| LLM_Router
-    LLM_Router --> Portkey_GW
-    Portkey_GW -.->|Fallback| Groq_LLM
-    Groq_LLM -.->|Fallback| Gemini_LLM
-    DB_Service -->|Parameterized SQL| PG_DB
-    API_Client -->|REST Calls| FastAPI_Core
-    FastAPI_Core --> PG_DB
-    ERMCopilotAgent --> OutputFormatter
-    OutputFormatter -->|AgentResponse| UI_Widget
+    subgraph Persistence_Layer ["Authoritative Persistence (PostgreSQL Schema: ers)"]
+        Checkpointer["PostgreSQLWorkflowCheckpointer\n(ers.agent_workflow_checkpoints)"]
+        DB_Service["ERMDatabaseService (psycopg2 Pooled Connection)"]
+        PG_Tables[("PostgreSQL Database: MassERS\n(ers.risk_register, ers.risk_description, ers.risk_treatment,\ners.risk_register_hist, ers.agent_workflow_checkpoints)")]
+    end
+
+    UI_Widget -->|POST /api/erm/chat| Chat_Endpoint
+    UI_Audio -->|POST /api/erm/speech-to-text| STT_Endpoint
+    STT_Endpoint --> STTAgent
+    Chat_Endpoint --> MasterOrch
+
+    MasterOrch --> WorkflowResolver
+    WorkflowResolver --> Checkpointer
+    MasterOrch --> IntentRouter
+
+    IntentRouter -->|intent == 'risk_creation'| RiskAgent
+    IntentRouter -->|intent == 'approval_workflow'| ApprovalAgent
+    IntentRouter -->|intent == 'treatment'| TreatmentAgent
+    IntentRouter -->|direct read-only query| AI_Harness
+
+    RiskAgent --> AI_Harness
+    ApprovalAgent --> AI_Harness
+    TreatmentAgent --> AI_Harness
+
+    AI_Harness --> ToolRegistry
+    ToolRegistry --> HMAC_Sec
+    ToolRegistry --> DB_Service
+    DB_Service --> PG_Tables
+    Checkpointer --> PG_Tables
+
+    RiskAgent --> FormatterAgent
+    ApprovalAgent --> FormatterAgent
+    TreatmentAgent --> FormatterAgent
+    MasterOrch --> FormatterAgent
+    FormatterAgent --> UI_Widget
 ```
 
 ---
 
-## 3. Core Principles & Design Tenets
+## 📑 3. Dedicated Agent & Subsystem Documentation Index
 
-1. **Decoupled Architecture:** `ERM_Copilot` is packaged as an independent module with zero hard circular dependencies on the web framework.
-2. **Role-Based Access Control (RBAC):** Tailors queries, approvals, and data visibility across all **7 ERM Stakeholder Roles**.
-3. **Deterministic Persistence:** Critical governance actions (risk creation, multi-stage approvals, rejections) execute parameterized SQL updates directly into PostgreSQL with atomic commits, ensuring zero hallucinated transactions.
-4. **Resilient Multi-Provider LLM Gateway:** Guarantees 99.99% reasoning uptime through intelligent failover from Portkey to Groq to Gemini.
-5. **Interactive Action Tokens:** Outputs rich Markdown tables accompanied by click-to-execute tokens `[btn:Label|Command]` and `[btn-confirm:Label|Command]` enabling instant one-click approvals in the UI.
+Each subagent and core platform service in ERM Copilot is comprehensively documented in its own dedicated file:
+
+| Document | Component / Agent | Primary Identity | Key Capabilities |
+|---|---|---|---|
+| [**01_ORCHESTRATOR_AGENT.md**](file:///d:/ERM/ERM_Copilot/docs/agents/01_ORCHESTRATOR_AGENT.md) | **Master Orchestrator Agent** | `agent_orchestrator` / `ERMOrchestratorAgent` | Active workflow resolution, draft suspension & resume, cross-agent intent switching matrix, 16 direct read-only tools, TTL caching. |
+| [**02_RISK_CREATION_AGENT.md**](file:///d:/ERM/ERM_Copilot/docs/agents/02_RISK_CREATION_AGENT.md) | **Risk Creation Agent** | `agent_risk_creation` / `ConversationalRiskWizard` | 14-step conversational state machine, $5\times 5$ matrix scoring calculation, interactive UI picker chips, checkpoint persistence to `ers.agent_workflow_checkpoints`. |
+| [**03_TREATMENT_MANAGEMENT_AGENT.md**](file:///d:/ERM/ERM_Copilot/docs/agents/03_TREATMENT_MANAGEMENT_AGENT.md) | **Treatment Management Agent** | `agent_treatment` / `TreatmentAgent` | Multi-turn mitigation task creation, progress tracking (0-100%), personnel reassignment, single/multi-turn parsers, HMAC-SHA256 confirmation tokens. |
+| [**04_GOVERNANCE_APPROVAL_AGENT.md**](file:///d:/ERM/ERM_Copilot/docs/agents/04_GOVERNANCE_APPROVAL_AGENT.md) | **Governance Approval Agent** | `agent_approval_workflow` / `ApprovalWorkflowPlanner` | Dynamic policy planner, 3-tier sequence enforcement (FH $\to$ RM $\to$ RH), department isolation, mandatory rejection reasons, two-phase approval preview. |
+| [**05_SPEECH_TO_TEXT_AGENT.md**](file:///d:/ERM/ERM_Copilot/docs/agents/05_SPEECH_TO_TEXT_AGENT.md) | **Speech-to-Text Transcriber** | `qwen_speech_service` / `QwenSpeechToTextService` | High-accuracy voice commands, Groq Whisper turbo + Gemini Multimodal Audio fallback, enterprise acoustic prompt biasing (`RSK-GAS-056`, etc.). |
+| [**06_RESPONSE_FORMATTER_ENGINE.md**](file:///d:/ERM/ERM_Copilot/docs/agents/06_RESPONSE_FORMATTER_ENGINE.md) | **Response Formatter Engine** | `response_formatter` / `ERMResponseFormatter` | 17 standardized formatting methods, aligned tables, severity pills, status badges, action buttons micro-syntax (`[btn-confirm]`, `[btn-cancel]`), and CSS bindings. |
+| [**07_AI_HARNESS_AND_TOOL_REGISTRY.md**](file:///d:/ERM/ERM_Copilot/docs/agents/07_AI_HARNESS_AND_TOOL_REGISTRY.md) | **AI Harness & Tool Registry** | `ERMAIHarness` / `ToolRegistry` | 20+ registered tools, strict RBAC permissions matrix, Pydantic JSON schema validation, two-phase confirmation tokens, execution audit logging. |
+| [**08_WORKFLOW_CHECKPOINTER_AND_CONCURRENCY.md**](file:///d:/ERM/ERM_Copilot/docs/agents/08_WORKFLOW_CHECKPOINTER_AND_CONCURRENCY.md) | **Workflow Checkpointer** | `PostgreSQLWorkflowCheckpointer` | Schema `ers.agent_workflow_checkpoints`, optimistic concurrency with `version`, `SELECT ... FOR UPDATE` row locks, pause/resume transitions, and crash recovery. |
 
 ---
 
-## 4. Role-Based Access Control (RBAC) Architecture
+## 🛡️ 4. Role-Based Access Control (RBAC) Architecture
 
-| Role ID | ERM Role Name | Scope | Key Copilot Capabilities |
+The platform enforces zero-trust role-based access control across all 7 ERM stakeholder personas:
+
+| Role ID | Role Name | Code / Scope | Key Permitted Capabilities |
 | :---: | :--- | :--- | :--- |
-| **1** | **Risk Owner (RO)** | Department-Specific | Drafts new risks via 5-step wizard, calculates 5×5 Likelihood × Impact scores, selects Action Owners. |
-| **2** | **Functional Head (FH)** | Department-Specific | Reviews Stage 2 submitted risks, performs 1-click technical sign-offs or returns with revision notes. |
-| **3** | **Risk Manager (RM)** | Cross-Department | Audits risk mitigations, validates 4-tier treatments, executes Stage 3 managerial sign-offs. |
-| **4** | **Risk Head / CRO (RH)** | Enterprise-Wide | Conducts Stage 4 final executive approvals, monitors plant-wide 5×5 heatmaps, reviews escalations. |
-| **5** | **Auditor** | Enterprise-Wide | Inspects immutable audit trails, verifies approval timestamps, reviews change histories. |
-| **6** | **Management / C-Suite** | Enterprise-Wide | Analyzes macro risk profiles, monitors departmental risk summaries and critical plant hazards. |
-| **7** | **ERM Admin / Super Admin** | Enterprise-Wide | Manages user-department mappings, oversees system health, monitors operational queues. |
+| **1** | **Risk Owner (RO)** | `risk_owner` (Dept) | Creates risks via 14-step wizard, evaluates $5\times 5$ scores, drafts mitigation plans, resubmits returned risks. |
+| **2** | **Functional Head (FH)** | `functional_head` (Dept) | Stage 1 review: Approves department risks, returns with mandatory reason, assigns initial action owners. |
+| **3** | **Risk Manager (RM)** | `risk_manager` (Enterprise) | Stage 2 review: Enterprise validation, audits 4-tier treatments, executes managerial sign-offs, reassigns owners. |
+| **4** | **Risk Head / CRO (RH)** | `risk_head` (Enterprise) | Stage 3 final review: Executive sign-offs, monitors plant heatmaps, oversees risk velocity. |
+| **5** | **Auditor** | `auditor` (Enterprise) | Read-only inspection of immutable audit trails (`ers.risk_register_hist`), timestamps, and user logs. |
+| **6** | **Management / C-Suite** | `management` (Enterprise) | Executive visibility into departmental risk breakdowns, macro heatmaps, and high-severity plant hazards. |
+| **7** | **ERM Admin** | `admin` (Enterprise) | System configuration, user-department mappings, and operational monitoring. |
 
 ---
 
-## 5. Directory Structure & Key Modules
+## 🗄️ 5. Authoritative Database Layer
 
-```
-d:\Chatboat\ERM\ERM_Copilot\
-├── agents\
-│   ├── base.py                   # BaseAgent abstract contract
-│   └── agent.py                  # ERMCopilotAgent with State Machine & Intent Handling
-├── config\
-│   └── settings.py               # Prioritized environment configurations & credentials
-├── docs\                         # Comprehensive system documentation
-│   ├── 01_ARCHITECTURE_OVERVIEW.md
-│   ├── 02_DATABASE_AND_SCHEMA.md
-│   ├── 03_LLM_GATEWAY_ROUTING.md
-│   ├── 04_CONVERSATIONAL_WIZARD_GUIDE.md
-│   ├── 05_GOVERNANCE_AND_APPROVAL_WORKFLOW.md
-│   ├── 06_API_INTEGRATION_AND_ENDPOINTS.md
-│   └── 07_DEVELOPMENT_AND_DEPLOYMENT_GUIDE.md
-├── gateway\
-│   └── client.py                 # Multi-Provider resilient LLM Gateway
-├── models\
-│   ├── contracts.py              # AgentRequest, AgentResponse, RequestContext
-│   └── schemas.py                # Pydantic schemas (RiskItem, RiskTreatmentPlan)
-├── services\
-│   ├── api_client.py             # REST integration with ESM Core API (port 8001)
-│   └── db_service.py             # High-performance direct PostgreSQL service
-├── __init__.py                   # Package exports
-└── README.md                     # Master documentation & Quickstart
-```
+All workflows and Copilot mutations execute directly against **PostgreSQL** (`MassERS` database, `ers` schema):
+- **`ers.agent_workflow_checkpoints`**: Authoritative checkpoint storage with optimistic concurrency (`version`), workflow state (`workflow_type`, `state_data`, `workflow_status`), and user bindings.
+- **`ers.risk_register`**: Core risk records with status codes (`1` = Draft, `2` = Submitted to FH, `3` = FH Approved, `4` = RM Approved, `5` = Final Approved).
+- **`ers.risk_description`**: Risk descriptions, causes, consequences, category mappings, and department associations.
+- **`ers.risk_treatment`**: Action plans, assigned action owners, target dates, progress percentages, and status tracking.
+- **`ers.risk_register_hist`**: Immutable append-only audit trail logging every approval, rejection, and state modification with timestamps and user IDs.

@@ -20,36 +20,46 @@ export class CopilotWidgetPage {
   }
 
   async openWidget() {
-    if (await this.widgetTriggerButton.isVisible()) {
-      await this.widgetTriggerButton.click({ force: true });
+    const launcher = this.page.locator('#erm-copilot-launcher');
+    if (await launcher.isVisible()) {
+      await launcher.click();
+    } else {
+      await this.page.evaluate(() => {
+        const win = document.getElementById('erm-copilot-window');
+        const l = document.getElementById('erm-copilot-launcher');
+        if (win) win.style.display = 'flex';
+        if (l) l.style.display = 'none';
+      });
     }
-    await this.page.evaluate(() => {
-      const win = document.getElementById('erm-copilot-window');
-      const launcher = document.getElementById('erm-copilot-launcher');
-      if (win && win.style.display !== 'flex') {
-        win.style.display = 'flex';
-        if (launcher) launcher.style.display = 'none';
-      }
-    });
     await this.chatInput.waitFor({ state: 'visible', timeout: 10000 });
   }
 
+  private botCount: number = 0;
+
   async sendMessage(message: string) {
+    this.botCount = await this.page.locator('.chat-msg.bot').count();
     await this.chatInput.waitFor({ state: 'visible', timeout: 5000 });
     await this.chatInput.fill(message);
     await this.sendButton.click();
   }
 
   async waitForAssistantResponse() {
-    await this.page.waitForSelector('.chat-msg.bot', { timeout: 20000 });
-    await this.page.waitForTimeout(500);
+    const expected = this.botCount + 1;
+    await expect(this.page.locator('.chat-msg.bot')).toHaveCount(expected, { timeout: 25000 });
+    await this.page.locator('.copilot-typing-dots').waitFor({ state: 'detached', timeout: 20000 }).catch(() => {});
+    await this.page.waitForTimeout(400);
   }
 
   async getLastMessageText(): Promise<string> {
-    const messages = this.page.locator('.chat-msg.bot .bot-content-area, .chat-msg.bot, .bot-bubble-wrapper, .erm-message.assistant');
+    const messages = this.page.locator('.chat-msg.bot .bot-content-area');
     const count = await messages.count();
     if (count > 0) {
       return (await messages.nth(count - 1).textContent()) || '';
+    }
+    const fallbacks = this.page.locator('.chat-msg.bot');
+    const fCount = await fallbacks.count();
+    if (fCount > 0) {
+      return (await fallbacks.nth(fCount - 1).textContent()) || '';
     }
     return '';
   }

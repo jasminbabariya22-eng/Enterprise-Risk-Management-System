@@ -30,6 +30,9 @@ class CheckpointError(Exception):
 class ConcurrencyConflictError(CheckpointError):
     """Raised when an optimistic locking version conflict occurs."""
     def __init__(self, workflow_id: str, expected_version: int, actual_version: int):
+        self.workflow_id = workflow_id
+        self.expected_version = expected_version
+        self.actual_version = actual_version
         super().__init__(
             f"Concurrency conflict on workflow '{workflow_id}': expected version {expected_version}, but actual version is {actual_version}."
         )
@@ -201,6 +204,7 @@ class PostgreSQLWorkflowCheckpointer(BaseWorkflowCheckpointer):
         try:
             self.ensure_schema()
             conn = self._get_connection()
+            conn.autocommit = False
             cur = conn.cursor()
 
             state.updated_at = datetime.now(timezone.utc)
@@ -264,6 +268,12 @@ class PostgreSQLWorkflowCheckpointer(BaseWorkflowCheckpointer):
         except ConcurrencyConflictError:
             raise
         except Exception as e:
+            if 'conn' in locals() and conn and not getattr(conn, 'closed', False):
+                try:
+                    conn.rollback()
+                    conn.close()
+                except Exception:
+                    pass
             logger.error(f"[CHECKPOINTER_ERROR] Failed saving to PostgreSQL: {e}")
             if self.fallback:
                 logger.info("[CHECKPOINTER] Falling back to in-memory store.")

@@ -957,7 +957,7 @@ class ERMDatabaseService:
 
             # 1. Fetch risk details
             cur.execute(f"""
-                SELECT r.risk_register_id, r.risk_id, r.risk_name, r.dept_id, rd.risk_description_id
+                SELECT r.*, rd.risk_description_id
                 FROM {DB_SCHEMA}.risk_register r
                 LEFT JOIN {DB_SCHEMA}.risk_description rd ON r.risk_register_id = rd.risk_register_id
                 WHERE r.risk_register_id = %s AND r.is_deleted = 0;

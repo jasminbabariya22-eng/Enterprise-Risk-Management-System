@@ -14,7 +14,11 @@ def proxy_erm_chat():
     try:
         payload = request.get_json() or {}
         msg = payload.get("message") or payload.get("query") or ""
-        session_id = payload.get("session_id") or session.get("session_id") or ""
+        session_id = payload.get("session_id") or session.get("copilot_session_id") or session.get("session_id")
+        if not session_id:
+            import uuid
+            session["copilot_session_id"] = f"sess_{uuid.uuid4().hex[:8]}"
+            session_id = session["copilot_session_id"]
         login_data = session.get("login_data") or {}
         
         # Extract trusted identity strictly from session auth

@@ -3,89 +3,79 @@
 ---
 
 ## 📌 1. Overview & Identity
+
 - **Class Name:** [`TreatmentManagementAgent`](file:///d:/ERM/ERM_Copilot/agents/treatment/agent.py#L24)
-- **File Location:** [`d:/ERM/ERM_Copilot/agents/treatment/agent.py`](file:///d:/ERM/ERM_Copilot/agents/treatment/agent.py)
+- **File Location:** [`ERM_Copilot/agents/treatment/agent.py`](file:///d:/ERM/ERM_Copilot/agents/treatment/agent.py)
 - **Agent ID:** `treatment_management_agent`
-- **Role:** Specialized subagent for attaching new mitigation action plans, updating execution progress, and reassigning action owners for existing risk records.
-- **Trigger Phrases:**
-  - `"add action plan"`, `"add treatment"`, `"create action plan"`, `"mitigate risk"`
-  - `"update progress"`, `"progress update"`, `"set progress to ..."`
-  - `"reassign owner"`, `"transfer action"`, `"assign action to ..."`
-  - `"list treatments"`, `"show action plans for ..."`
+- **Role:** Specialized subagent for formulating risk mitigation action plans, tracking milestone execution progress, and reassigning action owners.
+- **Workflow Type:** `WorkflowType.TREATMENT_MANAGEMENT`
+- **Supported Operational Modes:**
+  1. **Interactive Multi-Turn Wizard:** Conversational step-by-step collection when parameters are missing.
+  2. **High-Speed Single-Turn Commands:** Direct natural language mutations with confirmation gating (e.g., `"Update progress of TRT-168 to 50% with remark seal overhauled"`).
+  3. **Read-Only Inquiries:** Browsing active treatments, audit timelines, and overdue milestones.
 
 ---
 
-## 🔄 2. Sub-Workflows & State Machines
+## 🔄 2. Workflows & State Machines
 
-### 2.1 Add Treatment Plan Workflow (5 Steps)
+### 2.1 Multi-Turn "Add Treatment" Flow
 
 ```mermaid
 flowchart TD
-    Start["User: 'Add action plan'"] --> Step1["Step 1: AWAITING_RISK_SELECTION\n(Target Risk Dropdown)"]
-    Step1 --> Step2["Step 2: AWAITING_ACTION_PLAN\n(3 Phased Engineering Suggestions)"]
-    Step2 --> Step3["Step 3: AWAITING_ACTION_OWNER\n(Department Action Owner Dropdown)"]
-    Step3 --> Step4["Step 4: AWAITING_TARGET_DATE\n(+30d, +60d, +90d Timeline Chips)"]
-    Step4 --> Step5["Step 5: AWAITING_PROGRESS\n(0%, 25%, 50%, 75% Chips)"]
-    Step5 --> Confirm["Step 6: AWAITING_CONFIRMATION\n(Preview Summary Card)"]
-    Confirm -->|Confirm & Save| DB[("Persist to ers.risk_treatment")]
-    Confirm -->|Cancel| Abort["Cancel Session"]
+    Trigger["User: 'Add treatment plan'"] --> S1["AWAITING_RISK_ID\n(Prompts for target risk code)"]
+    S1 --> S2["AWAITING_ACTION_PLAN\n(3 AI mitigation suggestions or manual input)"]
+    S2 --> S3["AWAITING_ACTION_OWNER\n(Department personnel dropdown)"]
+    S3 --> S4["AWAITING_TARGET_DATE\n(+30d, +60d, +90d chips or custom date)"]
+    S4 --> S5["AWAITING_PROGRESS\n(Initial progress %: 0%, 25%, 50%)"]
+    S5 --> S6["AWAITING_CONFIRMATION\n(HMAC-Signed Confirmation Preview Card)"]
+    
+    S6 -->|Confirm| Execute["Atomic DB Mutation\n(ers.risk_treatment + audit log)"]
+    S6 -->|Cancel| Abort["Discard Draft Session"]
+    Execute --> Complete["Return Success Card & UI Refresh Event"]
 ```
 
-### 2.2 Instant Single-Turn & Multi-Turn Progress Updates
-- **Single-Turn Execution:** `"Update progress of TRT-12 to 75% with remark NDT completed"` $\rightarrow$ Directly calls `erm_db.update_treatment_progress` and confirms.
-- **Multi-Turn Mode:** If target treatment or percentage is missing, prompts conversationally for the missing values.
-
-### 2.3 Action Owner Reassignment
-- Prompts for the designated department personnel and updates `action_owner_id` with audit logging.
+### 2.2 Instant Single-Turn Parsing
+When user supplies all parameters in one command:
+- `"Update progress of TRT-101 to 75%"` $\to$ parses treatment ID `101`, progress `75`, prompts directly for confirmation preview.
+- `"Reassign TRT-101 to Rohan Deshmukh because of engineer rotation"` $\to$ parses target owner and reason, verifies department alignment, and generates confirmation preview.
 
 ---
 
-## 🛠️ 3. Tools & Database Functions Invoked
+## 🛠️ 3. Authoritative Tools & Database Functions
 
-| Function Name | Source Module | Inputs | Output Return | Purpose |
-|---|---|---|---|---|
-| `add_risk_treatment` | [`services/db_service.py`](file:///d:/ERM/ERM_Copilot/services/db_service.py) | `risk_id: str, action_plan: str, action_owner_id: int, target_date: str, progress: int, status: str` | `{"success": bool, "risk_treatment_id": int}` | Inserts new mitigation task into `ers.risk_treatment`. |
-| `update_treatment_progress` | [`services/db_service.py`](file:///d:/ERM/ERM_Copilot/services/db_service.py) | `treatment_id: int, progress: int, status: str, remark: str` | `{"success": bool, "treatment_id": int, "new_progress": int}` | Updates milestone progress percentage and status. |
-| `reassign_treatment_owner` | [`services/db_service.py`](file:///d:/ERM/ERM_Copilot/services/db_service.py) | `treatment_id: int, new_owner_id: int, remark: str` | `{"success": bool, "new_owner_name": str}` | Transfers ownership of an existing action plan. |
-| `get_risk_treatments` | [`services/db_service.py`](file:///d:/ERM/ERM_Copilot/services/db_service.py) | `risk_id: str` | `List[Dict[str, Any]]` | Retrieves all active treatment plans for a specific risk. |
-| `get_department_action_owners` | [`services/db_service.py`](file:///d:/ERM/ERM_Copilot/services/db_service.py) | `dept_id: int, dept_name: str` | `List[Dict[str, Any]]` | Returns registered Action Owners in the department. |
+The Treatment Management Agent interacts with the database exclusively through the governed AI Harness:
 
----
-
-## 🌐 4. FastAPI & REST API Endpoints
-
-### Conversational Treatment Turn
-- **Route:** `POST /api/erm/chat`
-- **Request:**
-```json
-{
-  "message": "Add action plan to RSK-GAS-049",
-  "role": "Action Owner",
-  "user_id": 8,
-  "dept_id": 2,
-  "dept_name": "Gas Processing Facilities"
-}
-```
-
-### Direct Programmatic CRUD (REST API)
-- **Create Treatment:** `POST /api/v1/risk-treatments/`
-- **Update Treatment:** `PUT /api/v1/risk-treatments/{id}`
-- **Delete Treatment:** `DELETE /api/v1/risk-treatments/{id}`
-- **Controller File:** [`ERM_API/app/api/risk_treatment.py`](file:///d:/ERM/ERM_API/app/api/risk_treatment.py)
-- **Request Schema (`TreatmentCreateSchema`):**
-```json
-{
-  "risk_id": 49,
-  "action_plan": "Install automated safety interlocks and calibrate alarm setpoints.",
-  "action_owner_id": 8,
-  "target_date": "2026-11-30",
-  "progress": 25,
-  "status_id": 1
-}
-```
+| Tool Name | Implementation Function | Category | Primary Inputs | Output Return |
+| :--- | :--- | :--- | :--- | :--- |
+| **`add_risk_treatment`** | [`db_service.add_risk_treatment`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L940) | STATE_CHANGING | `risk_id: str, action_plan: str, action_owner_id: int, target_date: str, progress: int, status: str` | `{"success": bool, "risk_treatment_id": int}` |
+| **`update_treatment_progress`** | [`db_service.update_treatment_progress`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L980) | STATE_CHANGING | `treatment_id: int, progress: int, status: Optional[str], remark: Optional[str]` | `{"success": bool, "treatment_id": int, "new_progress": int}` |
+| **`reassign_treatment_owner`** | [`db_service.reassign_treatment_owner`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L1060) | STATE_CHANGING | `treatment_id: int, new_owner_id: int, remark: Optional[str]` | `{"success": bool, "new_owner_name": str}` |
+| **`list_risk_treatments`** | [`db_service.get_risk_treatments`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L900) | READ_ONLY | `risk_id: str` | `List[Dict[str, Any]]` |
+| **`get_treatment_details`** | [`db_service.get_treatment_by_id`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L920) | READ_ONLY | `treatment_id: int` | `Dict[str, Any]` |
 
 ---
 
-## 🧪 5. Testing & Validation
-- **Dedicated Test Suite:** [`ERM_Copilot/tests/test_treatment_management_agent.py`](file:///d:/ERM/ERM_Copilot/tests/test_treatment_management_agent.py).
-- **Test Coverage:** Multi-turn addition, cancellation, listing treatments, regex trigger recognition, and progress parsing.
+## 🛡️ 4. Security, HMAC Token Binding & Cross-Department Isolation
+
+### 4.1 HMAC-SHA256 Token Binding
+Every state-changing treatment mutation produces a signed confirmation token:
+```python
+token = hmac.new(
+    SECRET_KEY.encode(),
+    f"{actor_id}:{actor_role}:{action}:{target_id}:{canonical_args}:{expires_at}".encode(),
+    hashlib.sha256
+).hexdigest()
+```
+- **Actor Binding:** Token can only be consumed by the identical authenticated user and role that requested it.
+- **Payload Anti-Tamper:** Modifying progress from `50%` to `100%` during confirmation invalidates the HMAC signature and causes immediate rejection.
+- **Single-Use Enforcement:** Status transitions atomically `PENDING` $\to$ `EXECUTING` $\to$ `EXECUTED`. Replays and concurrent clicks are blocked.
+- **15-Minute Expiration:** Expired tokens cannot be executed after a process restart.
+
+### 4.2 Cross-Department Isolation (Fail Closed)
+- Frontline Action Owners and Functional Heads can **only** add treatments, update progress, or reassign owners within their assigned department.
+- If user `dept_id != risk.dept_id`, the action is blocked with:
+  > `⛔ Department Access Restriction: Cannot modify treatments across departmental boundaries.`
+
+### 4.3 Comprehensive Audit Trail History
+- **`ers.risk_treatment_hist`:** Records every progress update, previous progress %, new progress %, prior owner, new owner, and user remark.
+- **`ers.risk_register_hist`:** Logs treatment milestone additions against the parent risk record.

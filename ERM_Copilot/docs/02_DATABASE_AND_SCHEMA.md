@@ -104,6 +104,34 @@ Captures specific action plans, milestones, and designated Action Owners:
 - `target_date`: Milestone target completion date.
 - `progress`: Percentage completion string (e.g. `45%`, `100%`).
 
+### 3.4. `ers.agent_workflow_checkpoints` (Authoritative Agent Checkpoint Store)
+Stores persistent conversational state, form drafts, and optimistic concurrency versioning for multi-turn AI workflows:
+- `workflow_id`: Primary key UUID string.
+- `session_id`: Client session identifier.
+- `user_id`: Authenticated user ID.
+- `workflow_type`: Target domain (`RISK_CREATION`, `TREATMENT_MANAGEMENT`, `APPROVAL_GOVERNANCE`).
+- `status`: Workflow lifecycle status (`INITIATION`, `IN_PROGRESS`, `PAUSED`, `AWAITING_INPUT`, `COMPLETED`, `CANCELLED`, `FAILED`).
+- `version`: Monotonically increasing integer supporting Optimistic Concurrency Control.
+- `collected_fields`: JSONB object storing all intermediate form answers.
+- `history`: JSONB array logging state transitions, timestamps, and suspension reasons.
+
+```sql
+CREATE TABLE IF NOT EXISTS ers.agent_workflow_checkpoints (
+    workflow_id VARCHAR(64) PRIMARY KEY,
+    session_id VARCHAR(128) NOT NULL,
+    user_id VARCHAR(64) NOT NULL,
+    workflow_type VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    current_step VARCHAR(64) NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    collected_fields JSONB NOT NULL DEFAULT '{}'::jsonb,
+    validation_errors JSONB NOT NULL DEFAULT '[]'::jsonb,
+    history JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ---
 
 ## 4. 5×5 Risk Scoring & Color Coding Matrix

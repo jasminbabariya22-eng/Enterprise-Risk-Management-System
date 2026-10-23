@@ -3,110 +3,103 @@
 ---
 
 ## 📌 1. Overview & Identity
+
 - **Class Name:** [`RiskCreationAgent`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/agent.py#L25)
-- **File Location:** [`d:/ERM/ERM_Copilot/agents/risk_creation/agent.py`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/agent.py)
+- **File Location:** [`ERM_Copilot/agents/risk_creation/agent.py`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/agent.py)
 - **Agent ID:** `risk_creation_agent`
-- **Role:** Interactive Conversational 10-Step Wizard for formulating, scoring, and saving new operational risks.
-- **Trigger Phrases:** `"create risk"`, `"register risk"`, `"new risk"`, `"add risk"`, `"log a risk"`, `"formulate hazard"`.
+- **Role:** Interactive Conversational 14-Step Wizard for formulating, scoring, mitigating, and persisting new operational risks.
+- **Workflow Type:** `WorkflowType.RISK_CREATION`
+- **Checkpoint Persistence:** Real-time state synchronization to [`ers.agent_workflow_checkpoints`](file:///d:/ERM/ERM_Copilot/workflow/checkpointer.py).
+- **Trigger Phrases:**
+  - `"create risk"`, `"register risk"`, `"new risk"`, `"add risk"`, `"log a risk"`
+  - `"create a new operational risk for Gas Processing"`
 
 ---
 
-## 🔄 2. 10-Step State Machine Workflow
+## 🔄 2. 14-Step Conversational State Machine
 
 ```mermaid
 stateDiagram-v2
-    [*] --> AWAITING_RISK_NAME: User Triggers 'create risk'
-    AWAITING_RISK_NAME --> AWAITING_CO_OWNER: Enters Risk Title
-    AWAITING_CO_OWNER --> AWAITING_DESCRIPTION: Selects Co-Owner / Skips
-    AWAITING_DESCRIPTION --> AWAITING_INHERENT_ASSESSMENT: Selects/Writes Hazard Description
-    AWAITING_INHERENT_ASSESSMENT --> AWAITING_MITIGATION: Submits Likelihood (1-5) & Impact (1-5)
-    AWAITING_MITIGATION --> AWAITING_CURRENT_ASSESSMENT: Selects/Writes Mitigation Strategy
-    AWAITING_CURRENT_ASSESSMENT --> AWAITING_ACTION_PLAN: Submits Residual Likelihood & Impact
-    AWAITING_ACTION_PLAN --> AWAITING_ACTION_OWNER: Selects/Writes Action Plan
-    AWAITING_ACTION_OWNER --> AWAITING_TARGET_DATE: Selects Department Action Owner
-    AWAITING_TARGET_DATE --> AWAITING_STATUS: Selects Date (+30d, +60d, etc.)
-    AWAITING_STATUS --> AWAITING_CONFIRMATION: Selects Draft or Submit to FH
-    AWAITING_CONFIRMATION --> WIZARD_COMPLETED: User Confirms [✅ Confirm & Save]
-    AWAITING_CONFIRMATION --> [*]: User Cancels [❌ Cancel]
+    [*] --> STEP_1_IDENTIFICATION: User triggers 'create risk'
+    STEP_1_IDENTIFICATION --> STEP_2_DEPARTMENT: Risk Name provided
+    STEP_2_DEPARTMENT --> STEP_3_CATEGORY: Department selected
+    STEP_3_CATEGORY --> STEP_4_DESCRIPTION: Category matched / selected
+    STEP_4_DESCRIPTION --> STEP_5_INHERENT_LIKELIHOOD: Hazard description provided
+    STEP_5_INHERENT_LIKELIHOOD --> STEP_6_INHERENT_IMPACT: Inherent Likelihood (1-5)
+    STEP_6_INHERENT_IMPACT --> STEP_7_EXISTING_CONTROLS: Inherent Impact (1-5) [Score Computed]
+    STEP_7_EXISTING_CONTROLS --> STEP_8_CURRENT_LIKELIHOOD: Controls described / selected
+    STEP_8_CURRENT_LIKELIHOOD --> STEP_9_CURRENT_IMPACT: Residual Likelihood (1-5)
+    STEP_9_CURRENT_IMPACT --> STEP_10_PROPOSED_MITIGATION: Residual Impact (1-5) [Score Computed]
+    STEP_10_PROPOSED_MITIGATION --> STEP_11_ACTION_OWNER: Mitigation strategy selected
+    STEP_11_ACTION_OWNER --> STEP_12_TARGET_DATE: Action Owner assigned
+    STEP_12_TARGET_DATE --> STEP_13_CONFIRMATION_PREVIEW: Target Date parsed (+30d, ISO)
+    STEP_13_CONFIRMATION_PREVIEW --> STEP_14_PERSISTENCE: User confirms [✅ Confirm & Save]
+    STEP_13_CONFIRMATION_PREVIEW --> [*]: User cancels [❌ Cancel]
+    STEP_14_PERSISTENCE --> [*]: Risk Created (RSK-XXX-NNN committed to DB)
 ```
 
 ---
 
-## 📋 3. Step-by-Step Breakdown & User Interactions
+## 📋 3. Step-by-Step Breakdown & Field Specifications
 
-| Step # | State Enum | Description & Interactive UI Component | Example Input / Button |
-|---|---|---|---|
-| **Step 1** | `AWAITING_RISK_NAME` | Prompts for the hazard / risk title. | `"Compressor High Vibration Risk"` |
-| **Step 2** | `AWAITING_CO_OWNER` | Dropdown selector with registered enterprise users or Skip. | `[select:👤 Select Risk Co-Owner...\|...]` or `Skip` |
-| **Step 3** | `AWAITING_DESCRIPTION` | Presents 3 AI industrial hazard suggestions. | `[btn:1️⃣ Option 1\|Option 1 Description]` |
-| **Step 4** | `AWAITING_INHERENT_ASSESSMENT` | Interactive $5\times 5$ dual dropdown selector ($L \times I$). | `[assessment-matrix:inherent]` (e.g. $L=4, I=4 \rightarrow 16$) |
-| **Step 5** | `AWAITING_MITIGATION` | Suggests 3 engineering & operational controls. | `[btn:1️⃣ Option 1: Engineering Control\|...]` |
-| **Step 6** | `AWAITING_CURRENT_ASSESSMENT` | Residual $5\times 5$ dual dropdown selector after mitigation. | `[assessment-matrix:current]` (e.g. $L=2, I=2 \rightarrow 4$) |
-| **Step 7** | `AWAITING_ACTION_PLAN` | Phased mitigation implementation plan. | `[btn:1️⃣ Option 1 Plan\|Option 1 Action Plan]` |
-| **Step 8** | `AWAITING_ACTION_OWNER` | Dropdown of registered Action Owners for user's department. | `[select:👤 Select Action Owner...\|...]` |
-| **Step 9** | `AWAITING_TARGET_DATE` | Timeline chips (`+30d`, `+60d`, `+90d`) or custom date. | `[btn:📅 +30 Days\|+30 days]` |
-| **Step 10**| `AWAITING_STATUS` | Governance status choice (Draft vs Submit to FH). | `[btn:💾 Draft\|Draft]` / `[btn:🚀 Submit to FH\|Submit]` |
-| **Review** | `AWAITING_CONFIRMATION` | Full compiled summary card with inline edit capabilities. | `[btn-confirm:✅ Confirm & Save\|Confirm]` |
-
----
-
-## 🛠️ 4. Tools & Submodules
-
-1. **`RiskMatrixCalculator`** ([`risk_creation/scoring.py`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/scoring.py)):
-   - Computes $Score = Likelihood \times Impact$.
-   - Maps scores to standard ERM severity bands:
-     - $15 - 25$: 🔴 **Critical**
-     - $10 - 14$: 🟠 **High**
-     - $5 - 9$: 🟡 **Medium**
-     - $1 - 4$: 🟢 **Low**
-2. **`StaticSuggestionProvider`** ([`risk_creation/suggestions.py`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/suggestions.py)):
-   - Generates contextual engineering, safety, and operational suggestions for descriptions, mitigations, and action plans.
-3. **`erm_db.create_risk_full`** ([`services/db_service.py`](file:///d:/ERM/ERM_Copilot/services/db_service.py)):
-   - Atomically inserts records across:
-     - `ers.risk_register` (Risk ID, Department ID, User ID, Inherent & Residual ratings, Status).
-     - `ers.risk_description` (Hazard Description & Mitigation details).
-     - `ers.risk_treatment` (Action plan, Action owner, Target date, Progress).
+| Step # | Wizard Step Enum | Purpose | Interactive UI Component | Validation & Processing |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | `STEP_1_IDENTIFICATION` | Captures high-level risk title | Text input prompt | Rejects empty strings; strips special markdown characters |
+| **2** | `STEP_2_DEPARTMENT` | Department alignment | Dropdown chips `[btn:GAS\|Gas Processing]` | Enforces user's assigned department if non-admin |
+| **3** | `STEP_3_CATEGORY` | Risk Taxonomy categorization | Selection list (Operational, Safety, Financial, etc.) | Fuzzy category matcher ([`parsers.py`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/parsers.py)) |
+| **4** | `STEP_4_DESCRIPTION` | Detailed hazard narrative | 3 Dynamic AI-generated hazard options | Natural language input or 1-click option chips |
+| **5** | `STEP_5_INHERENT_LIKELIHOOD` | Pre-control likelihood | Likelihood scale chips (1 to 5) | Integer range `[1, 5]` validation |
+| **6** | `STEP_6_INHERENT_IMPACT` | Pre-control consequence | Impact scale chips (1 to 5) | Auto-computes inherent score ($L \times I$) and badge |
+| **7** | `STEP_7_EXISTING_CONTROLS` | Document baseline controls | 3 AI control suggestions | Formats engineering barriers and inspection routines |
+| **8** | `STEP_8_CURRENT_LIKELIHOOD` | Post-control residual likelihood | Likelihood scale chips (1 to 5) | Must be $\le$ Inherent Likelihood |
+| **9** | `STEP_9_CURRENT_IMPACT` | Post-control residual consequence| Impact scale chips (1 to 5) | Auto-computes residual score ($L \times I$) and severity badge |
+| **10**| `STEP_10_PROPOSED_MITIGATION` | Strategic treatment plan | 3 Phased engineering options | Actionable maintenance, overhaul, or monitoring tasks |
+| **11**| `STEP_11_ACTION_OWNER` | Accountable personnel | User dropdown for department | Verifies user exists in `ers.mst_users` |
+| **12**| `STEP_12_TARGET_DATE` | Target completion timeline | Quick chips (`+30 Days`, `+60 Days`, `+90 Days`) | [`parse_target_date`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/parsers.py#L45) rejects past dates; formats ISO `YYYY-MM-DD` |
+| **13**| `STEP_13_CONFIRMATION_PREVIEW`| Two-phase human review | Full markdown summary table | Generates HMAC-SHA256 signature; enables inline field edits |
+| **14**| `STEP_14_PERSISTENCE` | Authoritative DB commit | Final confirmation card with risk ID | Executes `create_risk` tool; invalidates cache |
 
 ---
 
-## 🌐 5. FastAPI Endpoints & Payload Mapping
+## 🧮 4. 5×5 Scoring Matrix & Dynamic Badges
 
-### Conversational Wizard Turn
-- **Route:** `POST /api/erm/chat`
-- **Request:**
-```json
-{
-  "message": "Compressor Seal Leakage",
-  "role": "Risk Owner",
-  "user_id": 5,
-  "dept_id": 2,
-  "dept_name": "Gas Processing Facilities"
-}
+Implements authoritative enterprise risk formula via [`RiskMatrixCalculator`](file:///d:/ERM/ERM_Copilot/agents/risk_creation/matrix.py):
+
+$$ \text{Score} = \text{Likelihood (1--5)} \times \text{Impact (1--5)} $$
+
+```
+Impact ➔    1: Negligible   2: Minor     3: Moderate   4: Major      5: Catastrophic
+Likelihood 🠓
+5: Almost Certain  [5 - MED]     [10 - HIGH]  [15 - CRIT]   [20 - CRIT]   [25 - CRIT]
+4: Likely          [4 - LOW]     [8 - MED]    [12 - HIGH]   [16 - CRIT]   [20 - CRIT]
+3: Possible        [3 - LOW]     [6 - MED]    [9 - MED]     [12 - HIGH]   [15 - CRIT]
+2: Unlikely        [2 - LOW]     [4 - LOW]    [6 - MED]     [8 - MED]     [10 - HIGH]
+1: Rare            [1 - LOW]     [2 - LOW]    [3 - LOW]     [4 - LOW]     [5 - MED]
 ```
 
-### Direct Programmatic Risk Creation (REST API)
-- **Route:** `POST /api/v1/risks`
-- **Controller:** [`ERM_API/app/api/risk_register.py`](file:///d:/ERM/ERM_API/app/api/risk_register.py)
-- **Request Payload:**
-```json
-{
-  "risk_name": "Compressor Seal Leakage",
-  "department_id": 2,
-  "inherent_likelihood": 4,
-  "inherent_impact": 5,
-  "current_likelihood": 2,
-  "current_impact": 2,
-  "status_id": 2,
-  "description": "High pressure hydrogen gas leakage hazard.",
-  "mitigation": "Install dual pressurized mechanical seal barrier system.",
-  "action_plan": "Phase 1 seal overhaul and DCS vibration baseline calibration.",
-  "action_owner_id": 8,
-  "target_date": "2026-12-31"
-}
-```
+### Severity Bands & Color Badges
+- **15 -- 25:** `🔴 CRITICAL` (Immediate functional head escalation required)
+- **10 -- 14:** `🟠 HIGH` (Mandatory formal treatment plan required)
+- **5 -- 9:** `🟡 MEDIUM` (Routine operational monitoring)
+- **1 -- 4:** `🟢 LOW` (Standard operating procedures)
 
 ---
 
-## 🧪 6. Testing & Validation
-- **Dedicated Test Suite:** [`ERM_Copilot/tests/test_risk_creation_agent.py`](file:///d:/ERM/ERM_Copilot/tests/test_risk_creation_agent.py) and [`test_risk_owner_e2e_creation.py`](file:///d:/ERM/ERM_Copilot/tests/test_risk_owner_e2e_creation.py).
-- **Test Coverage:** All 14 steps, session isolation between concurrent users, inline field edits, matrix scoring, and cancellation.
+## 🛠️ 5. Tools & Database Functions Invoked
+
+| Tool Name | Module | Type | Description |
+| :--- | :--- | :--- | :--- |
+| [`create_risk`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L400) | `services/db_service.py` | STATE_CHANGING | Commits header to `ers.risk_register` and narrative to `ers.risk_description` in single atomic transaction. |
+| [`calculate_risk_score`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L550) | `services/db_service.py` | READ_ONLY | Authoritative backend validation of likelihood $\times$ impact score. |
+| [`get_dropdown_options`](file:///d:/ERM/ERM_Copilot/services/db_service.py#L200) | `services/db_service.py` | READ_ONLY | Fetches registered departments, categories, and potential action owners. |
+
+---
+
+## 💾 6. Checkpoint Persistence & Recovery
+
+When a user initiates the wizard, a persistent checkpoint is registered:
+- **Table:** `ers.agent_workflow_checkpoints`
+- **Workflow Type:** `RISK_CREATION`
+- **Collected Fields:** Real-time JSON document tracking all 14 fields.
+- **Inline Editing:** Before confirming Step 13, user can say `"Change likelihood to 3"` or `"Update target date to Dec 31"`; the agent updates `collected_fields` in place without restarting the wizard.
+- **Crash Recovery:** If browser tab closes or process restarts, the session is reloaded at the exact step where the user paused.
